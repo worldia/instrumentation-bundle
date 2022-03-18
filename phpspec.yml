@@ -1,0 +1,4 @@
+suites:
+    instrumentation:
+        namespace: Instrumentation
+        psr4_prefix: Instrumentation

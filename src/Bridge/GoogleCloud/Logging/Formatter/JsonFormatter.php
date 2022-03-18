@@ -1,0 +1,118 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of the worldia/instrumentation-bundle package.
+ * (c) Worldia <developers@worldia.com>
+ */
+
+namespace Instrumentation\Bridge\GoogleCloud\Logging\Formatter;
+
+use Instrumentation\Logging\Formatter\JsonFormatter as BaseJsonFormatter;
+
+final class JsonFormatter extends BaseJsonFormatter
+{
+    public function __construct(private string $project)
+    {
+        parent::__construct(self::BATCH_MODE_NEWLINES, true, true);
+    }
+
+    /**
+     * Translate the data into Google Cloud logging format.
+     *
+     * @see https://cloud.google.com/logging/docs/agent/configuration#process-payload
+     * @see https://github.com/GoogleCloudPlatform/fluent-plugin-google-cloud/blob/master/lib/fluent/plugin/out_google_cloud.rb
+     *
+     * @return array<mixed>
+     */
+    protected function normalize($data, int $depth = 0): array
+    {
+        $data = parent::normalize($data, $depth);
+
+        if ($depth < 1) {
+            // Map timestamp
+            $date = new \DateTime($data['datetime']);
+            $data['timestamp'] = [
+                'seconds' => $date->getTimestamp(),
+                'nanos' => (int) $date->format('u') * 1000,
+            ];
+            unset($data['datetime']);
+
+            // Map severity
+            $data['severity'] = $data['level_name'];
+            unset($data['level_name']);
+
+            // Map tracing
+            $data['logging.googleapis.com/trace'] = 'projects/'.$this->project.'/traces/'.$data['extra']['traceId'];
+            $data['logging.googleapis.com/spanId'] = $data['extra']['spanId'];
+            $data['logging.googleapis.com/trace_sampled'] = $data['extra']['traceSampled'];
+            if (isset($data['extra']['traceOperation'])) {
+                $data['logging.googleapis.com/operation'] = $data['extra']['traceOperation'];
+            }
+            unset($data['extra']['traceSampled'], $data['extra']['spanId'], $data['extra']['traceId'], $data['extra']['traceOperation']);
+
+            // Map channel
+            $data['logging.googleapis.com/labels'] = ['channel' => $data['channel']];
+            unset($data['channel']);
+
+            if ($exception = $data['context']['exception'] ?? false) {
+                $data['message'] = $exception['message'];
+                $data['context'] = array_merge($data['context'], $exception['context']);
+                unset($data['context']['exception']);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Translate exceptions into a format that Google Cloud Error Reporting understands.
+     *
+     * @see https://cloud.google.com/error-reporting/reference/rest/v1beta1/projects.events/report#reportederrorevent
+     * @see https://cloud.google.com/error-reporting/reference/rest/v1beta1/ErrorContext#sourcelocation
+     */
+    protected function normalizeException(\Throwable $e, int $depth = 0): array
+    {
+        return [
+            'message' => 'PHP Warning: '.(string) $e,
+            'context' => [
+                'reportLocation' => [
+                    'filePath' => $e->getFile(),
+                    'lineNumber' => $e->getLine(),
+                    'functionName' => static::getFunctionNameForReport($e->getTrace()),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * This code was taken from:.
+     *
+     * @see https://github.com/googleapis/google-cloud-php-errorreporting/blob/master/src/Bootstrap.php#L254
+     *
+     * Format the function name from a stack trace. This could be a global
+     * function (function_name), a class function (Class->function), or a static
+     * function (Class::function).
+     *
+     * @param array<mixed> $trace The stack trace returned from Exception::getTrace()
+     */
+    private static function getFunctionNameForReport(array $trace = null): string
+    {
+        if (null === $trace) {
+            return '<unknown function>';
+        }
+        if (empty($trace[0]['function'])) {
+            return '<none>';
+        }
+        $functionName = [$trace[0]['function']];
+        if (isset($trace[0]['type'])) {
+            $functionName[] = $trace[0]['type'];
+        }
+        if (isset($trace[0]['class'])) {
+            $functionName[] = $trace[0]['class'];
+        }
+
+        return implode('', array_reverse($functionName));
+    }
+}
