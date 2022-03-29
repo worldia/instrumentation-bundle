@@ -54,31 +54,28 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
             ],
             'response_times_seconds' => [
                 'type' => Histogram::TYPE,
-                'help' => 'Number of requests with a status code in the 5XX range',
+                'help' => 'Distribution of response times in seconds',
                 'buckets' => Histogram::getDefaultBuckets(),
             ],
         ];
     }
-
-    private float $startTime;
 
     /**
      * @param array<string> $blacklist
      */
     public function __construct(private RegistryInterface $registry, private array $blacklist)
     {
-        $this->startTime = microtime(true);
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => [['onRequestEvent', 9999]],
-            KernelEvents::RESPONSE => [['onResponseEvent', -9999]],
+            KernelEvents::REQUEST => [['onRequest', 9999]],
+            KernelEvents::TERMINATE => [['onTerminate', 8092]],
         ];
     }
 
-    public function onRequestEvent(Event\RequestEvent $event): void
+    public function onRequest(Event\RequestEvent $event): void
     {
         if (!$event->isMainRequest() || $this->isBlacklisted($event->getRequest())) {
             return;
@@ -88,13 +85,13 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
         $this->registry->getGauge('requests_handling')->inc();
     }
 
-    public function onResponseEvent(Event\ResponseEvent $event): void
+    public function onTerminate(Event\TerminateEvent $event): void
     {
         if (!$event->isMainRequest() || $this->isBlacklisted($event->getRequest())) {
             return;
         }
 
-        $time = microtime(true) - $this->startTime;
+        $time = microtime(true) - $event->getRequest()->server->get('REQUEST_TIME_FLOAT');
         $code = ((int) substr((string) $event->getResponse()->getStatusCode(), 0, 1)) * 100;
 
         $this->registry->getGauge('requests_handling')->dec();

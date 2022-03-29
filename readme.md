@@ -11,7 +11,7 @@
 
 #### Metrics
 - Using the [Prometheus Client](https://github.com/PromPHP/prometheus_client_php)
-- Minimal auto-instrumentation for common **request metrics** (including number of requests handled in total, currently handling, and response codes), **consumer metrics** (number of active consumers) and **message metrics** (messages currently consuming, total messages handled and total messages failed).
+- Minimal auto-instrumentation for common **request**, **consumer** and **message** metrics (see list of provided [default metrics](./docs/metrics/default-metrics.md)).
 - Autoconfigurable metric providers, see below.
 
 #### Baggage
@@ -53,10 +53,13 @@ instrumentation:
     - [Simple tracing example](./docs/tracing/simple-trace.md)
     - [Simple tracing example using the static API](./docs/tracing/static-usage.md)
 - **Metrics**
-    - [Yet to be added]
+    - [Adding a metric](./docs/metrics/adding-a-metric.md)
+- **Health**
+    - [Adding a healthcheck](./docs/health/adding-a-healthcheck.md)   
+- **Http**
+    - [Propagating trace/baggage context in HTTP requests](./docs/http/propagating-context.md)        
 
 #### Bridges
 
 **Google Cloud Platform**
 - **Logging**: The GCP bridge includes a `monolog` formatter to include trace information in logs.
-- **Tracing**: Handles transformation and propagation of the `X-Cloud-Trace-Context` header set by GCP load balancers.
