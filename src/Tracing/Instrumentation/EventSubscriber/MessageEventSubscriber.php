@@ -9,6 +9,7 @@ namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\Span;
@@ -92,6 +93,12 @@ class MessageEventSubscriber implements EventSubscriberInterface
      */
     private function getOperationName(Envelope $envelope, string $operation): string
     {
+        /** @var OperationNameStamp|null $stamp */
+        $stamp = $envelope->last(OperationNameStamp::class);
+        if ($stamp) {
+            return $stamp->getOperationName();
+        }
+
         return sprintf('%s %s', \get_class($envelope->getMessage()), $operation);
     }
 
