@@ -21,15 +21,15 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
         ];
     }
 
-    public function __construct(private RegistryInterface $registry)
-    {
-    }
-
     public static function getSubscribedEvents(): array
     {
         return [
             KernelEvents::REQUEST => 'onRequest',
         ];
+    }
+
+    public function __construct(private RegistryInterface $registry)
+    {
     }
 
     public function onRequest(Event\RequestEvent $event): void
