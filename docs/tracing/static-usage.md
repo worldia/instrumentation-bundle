@@ -1,21 +1,20 @@
 # Static usage example
 
-![Jaeger](./examples/simple-trace.png)
+![Jaeger](./examples/simple-trace.png) 
 
 ```php
-<?php
-
 namespace App\Controller;
 
 use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class CurrentTime
 {
-    public function __construct(private HttpClientInterface $httpClient)
+    public function __construct(private HttpClientInterface $httpClient, private LoggerInterface $logger)
     {
     }
 
@@ -29,7 +28,7 @@ class CurrentTime
 
         $span = Tracing::trace('process');
         $result = sprintf('Current time is %s in timezone "%s".', $info['datetime'], $info['timezone']);
-        sleep(1);
+        $this->logger->info($result);
         $span->end();
 
         return new Response($result);

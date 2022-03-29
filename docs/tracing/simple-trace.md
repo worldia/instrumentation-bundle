@@ -3,8 +3,6 @@
 ![Jaeger](./examples/simple-trace.png)
 
 ```php
-<?php
-
 namespace App\Controller;
 
 use Instrumentation\Tracing\Tracing;
@@ -19,7 +17,8 @@ class CurrentTime
 {
     public function __construct(
         private TracerProviderInterface $tracerProvider, 
-        private HttpClientInterface $httpClient
+        private HttpClientInterface $httpClient,
+        private LoggerInterface $logger
     ) {
     }
 
@@ -36,7 +35,7 @@ class CurrentTime
 
         $span = $this->getTracer()->spanBuilder('process')->startSpan();
         $result = sprintf('Current time is %s in timezone "%s".', $info['datetime'], $info['timezone']);
-        sleep(1);
+        $this->logger->info($result);
         $span->end();
 
         return new Response($result);
