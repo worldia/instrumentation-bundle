@@ -16,6 +16,7 @@
         "symfony/dependency-injection": "*"
     },
     "require-dev": {
+        "friends-of-phpspec/phpspec-expect": "^4.0",
         "phpspec/phpspec": "^7.2",
         "phpstan/phpstan": "^1.4",
         "symfony/framework-bundle": "*",
