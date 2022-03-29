@@ -12,9 +12,9 @@ namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 use Instrumentation\Semantics\Attribute\RequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ResponseAttributeProviderInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
-use Instrumentation\Tracing\Propagation\Http\TraceHeadersProvider;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\SDK\Trace\Span;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event;
@@ -96,8 +96,6 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function onResponseEvent(Event\ResponseEvent $event): void
     {
-        // $event->getResponse()->headers->add(TraceHeadersProvider::getHeaders());
-
         /** @var array<string&non-empty-string,string> $attributes */
         $attributes = $this->responseAttributeProvider->getAttributes($event->getResponse());
         foreach ($attributes as $key => $value) {
@@ -133,6 +131,6 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     private function getSpanForRequest(Request $request): SpanInterface
     {
-        return $this->spans[$request];
+        return $this->spans[$request] ?? $this->serverSpan ?: Span::getCurrent();
     }
 }
