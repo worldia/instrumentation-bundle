@@ -27,9 +27,7 @@ use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SDK\Trace\ExporterFactory;
 use OpenTelemetry\SDK\Trace\IdGeneratorInterface;
 use OpenTelemetry\SDK\Trace\RandomIdGenerator;
-use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
-use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -97,17 +95,6 @@ return static function (ContainerConfigurator $container) {
             param('tracing.request.incoming_header.regex'),
         ]);
 
-    if (class_exists(MonologBundle::class)) {
-        $container->extension('monolog', [
-            'handlers' => [
-                'tracing' => [
-                    'type' => 'service',
-                    'id' => TracingHandler::class,
-                ],
-            ],
-        ]);
-    }
-
     if (class_exists(Serializer::class)) {
         $container->services()
             ->set(ErrorNormalizer::class)
@@ -128,15 +115,5 @@ return static function (ContainerConfigurator $container) {
                 service(TraceUrlGeneratorInterface::class)->nullOnInvalid(),
             ])
             ->tag('twig.extension');
-
-        try {
-            $container->extension('twig', [
-                'paths' => [
-                    __DIR__.'/../../../Tracing/Twig/Templates' => 'Twig',
-                ],
-            ]);
-        } catch (InvalidArgumentException) {
-            // Do not throw error if there is no extension able to load the configuration for "twig"
-        }
     }
 };

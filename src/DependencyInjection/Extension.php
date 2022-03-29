@@ -12,6 +12,7 @@ namespace Instrumentation\DependencyInjection;
 use Instrumentation\Health\HealtcheckInterface;
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
+use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\TraceUrlGenerator;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use Monolog\Handler\FormattableHandlerInterface;
@@ -24,10 +25,11 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
+use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 
-class Extension extends BaseExtension implements CompilerPassInterface
+class Extension extends BaseExtension implements CompilerPassInterface, PrependExtensionInterface
 {
     public function getAlias(): string
     {
@@ -59,6 +61,28 @@ class Extension extends BaseExtension implements CompilerPassInterface
         }
         if ($config['metrics']['enabled']) {
             $this->loadMetrics($config['metrics'], $container);
+        }
+    }
+
+    public function prepend(ContainerBuilder $container): void
+    {
+        if ($container->hasExtension('monolog')) {
+            $container->prependExtensionConfig('monolog', [
+                'handlers' => [
+                    'tracing' => [
+                        'type' => 'service',
+                        'id' => TracingHandler::class,
+                    ],
+                ],
+            ]);
+        }
+
+        if ($container->hasExtension('twig')) {
+            $container->prependExtensionConfig('twig', [
+                'paths' => [
+                    __DIR__.'/../Tracing/Twig/Templates' => 'Twig',
+                ],
+            ]);
         }
     }
 
