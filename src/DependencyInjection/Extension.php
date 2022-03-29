@@ -43,6 +43,7 @@ class Extension extends BaseExtension implements CompilerPassInterface
         $config = $this->processConfiguration($configuration, $configs);
 
         $this->loadSemConv($config['resource'], $container);
+        $this->loadHttp($container);
 
         if ($config['health']['enabled']) {
             $this->loadHealth($config['health'], $container);
@@ -124,6 +125,13 @@ class Extension extends BaseExtension implements CompilerPassInterface
         $container->setParameter('app.resource_info', $config);
     }
 
+    protected function loadHttp(ContainerBuilder $container): void
+    {
+        $loader = $this->getLoader('http', $container);
+
+        $loader->load('http.php');
+    }
+
     /**
      * @param array<mixed> $config
      */
@@ -147,6 +155,7 @@ class Extension extends BaseExtension implements CompilerPassInterface
         $loader = $this->getLoader('baggage', $container);
 
         $loader->load('baggage.php');
+        $loader->load('http.php');
         $loader->load('request.php');
         $loader->load('message.php');
     }
@@ -166,7 +175,7 @@ class Extension extends BaseExtension implements CompilerPassInterface
         $container->setParameter('tracing.logs.channels', $config['logs']['channels']);
 
         $loader->load('tracing.php');
-        $loader->load('http-client.php');
+        $loader->load('http.php');
 
         if (isset($config['trace_url'])) {
             $container->register(TraceUrlGeneratorInterface::class)
