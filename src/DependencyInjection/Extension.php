@@ -184,10 +184,6 @@ class Extension extends BaseExtension implements CompilerPassInterface
                 ]);
         }
 
-        foreach ($config['bridges'] as $bridge) {
-            $loader->load('../bridge/'.$bridge.'/tracing.php');
-        }
-
         foreach (['request', 'command', 'message'] as $feature) {
             if (!$config[$feature]['enabled']) {
                 continue;

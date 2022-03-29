@@ -66,8 +66,3 @@ monolog:
     - [Adding a healthcheck](./docs/health/adding-a-healthcheck.md)   
 - **Http**
     - [Propagating trace/baggage context in HTTP requests](./docs/http/propagating-context.md)        
-
-#### Bridges
-
-**Google Cloud Platform**
-- **Logging**: The GCP bridge includes a `monolog` formatter to include trace information in logs.

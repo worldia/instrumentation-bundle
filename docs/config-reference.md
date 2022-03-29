@@ -32,7 +32,6 @@ instrumentation:
             # One of Monolog\Logger the levels.
             level:                200 # One of 100; 200; 250; 300; 400; 500; 550; 600
             channels:             []
-        bridges:              []
         request:
             enabled:              true
             incoming_header:
@@ -72,5 +71,4 @@ instrumentation:
                 type:                 ~ # One of "gauge"; "counter"; "histogram", Required
                 labels:               []
                 buckets:              []
-        bridges:              []
 ```
