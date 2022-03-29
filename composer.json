@@ -2,6 +2,7 @@
     "name": "worldia/instrumentation-bundle",
     "type": "symfony-bundle",
     "license": "MIT",
+    "keywords": ["instrumentation", "tracing", "metrics", "open-telemetry", "prometheus"],
     "authors": [
         {
             "name": "Worldia developers",
