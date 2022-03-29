@@ -115,6 +115,7 @@ class Configuration implements ConfigurationInterface
                                 ->arrayNode('blacklist')
                                     ->defaultValue([
                                         '^cache:clear$',
+                                        '^assets:install$',
                                     ])
                                     ->scalarPrototype()->end()
                                 ->end()
