@@ -45,12 +45,6 @@ instrumentation:
     service.name: my-app
   tracing:
     dsn: 'zipkin+http://jaeger:9411/api/v2/spans'
-    
-monolog:
-  handlers:
-    tracing:
-      type: service
-      id: Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler    
 ```
 
 ### Usage

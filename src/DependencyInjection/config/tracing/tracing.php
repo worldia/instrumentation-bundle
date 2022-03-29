@@ -27,6 +27,7 @@ use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SDK\Trace\ExporterFactory;
 use OpenTelemetry\SDK\Trace\IdGeneratorInterface;
 use OpenTelemetry\SDK\Trace\RandomIdGenerator;
+use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -92,9 +93,20 @@ return static function (ContainerConfigurator $container) {
 
         ->set(IncomingTraceHeaderResolverInterface::class, RegexIncomingTraceHeaderResolver::class)
         ->args([
-            param('tracing.request.incoming_header.name')->nullOnInvalid(),
-            param('tracing.request.incoming_header.regex')->nullOnInvalid(),
+            param('tracing.request.incoming_header.name'),
+            param('tracing.request.incoming_header.regex'),
         ]);
+
+    if (class_exists(MonologBundle::class)) {
+        $container->extension('monolog', [
+            'handlers' => [
+                'tracing' => [
+                    'type' => 'service',
+                    'id' => TracingHandler::class,
+                ],
+            ],
+        ]);
+    }
 
     if (class_exists(Serializer::class)) {
         $container->services()
