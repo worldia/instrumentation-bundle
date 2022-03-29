@@ -19,14 +19,17 @@ class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder('instrumentation');
 
         $treeBuilder->getRootNode() // @phpstan-ignore-line
+            ->addDefaultsIfNotSet()
             ->children()
 
                 ->arrayNode('resource')
-                    ->isRequired()
                     ->info('Use semantic tags defined in the OpenTelemetry specification (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md)')
                     ->example([
-                        'service.name' => 'my-instrumented-app',
-                        'service.version' => '1.2.3',
+                        ResourceAttributes::SERVICE_NAME => 'my-instrumented-app',
+                        ResourceAttributes::SERVICE_VERSION => '1.2.3',
+                    ])
+                    ->defaultValue([
+                        ResourceAttributes::SERVICE_NAME => 'app',
                     ])
                     ->scalarPrototype()->end()
                     ->beforeNormalization()

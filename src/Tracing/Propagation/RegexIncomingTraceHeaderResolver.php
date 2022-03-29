@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 class RegexIncomingTraceHeaderResolver implements IncomingTraceHeaderResolverInterface
 {
-    public function __construct(private string $headerName, private string $regex)
+    public function __construct(private ?string $headerName = null, private ?string $regex = null)
     {
     }
 
@@ -45,6 +45,10 @@ class RegexIncomingTraceHeaderResolver implements IncomingTraceHeaderResolverInt
      */
     private function resolve(Request $request): array
     {
+        if (null === $this->headerName || null === $this->regex) {
+            return [];
+        }
+
         $value = (string) $request->headers->get($this->headerName);
 
         preg_match($this->regex, $value, $matches);

@@ -169,8 +169,9 @@ class Extension extends BaseExtension implements CompilerPassInterface
 
         $loader = $this->getLoader('tracing', $container);
 
-        $container->setParameter('tracing.request.incoming_header.name', $config['request']['incoming_header']['name']);
-        $container->setParameter('tracing.request.incoming_header.regex', $config['request']['incoming_header']['regex']);
+        $container->setParameter('tracing.request.incoming_header.name', $config['request']['incoming_header']['name'] ?? null);
+        $container->setParameter('tracing.request.incoming_header.regex', $config['request']['incoming_header']['regex'] ?? null);
+
         $container->setParameter('tracing.logs.level', $config['logs']['level']);
         $container->setParameter('tracing.logs.channels', $config['logs']['channels']);
 

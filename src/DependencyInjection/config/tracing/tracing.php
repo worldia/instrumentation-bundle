@@ -51,12 +51,6 @@ return static function (ContainerConfigurator $container) {
             service('.inner'),
         ])
 
-        ->set(IncomingTraceHeaderResolverInterface::class, RegexIncomingTraceHeaderResolver::class)
-        ->args([
-            param('tracing.request.incoming_header.name'),
-            param('tracing.request.incoming_header.regex'),
-        ])
-
         ->set(TracerProviderFactory::class)
         ->args([
             service(ResourceInfo::class),
@@ -94,6 +88,12 @@ return static function (ContainerConfigurator $container) {
             service(MainSpanContext::class),
             param('tracing.logs.level'),
             param('tracing.logs.channels'),
+        ])
+
+        ->set(IncomingTraceHeaderResolverInterface::class, RegexIncomingTraceHeaderResolver::class)
+        ->args([
+            param('tracing.request.incoming_header.name')->nullOnInvalid(),
+            param('tracing.request.incoming_header.regex')->nullOnInvalid(),
         ]);
 
     if (class_exists(Serializer::class)) {
