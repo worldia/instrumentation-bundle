@@ -17,7 +17,7 @@ use Prometheus\Histogram;
 class Registry implements RegistryInterface
 {
     /**
-     * @var array<Metric>
+     * @var array<MetricDefinition>
      */
     private array $instantiated = [];
 
@@ -59,7 +59,7 @@ class Registry implements RegistryInterface
         return new HistogramEvent($labels, $this->getHistogram($name));
     }
 
-    private function getMetric(string $name): Metric
+    private function getMetric(string $name): MetricDefinition
     {
         if (!isset($this->instantiated[$name])) {
             if (!isset($this->metrics[$name])) {
@@ -71,7 +71,7 @@ class Registry implements RegistryInterface
             $config['name'] = $name;
             $config['namespace'] = $this->namespace;
 
-            $this->instantiated[$name] = new Metric(...$config);
+            $this->instantiated[$name] = new MetricDefinition(...$config);
         }
 
         return $this->instantiated[$name];

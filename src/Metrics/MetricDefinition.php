@@ -12,7 +12,7 @@ namespace Instrumentation\Metrics;
 /**
  * @internal
  */
-final class Metric
+final class MetricDefinition
 {
     /**
      * @param array<string>    $labels
