@@ -29,7 +29,7 @@ final class MainSpanContext
     public function getMainSpan(): SpanInterface
     {
         if (!$this->mainSpan) {
-            throw new \RuntimeException('No main span defined.');
+            return Span::getCurrent();
         }
 
         return $this->mainSpan;
