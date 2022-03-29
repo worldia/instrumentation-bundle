@@ -11,7 +11,7 @@
 
 #### Metrics
 - Using the [Prometheus Client](https://github.com/PromPHP/prometheus_client_php)
-- Minimal auto-instrumentation for common **request metrics** (including number of requests handled in total, currently handling, and response codes) and **consumer metrics** (number of active consumers) (Outstanding: **message metrics**)
+- Minimal auto-instrumentation for common **request metrics** (including number of requests handled in total, currently handling, and response codes), **consumer metrics** (number of active consumers) and **message metrics** (messages currently consuming, total messages handled and total messages failed).
 - Autoconfigurable metric providers, see below.
 
 #### Baggage

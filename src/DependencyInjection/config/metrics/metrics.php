@@ -54,5 +54,10 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service(Metrics\RegistryInterface::class),
         ])
-        ;
+
+        ->set(Metrics\EventSubscriber\MessageEventSubscriber::class)
+        ->autoconfigure()
+        ->args([
+            service(Metrics\RegistryInterface::class),
+        ]);
 };
