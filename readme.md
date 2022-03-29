@@ -45,6 +45,12 @@ instrumentation:
     service.name: my-app
   tracing:
     dsn: 'zipkin+http://jaeger:9411/api/v2/spans'
+    
+monolog:
+  handlers:
+    tracing:
+      type: service
+      id: Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler    
 ```
 
 ### Usage
@@ -52,8 +58,10 @@ instrumentation:
 - **Tracing**
     - [Simple tracing example](./docs/tracing/simple-trace.md)
     - [Simple tracing example using the static API](./docs/tracing/static-usage.md)
+    - [Add Urls to your traces in error messages](./docs/tracing/add-urls-to-your-traces.md)
 - **Metrics**
     - [Adding a metric](./docs/metrics/adding-a-metric.md)
+    - [Using Redis as storage adapter](./docs/metrics/using-redis-as-storage.md) (Recommended)    
 - **Health**
     - [Adding a healthcheck](./docs/health/adding-a-healthcheck.md)   
 - **Http**
