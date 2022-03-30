@@ -88,7 +88,7 @@ class Configuration implements ConfigurationInterface
                                 ->enumNode('level')
                                     ->defaultValue(Logger::INFO)
                                     ->values(Logger::getLevels())
-                                    ->info(sprintf('One of %s the levels.', Logger::class))
+                                    ->info(sprintf('One of the %s levels.', Logger::class))
                                 ->end()
                                 ->arrayNode('channels')
                                     ->defaultValue([])

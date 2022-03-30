@@ -36,7 +36,7 @@ instrumentation:
         trace_url:            ~ # Example: 'http://localhost:16682/trace/{traceId}'
         logs:
 
-            # One of Monolog\Logger the levels.
+            # One of the Monolog\Logger levels.
             level:                200 # One of 100; 200; 250; 300; 400; 500; 550; 600
             channels:             []
         request:
