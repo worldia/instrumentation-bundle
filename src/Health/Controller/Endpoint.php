@@ -10,16 +10,28 @@ declare(strict_types=1);
 namespace Instrumentation\Health\Controller;
 
 use Instrumentation\Health\HealtcheckInterface;
+use Instrumentation\Metrics\MetricProviderInterface;
+use Instrumentation\Metrics\RegistryInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Profiler\Profiler;
 
-class Endpoint
+class Endpoint implements MetricProviderInterface
 {
+    public static function getProvidedMetrics(): array
+    {
+        return [
+            'app_health' => [
+                'type' => 'gauge',
+                'help' => 'Global application health. 0: unhealthy, 1: degraded, 2: healthy',
+            ],
+        ];
+    }
+
     /**
      * @param iterable<HealtcheckInterface> $checks
      */
-    public function __construct(private ResourceInfo $resourceInfo, private iterable $checks, private ?Profiler $profiler = null)
+    public function __construct(private ResourceInfo $resourceInfo, private iterable $checks, private ?RegistryInterface $registry = null, private ?Profiler $profiler = null)
     {
     }
 
@@ -52,14 +64,21 @@ class Endpoint
         }
 
         $status = HealtcheckInterface::HEALTHY;
+        $statusInt = 2;
         if ($hasDegraded) {
             $status = HealtcheckInterface::DEGRADED;
+            $statusInt = 1;
         }
         if ($hasDegradedCritical) {
             $status = HealtcheckInterface::UNHEALTHY;
+            $statusInt = 0;
         }
 
         $results['status'] = $status;
+
+        if (null !== $this->registry) {
+            $this->registry->getGauge('app_health')->set($statusInt);
+        }
 
         return new JsonResponse($results, HealtcheckInterface::UNHEALTHY === $status ? 500 : 200);
     }

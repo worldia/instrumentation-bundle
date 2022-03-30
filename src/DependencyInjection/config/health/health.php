@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Resources;
 
 use Instrumentation\Health;
+use Instrumentation\Metrics\RegistryInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -21,7 +22,9 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service(ResourceInfo::class),
             tagged_iterator('app.healthcheck'),
+            service(RegistryInterface::class)->nullOnInvalid(),
             service('profiler')->nullOnInvalid(),
         ])
+        ->autoconfigure()
         ->tag('controller.service_arguments');
 };
