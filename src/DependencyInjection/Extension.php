@@ -218,7 +218,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             $map[$property] = $keys;
         }
 
-        $container->setParameter('logging.trace_context_keys', $$map);
+        $container->setParameter('logging.trace_context_keys', $map);
     }
 
     /**
