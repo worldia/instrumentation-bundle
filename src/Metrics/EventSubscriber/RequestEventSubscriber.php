@@ -32,25 +32,10 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
                 'type' => Gauge::TYPE,
                 'help' => 'Number of requests this instance is currently handling',
             ],
-            'response_codes_100_total' => [
+            'response_codes_total' => [
                 'type' => Counter::TYPE,
-                'help' => 'Number of requests with a status code in the 1XX range',
-            ],
-            'response_codes_200_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Number of requests with a status code in the 2XX range',
-            ],
-            'response_codes_300_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Number of requests with a status code in the 3XX range',
-            ],
-            'response_codes_400_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Number of requests with a status code in the 4XX range',
-            ],
-            'response_codes_500_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Number of requests with a status code in the 5XX range',
+                'help' => 'Number of requests per status code',
+                'labels' => ['code'],
             ],
             'response_times_seconds' => [
                 'type' => Histogram::TYPE,
@@ -92,11 +77,11 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
         }
 
         $time = microtime(true) - $event->getRequest()->server->get('REQUEST_TIME_FLOAT');
-        $code = ((int) substr((string) $event->getResponse()->getStatusCode(), 0, 1)) * 100;
+        $code = sprintf('%sxx', substr((string) $event->getResponse()->getStatusCode(), 0, 1));
 
         $this->registry->getGauge('requests_handling')->dec();
         $this->registry->getHistogram('response_times_seconds')->observe($time);
-        $this->registry->getCounter(sprintf('response_codes_%s_total', $code))->inc();
+        $this->registry->getCounter('response_codes_total')->inc([$code]);
     }
 
     private function isBlacklisted(Request $request): bool

@@ -5,11 +5,7 @@ Ref. [RequestEventSubscriber](../../src/Metrics/EventSubscriber/RequestEventSubs
 
 - `requests_handled_total` (`counter`): Total requests handled by this instance
 - `requests_handling` (`gauge`): Number of requests this instance is currently handling
-- `response_codes_100_total` (`counter`): Number of requests with a status code in the 1XX range
-- `response_codes_200_total` (`counter`): Number of requests with a status code in the 2XX range
-- `response_codes_300_total` (`counter`): Number of requests with a status code in the 3XX range
-- `response_codes_400_total` (`counter`): Number of requests with a status code in the 4XX range
-- `response_codes_500_total` (`counter`): Number of requests with a status code in the 5XX range
+- `response_codes_total` (`counter`): Number of requests per status code (labels: `code`)
 - `response_times_seconds` (`histogram`): Distribution of response times in seconds
 
 ### Messages
