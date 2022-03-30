@@ -27,4 +27,4 @@ Ref. [ConsumerEventSubscriber](../../src/Metrics/EventSubscriber/ConsumerEventSu
 ### Health
 Ref. [Health Endpoint](../../src/Health/Controller/Endpoint.php). 
 
-- `app_health` (`gauge`): Global application health. 0: unhealthy, 1: degraded, 2: healthy
+- `app_health` (`gauge`): Global application health. `0`: unhealthy, `1`: degraded, `2`: healthy

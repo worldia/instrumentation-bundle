@@ -15,7 +15,6 @@ use Instrumentation\Metrics\RegistryInterface;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\TraceUrlGenerator;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
-use Monolog\Handler\FormattableHandlerInterface;
 use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APC;
 use Prometheus\Storage\APCng;
@@ -95,24 +94,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             $appPathBlacklist = $container->getParameter('app.path_blacklist');
 
             $container->setParameter('tracing.request.blacklist', array_merge($tracingBlacklist, $appPathBlacklist));
-        }
-
-        if ($container->hasParameter('logging.bridge.custom-formatter')) {
-            /** @var array<string,string> $handlersToChannels */
-            $handlersToChannels = $container->getParameter('monolog.handlers_to_channels');
-            $handlerIds = array_keys($handlersToChannels);
-            /** @var string $formatterId */
-            $formatterId = $container->getParameter('logging.bridge.custom-formatter');
-
-            foreach ($handlerIds as $handlerId) {
-                $handlerDef = $container->getDefinition($handlerId);
-                /** @var class-string $handlerClass */
-                $handlerClass = $handlerDef->getClass();
-
-                if (is_a($handlerClass, FormattableHandlerInterface::class, true)) {
-                    $handlerDef->addMethodCall('setFormatter', [new Reference($formatterId)]);
-                }
-            }
         }
 
         if ($container->hasDefinition(RegistryInterface::class)) {
@@ -238,10 +219,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         }
 
         $container->setParameter('logging.trace_context_keys', $$map);
-
-        foreach ($config['bridges'] as $bridge) {
-            $loader->load('../bridge/'.$bridge.'/logging.php');
-        }
     }
 
     /**
