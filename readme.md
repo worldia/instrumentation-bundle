@@ -14,6 +14,9 @@
 - Minimal auto-instrumentation for common **request**, **consumer** and **message** metrics (see list of provided [default metrics](./docs/metrics/default-metrics.md)).
 - Autoconfigurable metric providers, see below.
 
+#### Logging
+- Adds trace context to logs for correlation, with customizable keys.
+
 #### Baggage
 - Using the official [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-php)
 - Baggage propagation from incoming **requests** to **consumers** and **outgoing http calls**
