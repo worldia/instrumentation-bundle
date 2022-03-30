@@ -6,7 +6,10 @@ As output by ```bin/console config:dump-reference instrumentation```.
 instrumentation:
 
     # Use semantic tags defined in the OpenTelemetry specification (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md)
-    resource:             # Required
+    resource:
+
+        # Default:
+        service.name:        app
 
         # Examples:
         service.name:        my-instrumented-app
@@ -18,7 +21,11 @@ instrumentation:
         path:                 /_healthz
     logging:
         enabled:              true
-        bridges:              []
+        keys:
+            trace:                context.trace
+            span:                 context.span
+            sampled:              context.sampled
+            operation:            context.operation
     tracing:
         enabled:              true
 
@@ -46,8 +53,9 @@ instrumentation:
             enabled:              true
             blacklist:
 
-                # Default:
+                # Defaults:
                 - ^cache:clear$
+                - ^assets:install$
         message:
             enabled:              true
             blacklist:            []
