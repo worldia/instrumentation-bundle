@@ -229,6 +229,16 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $loader->load('logging.php');
 
+        $map = [];
+        foreach ($config['keys'] as $property => $key) {
+            /** @var array<string> $keys */
+            $keys = preg_split('/(?<!\\\)\./', $key);
+            $keys = array_map(fn (string $key) => str_replace('\.', '.', $key), $keys);
+            $map[$property] = $keys;
+        }
+
+        $container->setParameter('logging.trace_context_keys', $$map);
+
         foreach ($config['bridges'] as $bridge) {
             $loader->load('../bridge/'.$bridge.'/logging.php');
         }

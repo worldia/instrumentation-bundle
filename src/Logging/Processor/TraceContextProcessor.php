@@ -11,12 +11,11 @@ use OpenTelemetry\SDK\Trace\Span;
 
 class TraceContextProcessor
 {
-    public function __construct(
-        private string $traceIdKey = 'context.trace',
-        private string $spanIdKey = 'context.spanId',
-        private string $sampledKey = 'context.traceSampled',
-        private string $operationKey = 'context.traceOperation'
-    ) {
+    /**
+     * @param array{trace:array<string>,span:array<string>,sampled:array<string>,operation:array<string>} $map
+     */
+    public function __construct(private array $map)
+    {
     }
 
     /**
@@ -33,12 +32,12 @@ class TraceContextProcessor
             return $record;
         }
 
-        $this->setRecordKey($record, $this->traceIdKey, $spanContext->getTraceId());
-        $this->setRecordKey($record, $this->spanIdKey, $spanContext->getSpanId());
-        $this->setRecordKey($record, $this->sampledKey, $spanContext->isSampled());
+        $this->setRecordKey($record, $this->map['trace'], $spanContext->getTraceId());
+        $this->setRecordKey($record, $this->map['span'], $spanContext->getSpanId());
+        $this->setRecordKey($record, $this->map['sampled'], $spanContext->isSampled());
 
         if ($span instanceof Span) {
-            $this->setRecordKey($record, $this->operationKey, $span->getName());
+            $this->setRecordKey($record, $this->map['operation'], $span->getName());
         }
 
         return $record;
@@ -46,13 +45,12 @@ class TraceContextProcessor
 
     /**
      * @param array<string,mixed> $record
+     * @param array<string>       $keys
      * @param string|bool|int     $value
      */
-    private function setRecordKey(array &$record, string $key, $value): void
+    private function setRecordKey(array &$record, array $keys, $value): void
     {
-        $keys = explode('.', $key);
         $temp = &$record;
-
         foreach ($keys as $key) {
             $temp = &$temp[$key];
         }

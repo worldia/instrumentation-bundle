@@ -57,7 +57,9 @@ instrumentation:
     - [Customize operation (span) name for a message](./docs/tracing/custom-operation-name-for-message.md)
 - **Metrics**
     - [Adding a metric](./docs/metrics/adding-a-metric.md)
-    - [Using Redis as storage adapter](./docs/metrics/using-redis-as-storage.md) (Recommended)    
+    - [Using Redis as storage adapter](./docs/metrics/using-redis-as-storage.md) (Recommended)
+- **Logging**
+    - [Customizing trace context log keys](./docs/logging/custom-keys.md)
 - **Health**
     - [Adding a healthcheck](./docs/health/adding-a-healthcheck.md)   
 - **Http**

@@ -12,6 +12,7 @@ namespace Instrumentation\Resources;
 use Instrumentation\Logging;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
@@ -25,6 +26,6 @@ return static function (ContainerConfigurator $container) {
         ->alias('monolog.formatter.json', Logging\Formatter\JsonFormatter::class)
 
         ->set(Logging\Processor\TraceContextProcessor::class)
-        ->tag('monolog.processor')
-    ;
+        ->args([param('logging.trace_context_keys')])
+        ->tag('monolog.processor');
 };
