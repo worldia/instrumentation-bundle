@@ -54,6 +54,7 @@ instrumentation:
     - [Simple tracing example using the static API](./docs/tracing/static-usage.md)
     - [Add Urls to your traces in error messages](./docs/tracing/add-urls-to-your-traces.md)
     - [Use upstream request id as trace id](./docs/tracing/upstream-request-id.md)
+    - [Customize operation (span) name for a message](./docs/tracing/custom-operation-name-for-message.md)
 - **Metrics**
     - [Adding a metric](./docs/metrics/adding-a-metric.md)
     - [Using Redis as storage adapter](./docs/metrics/using-redis-as-storage.md) (Recommended)    
