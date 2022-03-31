@@ -47,7 +47,7 @@ instrumentation:
   resource:
     service.name: my-app
   tracing:
-    dsn: 'zipkin+http://jaeger:9411/api/v2/spans'
+    dsn: 'jaeger+http://jaeger:9411/api/v2/spans'
 ```
 
 ### Usage
