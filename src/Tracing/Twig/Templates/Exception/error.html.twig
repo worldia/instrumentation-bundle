@@ -22,13 +22,13 @@
     </p>
 
     {%- set traceId = get_trace_id() -%}
-
-    Error: {{ traceId }}
-
     {%- set traceUrl = get_trace_url(traceId) -%}
+
     {%- if traceUrl -%}
-    <a target="_error" href="{{ traceUrl }}">Trace</a><br>
-    {% endif %}
+    Error: <a target="_error" href="{{ traceUrl }}">{{ traceId }}</a>
+    {%- else -%}
+    Error: {{ traceId }}
+    {%- endif -%}
 </div>
 </body>
 </html>
