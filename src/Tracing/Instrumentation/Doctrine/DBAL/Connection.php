@@ -24,6 +24,13 @@ final class Connection implements ServerInfoAwareConnection
 {
     use TracerAwareTrait;
 
+    private const OP_CONN_PREPARE = 'sql.conn.prepare';
+    private const OP_CONN_QUERY = 'sql.conn.query';
+    private const OP_CONN_EXEC = 'sql.conn.exec';
+    private const OP_CONN_BEGIN_TRANSACTION = 'sql.conn.begin_transaction';
+    private const OP_TRANSACTION_COMMIT = 'sql.transaction.commit';
+    private const OP_TRANSACTION_ROLLBACK = 'sql.transaction.rollback';
+
     private ?SpanInterface $mainSpan = null;
     private Context $mainSpanContext;
 
@@ -36,14 +43,14 @@ final class Connection implements ServerInfoAwareConnection
 
     public function prepare(string $sql): StatementInterface
     {
-        $statement = $this->trace('sql.prepare '.$sql, fn (): StatementInterface => $this->decorated->prepare($sql));
+        $statement = $this->trace(self::OP_CONN_PREPARE, $sql, fn (): StatementInterface => $this->decorated->prepare($sql));
 
         return new Statement($this->tracerProvider, $this->mainSpanContext, $statement, $sql, $this->attributes);
     }
 
     public function query(string $sql): Result
     {
-        return $this->trace('sql.query '.$sql, fn (): Result => $this->decorated->query($sql));
+        return $this->trace(self::OP_CONN_QUERY, $sql, fn (): Result => $this->decorated->query($sql));
     }
 
     /**
@@ -56,7 +63,7 @@ final class Connection implements ServerInfoAwareConnection
 
     public function exec(string $sql): int
     {
-        return $this->trace('sql.exec '.$sql, fn (): int => $this->decorated->exec($sql));
+        return $this->trace(self::OP_CONN_EXEC, $sql, fn (): int => $this->decorated->exec($sql));
     }
 
     /**
@@ -69,17 +76,17 @@ final class Connection implements ServerInfoAwareConnection
 
     public function beginTransaction(): bool
     {
-        return $this->trace('sql.begin_transaction BEGIN TRANSACTION', fn (): bool => $this->decorated->beginTransaction());
+        return $this->trace(self::OP_CONN_BEGIN_TRANSACTION, 'BEGIN TRANSACTION', fn (): bool => $this->decorated->beginTransaction());
     }
 
     public function commit(): bool
     {
-        return $this->trace('sql.commit COMMIT', fn (): bool => $this->decorated->commit());
+        return $this->trace(self::OP_TRANSACTION_COMMIT, 'COMMIT', fn (): bool => $this->decorated->commit());
     }
 
     public function rollBack(): bool
     {
-        return $this->trace('sql.rollback ROLLBACK', fn (): bool => $this->decorated->rollBack());
+        return $this->trace(self::OP_TRANSACTION_ROLLBACK, 'ROLLBACK', fn (): bool => $this->decorated->rollBack());
     }
 
     public function getServerVersion(): string
@@ -91,11 +98,31 @@ final class Connection implements ServerInfoAwareConnection
         return 'unkown';
     }
 
-    protected function trace(string $operation, callable $callable): mixed
+    /**
+     * @param non-empty-string&string $name
+     * @param array<string,string>    $attributes
+     * @param SpanKind::KIND_*        $kind
+     */
+    protected function trace(string $operation, string $sql, callable $callback): mixed
     {
         $this->ensureMainSpan();
 
-        return $this->traceFunction($operation, $this->attributes, \Closure::fromCallable($callable), $this->mainSpanContext, SpanKind::KIND_CLIENT); // @phpstan-ignore-line
+        $span = $this->getTracer()
+            ->spanBuilder($operation) // @phpstan-ignore-line
+            ->setSpanKind(SpanKind::KIND_CLIENT)
+            ->setParent($this->mainSpanContext)
+            ->setAttributes($this->attributes)
+            ->startSpan();
+
+        if ($sql) {
+            $span->addEvent($sql);
+        }
+
+        try {
+            return $callback();
+        } finally {
+            $span->end();
+        }
     }
 
     private function ensureMainSpan(): void

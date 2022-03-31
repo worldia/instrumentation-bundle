@@ -21,6 +21,8 @@ class Statement implements DoctrineStatement
 {
     use TracerAwareTrait;
 
+    private const OP_STMT_EXECUTE = 'sql.stmt.execute';
+
     /**
      * @param string               $sqlQuery
      * @param array<string,string> $attributes
@@ -41,16 +43,18 @@ class Statement implements DoctrineStatement
 
     public function execute($params = null): Result
     {
-        $statement = $this->decoratedStatement;
+        $span = $this->getTracer()
+            ->spanBuilder(self::OP_STMT_EXECUTE)
+            ->setSpanKind(SpanKind::KIND_CLIENT)
+            ->setParent($this->parentContext)
+            ->setAttributes($this->attributes)
+            ->startSpan()
+            ->addEvent($this->sqlQuery);
 
-        return $this->traceFunction(
-            'sql.stmt '.$this->sqlQuery,
-            $this->attributes,
-            function () use ($statement, $params) {
-                return $statement->execute($params);
-            },
-            $this->parentContext,
-            SpanKind::KIND_CLIENT
-        );
+        try {
+            return $this->decoratedStatement->execute($params);
+        } finally {
+            $span->end();
+        }
     }
 }
