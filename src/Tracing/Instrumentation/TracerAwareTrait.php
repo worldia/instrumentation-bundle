@@ -7,11 +7,13 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
+namespace Instrumentation\Tracing\Instrumentation;
 
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\Context\Context;
 
 trait TracerAwareTrait
 {
@@ -29,5 +31,26 @@ trait TracerAwareTrait
     protected function startSpan(string $name, array $attributes = []): SpanInterface
     {
         return $this->getTracer()->spanBuilder($name)->setAttributes($attributes)->startSpan();
+    }
+
+    /**
+     * @param non-empty-string&string $name
+     * @param array<string,string>    $attributes
+     * @param SpanKind::KIND_*        $kind
+     */
+    protected function traceFunction(string $name, array $attributes, callable $callback, ?Context $parentContext = null, ?int $kind = null): mixed
+    {
+        $span = $this->getTracer()
+            ->spanBuilder($name) // @phpstan-ignore-line
+            ->setSpanKind($kind ?: SpanKind::KIND_SERVER)
+            ->setParent($parentContext ?: Context::getCurrent())
+            ->setAttributes($attributes)
+            ->startSpan();
+
+        try {
+            return $callback();
+        } finally {
+            $span->end();
+        }
     }
 }

@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
+use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProvider;
+use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\MessageAttributeProvider;
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\RequestAttributeProvider;
@@ -34,5 +36,6 @@ return static function (ContainerConfigurator $container) {
 
         ->set(RequestAttributeProviderInterface::class, RequestAttributeProvider::class)
         ->set(ResponseAttributeProviderInterface::class, ResponseAttributeProvider::class)
-        ->set(MessageAttributeProviderInterface::class, MessageAttributeProvider::class);
+        ->set(MessageAttributeProviderInterface::class, MessageAttributeProvider::class)
+        ->set(DoctrineConnectionAttributeProviderInterface::class, DoctrineConnectionAttributeProvider::class);
 };

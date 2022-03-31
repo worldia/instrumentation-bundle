@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;

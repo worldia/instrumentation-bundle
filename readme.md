@@ -4,7 +4,7 @@
 
 #### Tracing
 - Using the official [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-php)
-- Minimal auto-instrumentation for **requests**, console **commands** and **consumers**
+- Minimal auto-instrumentation for **requests**, console **commands**, **consumers** and **doctrine**
 - Trace context propagation from incoming **requests** to **consumers** and **outgoing http calls**
 - Configurable blacklisting of requests by path to avoid useless traces, eg. `/metrics` or `/_healthz`
 - Automatic log inclusion with configurable log level and channels
@@ -58,6 +58,7 @@ instrumentation:
     - [Add Urls to your traces in error messages](./docs/tracing/add-urls-to-your-traces.md)
     - [Use upstream request id as trace id](./docs/tracing/upstream-request-id.md)
     - [Customize operation (span) name for a message](./docs/tracing/custom-operation-name-for-message.md)
+    - [Propagating trace/baggage context in HTTP requests](./docs/tracing/propagating-context.md)
 - **Metrics**
     - [Adding a metric](./docs/metrics/adding-a-metric.md)
     - [Using Redis as storage adapter](./docs/metrics/using-redis-as-storage.md) (Recommended)
@@ -65,5 +66,3 @@ instrumentation:
     - [Customizing trace context log keys](./docs/logging/custom-keys.md)
 - **Health**
     - [Adding a healthcheck](./docs/health/adding-a-healthcheck.md)   
-- **Http**
-    - [Propagating trace/baggage context in HTTP requests](./docs/http/propagating-context.md)        

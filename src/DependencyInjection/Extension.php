@@ -12,6 +12,7 @@ namespace Instrumentation\DependencyInjection;
 use Instrumentation\Health\HealtcheckInterface;
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
+use Instrumentation\Tracing\Instrumentation\Doctrine\DBAL\Middleware;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\TraceUrlGenerator;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
@@ -46,19 +47,19 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $this->loadSemConv($config['resource'], $container);
         $this->loadHttp($container);
 
-        if ($config['health']['enabled']) {
+        if ($this->isConfigEnabled($container, $config['health'])) {
             $this->loadHealth($config['health'], $container);
         }
-        if ($config['baggage']['enabled']) {
+        if ($this->isConfigEnabled($container, $config['baggage'])) {
             $this->loadBaggage($config['baggage'], $container);
         }
-        if ($config['tracing']['enabled']) {
+        if ($this->isConfigEnabled($container, $config['tracing'])) {
             $this->loadTracing($config['tracing'], $container);
         }
-        if ($config['logging']['enabled']) {
+        if ($this->isConfigEnabled($container, $config['logging'])) {
             $this->loadLogging($config['logging'], $container);
         }
-        if ($config['metrics']['enabled']) {
+        if ($this->isConfigEnabled($container, $config['metrics'])) {
             $this->loadMetrics($config['metrics'], $container);
         }
     }
@@ -116,6 +117,40 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
             $container->setParameter('metrics.metrics', $metrics);
         }
+
+        if ($container->hasParameter('tracing.doctrine.connections')) {
+            /** @var array<string> $connectionsToTrace */
+            $connectionsToTrace = $container->getParameter('tracing.doctrine.connections');
+
+            /** @var array<string,string> $connections */
+            $connections = $container->getParameter('doctrine.connections');
+
+            if (empty($connectionsToTrace)) {
+                $connectionsToTrace = array_keys($connections);
+            }
+
+            foreach ($connectionsToTrace as $connection) {
+                $serviceId = sprintf('doctrine.dbal.%s_connection', $connection);
+
+                if (!\in_array($serviceId, $connections, true)) {
+                    throw new \InvalidArgumentException(sprintf('No such connection: "%s".', $connection));
+                }
+
+                $configDef = $container->getDefinition(sprintf('%s.configuration', $serviceId));
+
+                $middlewares = [];
+                foreach ($configDef->getMethodCalls() as $call) {
+                    [$method, $arguments] = $call;
+                    if ('setMiddlewares' === $method) {
+                        $middlewares = array_merge($middlewares, $arguments[0]);
+                    }
+                }
+
+                $configDef
+                    ->removeMethodCall('setMiddlewares')
+                    ->addMethodCall('setMiddlewares', [array_merge($middlewares, [new Reference(Middleware::class)])]);
+            }
+        }
     }
 
     /**
@@ -171,6 +206,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
     protected function loadTracing(array $config, ContainerBuilder $container): void
     {
         $container->setParameter('tracer.dsn', $config['dsn']);
+        $container->setParameter('tracing.doctrine.connections', []);
 
         $loader = $this->getLoader('tracing', $container);
 
@@ -190,14 +226,20 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
                 ]);
         }
 
-        foreach (['request', 'command', 'message'] as $feature) {
-            if (!$config[$feature]['enabled']) {
+        foreach (['request', 'command', 'message', 'doctrine'] as $feature) {
+            if (!$this->isConfigEnabled($container, $config[$feature])) {
                 continue;
             }
 
             $loader->load($feature.'.php');
 
-            $container->setParameter(sprintf('tracing.%s.blacklist', $feature), $config[$feature]['blacklist']);
+            if (isset($config[$feature]['blacklist'])) {
+                $container->setParameter(sprintf('tracing.%s.blacklist', $feature), $config[$feature]['blacklist']);
+            }
+        }
+
+        if ($this->isConfigEnabled($container, $config['doctrine'])) {
+            $container->setParameter('tracing.doctrine.connections', $config['doctrine']['connections']);
         }
     }
 

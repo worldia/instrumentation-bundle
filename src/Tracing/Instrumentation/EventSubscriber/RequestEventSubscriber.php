@@ -12,6 +12,7 @@ namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 use Instrumentation\Semantics\Attribute\RequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ResponseAttributeProviderInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\Span;
