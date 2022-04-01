@@ -98,11 +98,6 @@ final class Connection implements ServerInfoAwareConnection
         return 'unkown';
     }
 
-    /**
-     * @param non-empty-string&string $name
-     * @param array<string,string>    $attributes
-     * @param SpanKind::KIND_*        $kind
-     */
     protected function trace(string $operation, string $sql, callable $callback): mixed
     {
         $this->ensureMainSpan();
