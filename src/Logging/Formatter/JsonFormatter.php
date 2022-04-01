@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Logging\Formatter;
 
 use Monolog\Formatter\JsonFormatter as BaseJsonFormatter;
+use Monolog\Utils;
 
 class JsonFormatter extends BaseJsonFormatter
 {
@@ -26,7 +27,7 @@ class JsonFormatter extends BaseJsonFormatter
         // Truncate messages that are longer than the php.ini
         // "log_errors_max_len" configured bytes length ...
         if (0 !== $limit && $length > $limit) {
-            $message = substr($this->toJson($normalized['message']), 1, -1);
+            $message = Utils::substr($this->toJson($normalized['message']), 1, -1);
             $json = str_replace($message, substr($message, 0, -$length + $this->lengthLimit - 1), $json);
         }
 
