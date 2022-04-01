@@ -18,6 +18,7 @@ use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use Symfony\Component\Routing\RouterInterface;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
@@ -31,6 +32,7 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Instrumentation\EventSubscriber\RequestEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
+            service(RouterInterface::class),
             service(RequestAttributeProviderInterface::class),
             service(ResponseAttributeProviderInterface::class),
             service(MainSpanContext::class),

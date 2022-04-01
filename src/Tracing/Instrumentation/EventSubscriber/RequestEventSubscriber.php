@@ -20,6 +20,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Routing\RouterInterface;
 
 class RequestEventSubscriber implements EventSubscriberInterface
 {
@@ -46,6 +47,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function __construct(
         protected TracerProviderInterface $tracerProvider,
+        protected RouterInterface $router,
         protected RequestAttributeProviderInterface $requestAttributeProvider,
         protected ResponseAttributeProviderInterface $responseAttributeProvider,
         protected MainSpanContext $mainSpanContext
@@ -72,10 +74,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         if ($event->isMainRequest()) {
             $attributes = $this->requestAttributeProvider->getAttributes($request);
 
-            /** @var string&non-empty-string $name */
-            $name = $request->getPathInfo();
-
-            $this->serverSpan->updateName($name);
+            $this->serverSpan->updateName(sprintf('http.%s', strtolower($request->getMethod())));
             $this->serverSpan->setAttributes($attributes);
         }
 
@@ -85,14 +84,21 @@ class RequestEventSubscriber implements EventSubscriberInterface
     public function onControllerEvent(Event\ControllerEvent $event): void
     {
         $request = $event->getRequest();
-        $controller = $event->getRequest()->attributes->get('_controller');
+
+        $controller = $request->attributes->get('_controller');
+        $routeAlias = $request->attributes->get('_route');
 
         $span = $this->getSpanForRequest($request);
 
         $span->updateName($controller);
-
         $span->setAttribute('sf.controller', $controller);
-        $span->setAttribute('sf.route', $request->attributes->get('_route'));
+        $span->setAttribute('sf.route', $routeAlias);
+
+        if ($routeAlias && $event->isMainRequest() && $route = $this->router->getRouteCollection()->get($routeAlias)) {
+            /** @var non-empty-string $path */
+            $path = $route->getPath();
+            $this->serverSpan?->updateName($path);
+        }
     }
 
     public function onResponseEvent(Event\ResponseEvent $event): void
@@ -116,7 +122,10 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function onExceptionEvent(Event\ExceptionEvent $event): void
     {
-        $this->getSpanForRequest($event->getRequest())->end();
+        $span = $this->getSpanForRequest($event->getRequest());
+        $span->recordException($event->getThrowable());
+        $span->end();
+        // $this->getSpanForRequest($event->getRequest())->end();
     }
 
     private function startSpanForRequest(Request $request, bool $activate): void
