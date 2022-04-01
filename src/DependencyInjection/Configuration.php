@@ -111,6 +111,7 @@ class Configuration implements ConfigurationInterface
                                     ->defaultValue([
                                         '^/_fragment',
                                         '^/_profiler',
+                                        '^/_wdt',
                                     ])
                                     ->scalarPrototype()->end()
                                 ->end()
