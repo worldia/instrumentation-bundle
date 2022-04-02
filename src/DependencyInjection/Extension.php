@@ -206,7 +206,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
     protected function loadTracing(array $config, ContainerBuilder $container): void
     {
         $container->setParameter('tracer.dsn', $config['dsn']);
-        $container->setParameter('tracing.doctrine.connections', []);
 
         $loader = $this->getLoader('tracing', $container);
 
