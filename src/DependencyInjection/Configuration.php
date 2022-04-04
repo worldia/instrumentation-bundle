@@ -100,6 +100,25 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultTrue()->end()
+                                ->arrayNode('attributes')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->scalarNode('server_name')
+                                            ->defaultNull()
+                                            ->info('Use the primary server name of the matched virtual host')
+                                            ->example('example.com')
+
+                                        ->end()
+                                        ->arrayNode('headers')
+                                            ->defaultValue([])
+                                            ->scalarPrototype()->end()
+                                            ->example([
+                                                'accept',
+                                                'accept-encoding',
+                                            ])
+                                        ->end()
+                                    ->end()
+                                ->end()
                                 ->arrayNode('incoming_header')
                                     ->addDefaultsIfNotSet()
                                     ->children()

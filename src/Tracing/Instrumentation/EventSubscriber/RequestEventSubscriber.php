@@ -9,13 +9,16 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
-use Instrumentation\Semantics\Attribute\RequestAttributeProviderInterface;
-use Instrumentation\Semantics\Attribute\ResponseAttributeProviderInterface;
+use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
+use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\Span;
+use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event;
@@ -48,8 +51,8 @@ class RequestEventSubscriber implements EventSubscriberInterface
     public function __construct(
         protected TracerProviderInterface $tracerProvider,
         protected RouterInterface $router,
-        protected RequestAttributeProviderInterface $requestAttributeProvider,
-        protected ResponseAttributeProviderInterface $responseAttributeProvider,
+        protected ServerRequestAttributeProviderInterface $requestAttributeProvider,
+        protected ServerResponseAttributeProviderInterface $responseAttributeProvider,
         protected MainSpanContext $mainSpanContext
     ) {
         $this->spans = new \SplObjectStorage();
@@ -64,8 +67,10 @@ class RequestEventSubscriber implements EventSubscriberInterface
             $startTime = (int) ($startTime * 1000 * 1000 * 1000); // Convert to nanoseconds
 
             $this->serverSpan = $this->getTracer()->spanBuilder('server')
+                ->setSpanKind(SpanKind::KIND_SERVER)
                 ->setStartTimestamp($startTime)
                 ->startSpan();
+
             $this->serverSpan->activate();
 
             $this->mainSpanContext->setMainSpan($this->serverSpan);
@@ -98,15 +103,22 @@ class RequestEventSubscriber implements EventSubscriberInterface
             /** @var non-empty-string $path */
             $path = $route->getPath();
             $this->serverSpan?->updateName($path);
+            $this->serverSpan?->setAttribute(TraceAttributes::HTTP_ROUTE, $path);
         }
     }
 
     public function onResponseEvent(Event\ResponseEvent $event): void
     {
+        $response = $event->getResponse();
+
         /** @var array<string&non-empty-string,string> $attributes */
-        $attributes = $this->responseAttributeProvider->getAttributes($event->getResponse());
+        $attributes = $this->responseAttributeProvider->getAttributes($response);
         foreach ($attributes as $key => $value) {
             $this->serverSpan?->setAttribute($key, $value);
+        }
+
+        if ($response->getStatusCode() >= 500) {
+            $this->serverSpan?->setStatus(StatusCode::STATUS_ERROR);
         }
     }
 
@@ -122,10 +134,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function onExceptionEvent(Event\ExceptionEvent $event): void
     {
-        $span = $this->getSpanForRequest($event->getRequest());
-        $span->recordException($event->getThrowable());
-        $span->end();
-        // $this->getSpanForRequest($event->getRequest())->end();
+        $this->getSpanForRequest($event->getRequest())->end();
     }
 
     private function startSpanForRequest(Request $request, bool $activate): void

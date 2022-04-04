@@ -13,10 +13,10 @@ use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProvider;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\MessageAttributeProvider;
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
-use Instrumentation\Semantics\Attribute\RequestAttributeProvider;
-use Instrumentation\Semantics\Attribute\RequestAttributeProviderInterface;
-use Instrumentation\Semantics\Attribute\ResponseAttributeProvider;
-use Instrumentation\Semantics\Attribute\ResponseAttributeProviderInterface;
+use Instrumentation\Semantics\Attribute\ServerRequestAttributeProvider;
+use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
+use Instrumentation\Semantics\Attribute\ServerResponseAttributeProvider;
+use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
 use Instrumentation\Semantics\ResourceInfoProvider;
 use Instrumentation\Semantics\ResourceInfoProviderInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
@@ -34,8 +34,12 @@ return static function (ContainerConfigurator $container) {
         ->set(ResourceInfo::class)
         ->factory([service(ResourceInfoProviderInterface::class), 'getInfo'])
 
-        ->set(RequestAttributeProviderInterface::class, RequestAttributeProvider::class)
-        ->set(ResponseAttributeProviderInterface::class, ResponseAttributeProvider::class)
+        ->set(ServerRequestAttributeProviderInterface::class, ServerRequestAttributeProvider::class)
+        ->args([
+            param('tracing.request.attributes.server_name'),
+            param('tracing.request.attributes.headers'),
+        ])
+        ->set(ServerResponseAttributeProviderInterface::class, ServerResponseAttributeProvider::class)
         ->set(MessageAttributeProviderInterface::class, MessageAttributeProvider::class)
         ->set(DoctrineConnectionAttributeProviderInterface::class, DoctrineConnectionAttributeProvider::class);
 };

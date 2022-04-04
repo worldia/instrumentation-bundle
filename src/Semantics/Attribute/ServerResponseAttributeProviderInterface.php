@@ -11,7 +11,7 @@ namespace Instrumentation\Semantics\Attribute;
 
 use Symfony\Component\HttpFoundation\Response;
 
-interface ResponseAttributeProviderInterface
+interface ServerResponseAttributeProviderInterface
 {
     /**
      * @return array<string,string>

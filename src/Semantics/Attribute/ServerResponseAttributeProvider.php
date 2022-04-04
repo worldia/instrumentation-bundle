@@ -12,7 +12,7 @@ namespace Instrumentation\Semantics\Attribute;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\HttpFoundation\Response;
 
-class ResponseAttributeProvider implements ResponseAttributeProviderInterface
+class ServerResponseAttributeProvider implements ServerResponseAttributeProviderInterface
 {
     public function getAttributes(Response $response): array
     {

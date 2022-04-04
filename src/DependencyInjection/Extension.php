@@ -163,6 +163,9 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $loader->load('semconv.php');
 
         $container->setParameter('app.resource_info', $config);
+
+        $container->setParameter('tracing.request.attributes.server_name', null);
+        $container->setParameter('tracing.request.attributes.headers', []);
     }
 
     protected function loadHttp(ContainerBuilder $container): void
@@ -208,6 +211,9 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('tracer.dsn', $config['dsn']);
 
         $loader = $this->getLoader('tracing', $container);
+
+        $container->setParameter('tracing.request.attributes.server_name', $config['request']['attributes']['server_name']);
+        $container->setParameter('tracing.request.attributes.headers', array_map(fn (string $value): string => strtolower($value), $config['request']['attributes']['headers']));
 
         $container->setParameter('tracing.request.incoming_header.name', $config['request']['incoming_header']['name'] ?? null);
         $container->setParameter('tracing.request.incoming_header.regex', $config['request']['incoming_header']['regex'] ?? null);

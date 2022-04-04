@@ -12,10 +12,10 @@ namespace Instrumentation\Semantics\Attribute;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\HttpFoundation\Request;
 
-interface RequestAttributeProviderInterface
+interface ServerRequestAttributeProviderInterface
 {
     /**
-     * @return array<TraceAttributes::HTTP_*,string>
+     * @return array<string|TraceAttributes::*,string|array<string>>
      */
     public function getAttributes(Request $request): array;
 }
