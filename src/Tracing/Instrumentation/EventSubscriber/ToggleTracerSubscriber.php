@@ -46,6 +46,14 @@ class ToggleTracerSubscriber implements EventSubscriberInterface
         if ($this->isBlacklisted($operation, $this->requestBlacklist)) {
             $this->sampler->dropNext();
         }
+
+        if (null !== $force = $event->getRequest()->headers->get('x-trace')) {
+            if ((bool) $force) {
+                $this->sampler->recordAndSampleNext();
+            } else {
+                $this->sampler->dropNext();
+            }
+        }
     }
 
     public function onCommand(ConsoleCommandEvent $event): void
