@@ -66,6 +66,16 @@ class Registry implements RegistryInterface
                 throw new \InvalidArgumentException(sprintf('No metric registered with that name: "%s".', $name));
             }
 
+            /**
+             * @var array{
+             *        name:string,
+             *        namespace:string,
+             *        type:string,
+             *        help:string,
+             *        labels?:array<string>,
+             *        buckets?:array<int|float>|null
+             *      } $config
+             */
             $config = $this->metrics[$name];
 
             $config['name'] = $name;

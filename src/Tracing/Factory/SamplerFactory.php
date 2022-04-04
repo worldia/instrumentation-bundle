@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\Factory;
 
 use InvalidArgumentException;
+use Nyholm\Dsn\DsnParser;
 use OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
 use OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
 use OpenTelemetry\SDK\Trace\Sampler\ParentBased;
@@ -40,5 +41,14 @@ class SamplerFactory
             self::PARENTBASED_ALWAYS_OFF => new ParentBased(new AlwaysOffSampler()),
             default => throw new InvalidArgumentException('Unknown sampler: '.$type)
         };
+    }
+
+    public function createFromDsn(string $dsn): SamplerInterface
+    {
+        $dsn = DsnParser::parseUrl($dsn);
+        $type = $dsn->getParameter('sampler', self::PARENTBASED_ALWAYS_ON);
+        $ratio = $dsn->getParameter('ratio', .5);
+
+        return $this->create($type, $ratio);
     }
 }

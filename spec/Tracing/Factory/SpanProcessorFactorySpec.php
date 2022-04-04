@@ -8,6 +8,7 @@
 namespace spec\Instrumentation\Tracing\Factory;
 
 use Instrumentation\Tracing\Factory\SpanProcessorFactory;
+use OpenTelemetry\SDK\Trace\SpanExporterInterface;
 use OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
 use OpenTelemetry\SDK\Trace\SpanProcessor\NoopSpanProcessor;
 use OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
@@ -15,6 +16,11 @@ use PhpSpec\ObjectBehavior;
 
 class SpanProcessorFactorySpec extends ObjectBehavior
 {
+    public function let(SpanExporterInterface $exporter)
+    {
+        $this->beConstructedWith($exporter);
+    }
+
     public function it_is_initializable(): void
     {
         $this->beAnInstanceOf(SpanProcessorFactory::class);

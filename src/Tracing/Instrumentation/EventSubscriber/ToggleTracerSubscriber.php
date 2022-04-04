@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
-use Instrumentation\Tracing\Instrumentation\TogglableTracerProvider;
+use Instrumentation\Tracing\Sampler\TogglableSampler;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -20,9 +20,9 @@ class ToggleTracerSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            RequestEvent::class => [['onRequest', 1000]],
-            ConsoleCommandEvent::class => [['onCommand', 1000]],
-            WorkerMessageReceivedEvent::class => [['onMessage', 1000]],
+            RequestEvent::class => [['onRequest', 8092]],
+            ConsoleCommandEvent::class => [['onCommand', 8092]],
+            WorkerMessageReceivedEvent::class => [['onMessage', 8092]],
         ];
     }
 
@@ -31,16 +31,20 @@ class ToggleTracerSubscriber implements EventSubscriberInterface
      * @param array<string> $commandBlacklist
      * @param array<string> $messageBlacklist
      */
-    public function __construct(private TogglableTracerProvider $tracerProvider, private array $requestBlacklist, private array $commandBlacklist, private array $messageBlacklist)
+    public function __construct(private TogglableSampler $sampler, private array $requestBlacklist, private array $commandBlacklist, private array $messageBlacklist)
     {
     }
 
     public function onRequest(RequestEvent $event): void
     {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
         $operation = $event->getRequest()->getPathInfo();
 
         if ($this->isBlacklisted($operation, $this->requestBlacklist)) {
-            $this->tracerProvider->disable();
+            $this->sampler->dropNext();
         }
     }
 
@@ -49,7 +53,7 @@ class ToggleTracerSubscriber implements EventSubscriberInterface
         $operation = $event->getCommand()?->getDefaultName() ?: 'unknown-command';
 
         if ($this->isBlacklisted($operation, $this->commandBlacklist)) {
-            $this->tracerProvider->disable();
+            $this->sampler->dropNext();
         }
     }
 
@@ -58,7 +62,7 @@ class ToggleTracerSubscriber implements EventSubscriberInterface
         $operation = \get_class($event->getEnvelope()->getMessage());
 
         if ($this->isBlacklisted($operation, $this->messageBlacklist)) {
-            $this->tracerProvider->disable();
+            $this->sampler->dropNext();
         }
     }
 

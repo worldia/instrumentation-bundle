@@ -14,7 +14,7 @@ use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\Span;
-use OpenTelemetry\SDK\Trace\TracerProvider;
+use OpenTelemetry\SDK\Trace\SpanExporterInterface;
 use OpenTelemetry\SemConv\TraceAttributeValues;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -38,7 +38,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected MessageAttributeProviderInterface $attributeProvider, protected MainSpanContext $mainSpanContext)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected SpanExporterInterface $spanExporter, protected MessageAttributeProviderInterface $attributeProvider, protected MainSpanContext $mainSpanContext)
     {
     }
 
@@ -82,9 +82,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
             $span->end();
         }
 
-        /** @var TracerProvider $provider */
-        $provider = $this->tracerProvider;
-        $provider->forceFlush();
+        $this->spanExporter->forceFlush();
     }
 
     /**

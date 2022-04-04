@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\Factory;
 
 use InvalidArgumentException;
+use Nyholm\Dsn\DsnParser;
 use OpenTelemetry\SDK\Trace\SpanExporterInterface;
 use OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
 use OpenTelemetry\SDK\Trace\SpanProcessor\NoopSpanProcessor;
@@ -23,6 +24,10 @@ class SpanProcessorFactory
     public const NOOP = 'noop';
     public const NONE = 'none';
 
+    public function __construct(private SpanExporterInterface $exporter)
+    {
+    }
+
     public function create(string $type, SpanExporterInterface $exporter = null): SpanProcessorInterface
     {
         return match ($type) {
@@ -32,5 +37,13 @@ class SpanProcessorFactory
             self::NONE => NoopSpanProcessor::getInstance(),
             default => throw new InvalidArgumentException('Unknown processor: '.$type)
         };
+    }
+
+    public function createFromDsn(string $dsn): SpanProcessorInterface
+    {
+        $dsn = DsnParser::parseUrl($dsn);
+        $type = $dsn->getParameter('processor', self::BATCH);
+
+        return $this->create($type, $this->exporter);
     }
 }

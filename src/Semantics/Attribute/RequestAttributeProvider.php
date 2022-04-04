@@ -18,7 +18,7 @@ class RequestAttributeProvider implements RequestAttributeProviderInterface
     {
         $attributes = [
             TraceAttributes::HTTP_METHOD => $request->getMethod(),
-            TraceAttributes::HTTP_URL => $request->getUri(),
+            // TraceAttributes::HTTP_URL => $request->getUri(),
             TraceAttributes::HTTP_TARGET => $request->getPathInfo(),
             TraceAttributes::HTTP_HOST => $request->getHttpHost(),
             TraceAttributes::HTTP_SCHEME => $request->getScheme(),

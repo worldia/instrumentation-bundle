@@ -9,24 +9,29 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
+use Instrumentation\Tracing\Exporter\ResetSpanExporter;
+use Instrumentation\Tracing\Factory\ExporterFactory;
 use Instrumentation\Tracing\Factory\SamplerFactory;
 use Instrumentation\Tracing\Factory\SpanProcessorFactory;
-use Instrumentation\Tracing\Factory\TracerProviderFactory;
 use Instrumentation\Tracing\Instrumentation\EventSubscriber\ToggleTracerSubscriber;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
-use Instrumentation\Tracing\Instrumentation\TogglableTracerProvider;
 use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
 use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
 use Instrumentation\Tracing\Propagation\RegexIncomingTraceHeaderResolver;
+use Instrumentation\Tracing\Sampler\TogglableSampler;
 use Instrumentation\Tracing\Serializer\Normalizer\ErrorNormalizer;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Twig\Extension\TracingExtension;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
-use OpenTelemetry\SDK\Trace\ExporterFactory;
 use OpenTelemetry\SDK\Trace\IdGeneratorInterface;
 use OpenTelemetry\SDK\Trace\RandomIdGenerator;
+use OpenTelemetry\SDK\Trace\SamplerInterface;
+use OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
+use OpenTelemetry\SDK\Trace\TracerProvider;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -37,11 +42,15 @@ return static function (ContainerConfigurator $container) {
     $container->services()
         ->set(ExporterFactory::class)
         ->args([
-            'traced-app', // will be overidden by resource info service.name
+            service(ResourceInfo::class),
         ])
 
         ->set(SamplerFactory::class)
         ->set(SpanProcessorFactory::class)
+        ->args([
+            service(SpanExporterInterface::class),
+        ])
+
         ->set(IdGeneratorInterface::class, RandomIdGenerator::class)
 
         ->set(ForcableIdGenerator::class)
@@ -50,29 +59,47 @@ return static function (ContainerConfigurator $container) {
             service('.inner'),
         ])
 
-        ->set(TracerProviderFactory::class)
-        ->args([
-            service(ResourceInfo::class),
-            service(ExporterFactory::class),
-            service(SamplerFactory::class),
-            service(SpanProcessorFactory::class),
-            service(IdGeneratorInterface::class),
-        ])
-
-        ->set(TracerProviderInterface::class)
-        ->factory([service(TracerProviderFactory::class), 'createFromDsn'])
+        ->set(SamplerInterface::class)
+        ->factory([service(SamplerFactory::class), 'createFromDsn'])
         ->args([param('tracer.dsn')])
-        ->public()
 
-        ->set(TogglableTracerProvider::class)
-        ->decorate(TracerProviderInterface::class)
+        ->set(TogglableSampler::class)
+        ->decorate(SamplerInterface::class)
         ->args([
             service('.inner'),
+            service(LoggerInterface::class),
         ])
+
+        ->set(SpanExporterInterface::class)
+        ->factory([service(ExporterFactory::class), 'createFromDsn'])
+        ->args([
+            param('tracer.dsn'),
+        ])
+
+        ->set(ResetSpanExporter::class)
+        ->args([
+            service(SpanExporterInterface::class),
+        ])
+
+        ->set(SpanProcessorInterface::class)
+        ->factory([service(SpanProcessorFactory::class), 'createFromDsn'])
+        ->args([
+            param('tracer.dsn'),
+        ])
+
+        ->set(TracerProviderInterface::class, TracerProvider::class)
+        ->args([
+            [service(SpanProcessorInterface::class)],
+            service(SamplerInterface::class),
+            service(ResourceInfo::class),
+            null,
+            service(IdGeneratorInterface::class),
+        ])
+        ->public()
 
         ->set(ToggleTracerSubscriber::class)
         ->args([
-            service(TogglableTracerProvider::class),
+            service(TogglableSampler::class),
             param('tracing.request.blacklist'),
             param('tracing.command.blacklist'),
             param('tracing.message.blacklist'),
