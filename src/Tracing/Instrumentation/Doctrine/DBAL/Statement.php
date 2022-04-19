@@ -21,7 +21,7 @@ class Statement implements DoctrineStatement
 {
     use TracerAwareTrait;
 
-    private const OP_STMT_EXECUTE = 'sql.stmt.execute';
+    private const OP_STMT_EXECUTE = 'db.statement.execute';
 
     /**
      * @param string               $sqlQuery

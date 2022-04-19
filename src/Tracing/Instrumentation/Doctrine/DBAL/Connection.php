@@ -24,12 +24,12 @@ final class Connection implements ServerInfoAwareConnection
 {
     use TracerAwareTrait;
 
-    private const OP_CONN_PREPARE = 'sql.conn.prepare';
-    private const OP_CONN_QUERY = 'sql.conn.query';
-    private const OP_CONN_EXEC = 'sql.conn.exec';
-    private const OP_CONN_BEGIN_TRANSACTION = 'sql.conn.begin_transaction';
-    private const OP_TRANSACTION_COMMIT = 'sql.transaction.commit';
-    private const OP_TRANSACTION_ROLLBACK = 'sql.transaction.rollback';
+    private const OP_CONN_PREPARE = 'db.connection.prepare';
+    private const OP_CONN_QUERY = 'db.connection.query';
+    private const OP_CONN_EXEC = 'db.connection.exec';
+    private const OP_CONN_BEGIN_TRANSACTION = 'db.connection.begin_transaction';
+    private const OP_TRANSACTION_COMMIT = 'db.transaction.commit';
+    private const OP_TRANSACTION_ROLLBACK = 'db.transaction.rollback';
 
     private ?SpanInterface $mainSpan = null;
     private Context $mainSpanContext;
@@ -95,7 +95,7 @@ final class Connection implements ServerInfoAwareConnection
             return $this->decorated->getServerVersion();
         }
 
-        return 'unkown';
+        return 'unknown';
     }
 
     protected function trace(string $operation, string $sql, callable $callback): mixed
@@ -126,8 +126,9 @@ final class Connection implements ServerInfoAwareConnection
             return;
         }
 
-        $this->mainSpan = $this->getTracer()->spanBuilder('doctrine')->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
-        $this->mainSpanContext = Context::getCurrent()->withContextValue($this->mainSpan);
+        $this->mainSpan = $this->getTracer()->spanBuilder('db')->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
+        $this->mainSpan->activate();
+        $this->mainSpanContext = Context::getCurrent();
         $this->mainSpan->end();
     }
 }
