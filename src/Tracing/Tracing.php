@@ -20,6 +20,7 @@ final class Tracing
     public const NAME = 'io.opentelemetry.contrib.php';
 
     private static ?TracerProviderInterface $tracerProvider = null;
+    private static ?TracerInterface $tracer = null;
 
     /**
      * @param non-empty-string     $operation
@@ -37,11 +38,15 @@ final class Tracing
 
     public static function getTracer(): TracerInterface
     {
-        if(null === $tracer = self::getProvider()?->getTracer(self::NAME)) {
-            $tracer = NoopTracer::getInstance();
+        if (null === self::$tracer) {
+            if(null === $tracer = self::getProvider()?->getTracer(self::NAME)) {
+                $tracer = NoopTracer::getInstance();
+            }
+
+            self::$tracer = new Tracer($tracer);
         }
 
-        return new Tracer($tracer);
+        return self::$tracer;
     }
 
     public static function setProvider(TracerProviderInterface $tracerProvider): void
