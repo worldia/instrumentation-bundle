@@ -14,17 +14,20 @@
         "nyholm/psr7": "^1.5",
         "open-telemetry/opentelemetry": "^0.0.6",
         "promphp/prometheus_client_php": "^2.4",
+        "psr/http-client": "^1.0",
         "symfony/dependency-injection": "*"
     },
     "require-dev": {
         "doctrine/dbal": "^3.0",
         "friends-of-phpspec/phpspec-expect": "^4.0",
+        "php-http/httplug": "^2.3",
         "phpspec/phpspec": "^7.2",
         "phpstan/phpstan": "^1.4",
         "symfony/framework-bundle": "*",
         "symfony/http-client": "*",
         "symfony/messenger": "*",
         "symfony/monolog-bundle": "^3.7",
+        "symfony/security-core": "^6.0",
         "symfony/serializer": "*",
         "symfony/twig-bundle": "*",
         "worldia/coding-standards": "^1.0"

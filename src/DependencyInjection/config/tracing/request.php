@@ -19,6 +19,7 @@ use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
@@ -36,6 +37,13 @@ return static function (ContainerConfigurator $container) {
             service(ServerRequestAttributeProviderInterface::class),
             service(ServerResponseAttributeProviderInterface::class),
             service(MainSpanContext::class),
+        ])
+        ->autoconfigure()
+
+        ->set(Tracing\Instrumentation\EventSubscriber\AddUserEventSubscriber::class)
+        ->args([
+            service(MainSpanContext::class),
+            service(TokenStorageInterface::class)->nullOnInvalid(),
         ])
         ->autoconfigure();
 };
