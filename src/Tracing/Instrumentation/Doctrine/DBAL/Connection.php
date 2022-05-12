@@ -110,7 +110,7 @@ final class Connection implements ServerInfoAwareConnection
             ->startSpan();
 
         if ($sql) {
-            $span->addEvent($sql);
+            $span->addEvent($sql, ['_severity' => 'info', '_category' => 'db']);
         }
 
         try {
@@ -126,7 +126,7 @@ final class Connection implements ServerInfoAwareConnection
             return;
         }
 
-        $this->mainSpan = $this->getTracer()->spanBuilder('db')->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
+        $this->mainSpan = $this->getTracer()->spanBuilder('db.orm')->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
         $this->mainSpan->activate();
         $this->mainSpanContext = Context::getCurrent();
         $this->mainSpan->end();
