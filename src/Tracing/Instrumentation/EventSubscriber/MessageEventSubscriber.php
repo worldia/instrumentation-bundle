@@ -76,7 +76,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
 
     public function onHandled(): void
     {
-        $span = Span::getCurrent();
+        $span = $this->mainSpanContext->getMainSpan();
 
         if ($this->createSubSpan) {
             $span->end();
