@@ -118,7 +118,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             $container->setParameter('metrics.metrics', $metrics);
         }
 
-        if ($container->hasParameter('tracing.doctrine.connections')) {
+        if ($container->hasParameter('tracing.doctrine.connections') && $container->hasParameter('doctrine.connections')) {
             /** @var array<string> $connectionsToTrace */
             $connectionsToTrace = $container->getParameter('tracing.doctrine.connections');
 
