@@ -9,6 +9,7 @@ namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -18,6 +19,7 @@ use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use OpenTelemetry\SemConv\TraceAttributeValues;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Event\AbstractWorkerMessageEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
@@ -74,9 +76,13 @@ class MessageEventSubscriber implements EventSubscriberInterface
         $this->mainSpanContext->setMainSpan($span);
     }
 
-    public function onHandled(): void
+    public function onHandled(AbstractWorkerMessageEvent $event): void
     {
         $span = $this->mainSpanContext->getMainSpan();
+
+        if ($event instanceof WorkerMessageFailedEvent) {
+            $span->recordException($event->getThrowable());
+        }
 
         if ($this->createSubSpan) {
             $span->end();
@@ -102,7 +108,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @return array{
+     * @return array<non-empty-string,non-empty-string>|array{
      *           'messenger.message':class-string,
      *           'messenger.bus'?:string,
      *           'messaging.destination_kind':'queue'|'topic',
@@ -121,6 +127,12 @@ class MessageEventSubscriber implements EventSubscriberInterface
         $stamp = $envelope->last(BusNameStamp::class);
         if ($stamp) {
             $attributes['messenger.bus'] = $stamp->getBusName();
+        }
+
+        /** @var AttributesStamp|null $stamp */
+        $stamp = $envelope->last(AttributesStamp::class);
+        if ($stamp) {
+            $attributes = array_merge($attributes, $stamp->getAttributes());
         }
 
         return $attributes;
