@@ -46,7 +46,7 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
         return [
             WorkerMessageReceivedEvent::class => [['onConsume', 100]],
             WorkerMessageHandledEvent::class => [['onHandled', -100]],
-            WorkerMessageFailedEvent::class => [['onHandled', -100]],
+            WorkerMessageFailedEvent::class => [['onFailed', -100]],
         ];
     }
 
