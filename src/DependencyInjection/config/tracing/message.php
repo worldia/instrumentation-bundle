@@ -13,7 +13,7 @@ use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
 use Instrumentation\Tracing;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
-use OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
@@ -25,7 +25,7 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Instrumentation\EventSubscriber\MessageEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(SpanExporterInterface::class),
+            service(SpanProcessorInterface::class),
             service(MessageAttributeProviderInterface::class),
             service(MainSpanContext::class),
         ])
