@@ -42,7 +42,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
 
     public function onCommand(ConsoleCommandEvent $event): void
     {
-        $name = $event->getCommand()?->getDefaultName() ?: 'unknown-command';
+        $name = $event->getCommand()?->getName() ?: 'unknown-command';
 
         $this->span = $this->startSpan($name, ['command' => $name]);
 
