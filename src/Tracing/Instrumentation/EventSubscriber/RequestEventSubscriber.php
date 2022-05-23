@@ -79,7 +79,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         if ($event->isMainRequest()) {
             $attributes = $this->requestAttributeProvider->getAttributes($request);
 
-            $this->serverSpan->updateName(sprintf('http.%s', strtolower($request->getMethod())));
+            $this->serverSpan->updateName(sprintf('http.%s %s', strtolower($request->getMethod()), $request->getPathInfo()));
             $this->serverSpan->setAttributes($attributes);
         }
 
@@ -102,6 +102,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         if ($routeAlias && $event->isMainRequest() && $route = $this->router->getRouteCollection()->get($routeAlias)) {
             /** @var non-empty-string $path */
             $path = $route->getPath();
+            $this->serverSpan?->updateName(sprintf('http.%s %s', strtolower($request->getMethod()), $path));
             $this->serverSpan?->setAttribute(TraceAttributes::HTTP_ROUTE, $path);
         }
     }
