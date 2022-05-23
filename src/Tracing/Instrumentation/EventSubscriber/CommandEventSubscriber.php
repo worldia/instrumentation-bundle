@@ -12,8 +12,10 @@ namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
+use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\Console\Event\ConsoleSignalEvent;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -28,6 +30,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
     {
         return [
             ConsoleCommandEvent::class => [['onCommand', 100]],
+            ConsoleErrorEvent::class => [['onError', -100]],
             ConsoleTerminateEvent::class => [['onTerminate', -100]],
             ConsoleSignalEvent::class => [['onSignal', -100]],
         ];
@@ -44,6 +47,12 @@ class CommandEventSubscriber implements EventSubscriberInterface
         $this->span = $this->startSpan($name, ['command' => $name]);
 
         $this->mainSpanContext->setMainSpan($this->span);
+    }
+
+    public function onError(ConsoleErrorEvent $event): void
+    {
+        $this->span->recordException($event->getError());
+        $this->span->setStatus(StatusCode::STATUS_ERROR);
     }
 
     public function onSignal(): void

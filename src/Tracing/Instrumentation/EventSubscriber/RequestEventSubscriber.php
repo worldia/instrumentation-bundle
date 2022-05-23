@@ -78,8 +78,9 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
         if ($event->isMainRequest()) {
             $attributes = $this->requestAttributeProvider->getAttributes($request);
-
-            $this->serverSpan->updateName(sprintf('http.%s', strtolower($request->getMethod())));
+            /** @var non-empty-string $path */
+            $path = $request->getPathInfo();
+            $this->serverSpan->updateName($path);
             $this->serverSpan->setAttributes($attributes);
         }
 
@@ -134,7 +135,9 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function onExceptionEvent(Event\ExceptionEvent $event): void
     {
-        $this->getSpanForRequest($event->getRequest())->end();
+        $span = $this->getSpanForRequest($event->getRequest());
+        $span->setStatus(StatusCode::STATUS_ERROR);
+        $span->end();
     }
 
     private function startSpanForRequest(Request $request, bool $activate): void

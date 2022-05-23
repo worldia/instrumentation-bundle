@@ -13,6 +13,7 @@ use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\Span;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
@@ -82,6 +83,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
 
         if ($event instanceof WorkerMessageFailedEvent) {
             $span->recordException($event->getThrowable());
+            $span->setStatus(StatusCode::STATUS_ERROR);
         }
 
         if ($this->createSubSpan) {
