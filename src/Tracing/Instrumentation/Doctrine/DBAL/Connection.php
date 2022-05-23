@@ -14,8 +14,9 @@ use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\Driver\Statement as StatementInterface;
 use Doctrine\DBAL\ParameterType;
+use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
-use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\SpanContextKey;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\Context;
@@ -31,13 +32,13 @@ final class Connection implements ServerInfoAwareConnection
     private const OP_TRANSACTION_COMMIT = 'db.transaction.commit';
     private const OP_TRANSACTION_ROLLBACK = 'db.transaction.rollback';
 
-    private ?SpanInterface $mainSpan = null;
-    private Context $mainSpanContext;
+    private Context $doctrineSpanContext;
+    private bool $createdDoctrineSpanContext = false;
 
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected ConnectionInterface $decorated, private array $attributes)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected ConnectionInterface $decorated, private MainSpanContext $mainSpanContext, private array $attributes)
     {
     }
 
@@ -45,7 +46,7 @@ final class Connection implements ServerInfoAwareConnection
     {
         $statement = $this->trace(self::OP_CONN_PREPARE, $sql, fn (): StatementInterface => $this->decorated->prepare($sql));
 
-        return new Statement($this->tracerProvider, $this->mainSpanContext, $statement, $sql, $this->attributes);
+        return new Statement($this->tracerProvider, $this->doctrineSpanContext, $statement, $sql, $this->attributes);
     }
 
     public function query(string $sql): Result
@@ -105,12 +106,12 @@ final class Connection implements ServerInfoAwareConnection
         $span = $this->getTracer()
             ->spanBuilder($operation) // @phpstan-ignore-line
             ->setSpanKind(SpanKind::KIND_CLIENT)
-            ->setParent($this->mainSpanContext)
+            ->setParent($this->doctrineSpanContext)
             ->setAttributes($this->attributes)
             ->startSpan();
 
         if ($sql) {
-            $span->addEvent($sql, ['_severity' => 'info', '_category' => 'db']);
+            $span->addEvent($sql);
         }
 
         try {
@@ -122,13 +123,17 @@ final class Connection implements ServerInfoAwareConnection
 
     private function ensureMainSpan(): void
     {
-        if ($this->mainSpan) {
+        if ($this->createdDoctrineSpanContext) {
             return;
         }
 
-        $this->mainSpan = $this->getTracer()->spanBuilder('db.orm')->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
-        $this->mainSpan->activate();
-        $this->mainSpanContext = Context::getCurrent();
-        $this->mainSpan->end();
+        $mainSpan = $this->mainSpanContext->getMainSpan();
+        $parentContext = new Context(SpanContextKey::instance(), $mainSpan);
+
+        $doctrineSpan = $this->getTracer()->spanBuilder('db.orm')->setParent($parentContext)->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
+        $this->doctrineSpanContext = new Context(SpanContextKey::instance(), $doctrineSpan);
+        $doctrineSpan->end();
+
+        $this->createdDoctrineSpanContext = true;
     }
 }

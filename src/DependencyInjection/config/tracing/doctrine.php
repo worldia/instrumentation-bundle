@@ -11,6 +11,7 @@ namespace Instrumentation\Resources;
 
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Tracing;
+use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -21,5 +22,6 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service(TracerProviderInterface::class),
             service(DoctrineConnectionAttributeProviderInterface::class),
+            service(MainSpanContext::class),
         ]);
 };

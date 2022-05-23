@@ -17,11 +17,12 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\VersionAwarePlatformDriver;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
+use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 
 final class Driver implements VersionAwarePlatformDriver
 {
-    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private DriverInterface $decorated)
+    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private DriverInterface $decorated, private MainSpanContext $mainSpanContext)
     {
     }
 
@@ -29,7 +30,7 @@ final class Driver implements VersionAwarePlatformDriver
     {
         $attributes = $this->attributeProvider->getAttributes($this->decorated->getDatabasePlatform(), $params);
 
-        return new Connection($this->tracerProvider, $this->decorated->connect($params), $attributes);
+        return new Connection($this->tracerProvider, $this->decorated->connect($params), $this->mainSpanContext, $attributes);
     }
 
     public function getDatabasePlatform(): AbstractPlatform

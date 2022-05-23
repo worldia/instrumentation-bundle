@@ -49,7 +49,7 @@ class Statement implements DoctrineStatement
             ->setParent($this->parentContext)
             ->setAttributes($this->attributes)
             ->startSpan()
-            ->addEvent($this->sqlQuery, ['_severity' => 'info', '_category' => 'db']);
+            ->addEvent($this->sqlQuery);
 
         try {
             return $this->decoratedStatement->execute($params);
