@@ -12,6 +12,7 @@ namespace Instrumentation\Tracing\Propagation\EventSubscriber;
 use Instrumentation\Tracing\Propagation\ContextInitializer;
 use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
 use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
+use OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -35,10 +36,18 @@ class RequestEventSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $request = $event->getRequest();
+
+        if ($request->headers->get(TraceContextPropagator::TRACEPARENT)) {
+            ContextInitializer::fromRequest($request);
+
+            return;
+        }
+
         if ($this->incomingTraceResolver) {
-            $traceId = $this->incomingTraceResolver->getTraceId($event->getRequest());
-            $spanId = $this->incomingTraceResolver->getSpanId($event->getRequest());
-            $sampled = $this->incomingTraceResolver->isSampled($event->getRequest());
+            $traceId = $this->incomingTraceResolver->getTraceId($request);
+            $spanId = $this->incomingTraceResolver->getSpanId($request);
+            $sampled = $this->incomingTraceResolver->isSampled($request);
 
             if (null !== $traceId && null !== $spanId && null !== $sampled) {
                 $w3cHeader = sprintf('00-%s-%s-%s', $traceId, $spanId, $sampled ? '01' : '00');
@@ -56,7 +65,5 @@ class RequestEventSubscriber implements EventSubscriberInterface
                 return;
             }
         }
-
-        ContextInitializer::fromRequest($event->getRequest());
     }
 }
