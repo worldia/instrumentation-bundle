@@ -100,13 +100,14 @@ class MessageEventSubscriber implements EventSubscriberInterface
      */
     private function getOperationName(Envelope $envelope, string $operation): string
     {
+        $name = \get_class($envelope->getMessage());
         /** @var OperationNameStamp|null $stamp */
         $stamp = $envelope->last(OperationNameStamp::class);
         if ($stamp) {
-            return $stamp->getOperationName();
+            $name = $stamp->getOperationName();
         }
 
-        return sprintf('%s %s', \get_class($envelope->getMessage()), $operation);
+        return sprintf('message.%s %s', $name, $operation);
     }
 
     /**

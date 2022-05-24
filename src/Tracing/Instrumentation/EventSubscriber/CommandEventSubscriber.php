@@ -44,7 +44,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
     {
         $name = $event->getCommand()?->getName() ?: 'unknown-command';
 
-        $this->span = $this->startSpan($name, ['command' => $name]);
+        $this->span = $this->startSpan(sprintf('cli %s', $name), ['command' => $name]);
 
         $this->mainSpanContext->setMainSpan($this->span);
     }
