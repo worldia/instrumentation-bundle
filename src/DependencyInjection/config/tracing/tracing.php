@@ -130,9 +130,7 @@ return static function (ContainerConfigurator $container) {
                 service('.inner'),
                 param('kernel.debug'),
                 service(TraceUrlGeneratorInterface::class)->nullOnInvalid(),
-            ])
-            ->tag('serializer.normalizer')
-            ->autoconfigure();
+            ]);
     }
 
     if (class_exists(TwigBundle::class)) {
