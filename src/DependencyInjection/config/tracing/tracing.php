@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
+use ApiPlatform\Core\Problem\Serializer\ErrorNormalizer as ApiPlatformErrorNormalizer;
 use Instrumentation\Tracing\Exporter\ResetSpanExporter;
 use Instrumentation\Tracing\Factory\ExporterFactory;
 use Instrumentation\Tracing\Factory\SamplerFactory;
@@ -124,8 +125,21 @@ return static function (ContainerConfigurator $container) {
 
     if (class_exists(Serializer::class)) {
         $container->services()
-            ->set(ErrorNormalizer::class)
+            ->set('worldia-instrumentation.serializer.normalizer.problem')
+            ->class(ErrorNormalizer::class)
             ->decorate('serializer.normalizer.problem')
+            ->args([
+                service('.inner'),
+                param('kernel.debug'),
+                service(TraceUrlGeneratorInterface::class)->nullOnInvalid(),
+            ]);
+    }
+
+    if (class_exists(ApiPlatformErrorNormalizer::class)) {
+        $container->services()
+            ->set('worldia-instrumentation.problem.normalizer.error')
+            ->class(ErrorNormalizer::class)
+            ->decorate('api_platform.problem.normalizer.error')
             ->args([
                 service('.inner'),
                 param('kernel.debug'),
