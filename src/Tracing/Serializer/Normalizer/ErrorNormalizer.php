@@ -14,11 +14,10 @@ use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use OpenTelemetry\SDK\Trace\Span;
 use Symfony\Component\Serializer\Normalizer\CacheableSupportsMethodInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\ProblemNormalizer;
 
 class ErrorNormalizer implements NormalizerInterface, CacheableSupportsMethodInterface
 {
-    public function __construct(private ProblemNormalizer $decorated, private bool $addUrl = false, private ?TraceUrlGeneratorInterface $traceUrlGenerator = null)
+    public function __construct(private NormalizerInterface $decorated, private bool $addUrl = false, private ?TraceUrlGeneratorInterface $traceUrlGenerator = null)
     {
     }
 
@@ -30,6 +29,10 @@ class ErrorNormalizer implements NormalizerInterface, CacheableSupportsMethodInt
     public function normalize($exception, string $format = null, array $context = []): array|string|int|float|bool|ArrayObject|null
     {
         $data = $this->decorated->normalize($exception, $format, $context);
+
+        if (false === \is_array($data)) {
+            return $data;
+        }
 
         $spanContext = Span::getCurrent()->getContext();
 
@@ -49,6 +52,6 @@ class ErrorNormalizer implements NormalizerInterface, CacheableSupportsMethodInt
 
     public function hasCacheableSupportsMethod(): bool
     {
-        return $this->decorated->hasCacheableSupportsMethod();
+        return $this->decorated instanceof CacheableSupportsMethodInterface && $this->decorated->hasCacheableSupportsMethod();
     }
 }
