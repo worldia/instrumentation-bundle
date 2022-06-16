@@ -30,12 +30,12 @@ class TracingExtension extends AbstractExtension
 
     public function getTraceId(): string
     {
-        return Span::getCurrent()->getContext()->getTraceId();
+        return Span::getCurrent()?->getContext()?->getTraceId();
     }
 
-    public function getTraceUrl(string $traceId): ?string
+    public function getTraceUrl(?string $traceId = null): ?string
     {
-        if ($this->traceUrlGenerator) {
+        if ($traceId && $this->traceUrlGenerator) {
             return $this->traceUrlGenerator->getTraceUrl($traceId);
         }
 
