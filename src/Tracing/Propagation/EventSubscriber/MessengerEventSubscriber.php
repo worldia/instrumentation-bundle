@@ -9,12 +9,21 @@ namespace Instrumentation\Tracing\Propagation\EventSubscriber;
 
 use Instrumentation\Tracing\Propagation\ContextInitializer;
 use Instrumentation\Tracing\Propagation\Messenger\TraceContextStamp;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Event\SendMessageToTransportsEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 
 class MessengerEventSubscriber implements EventSubscriberInterface
 {
+    private LoggerInterface $logger;
+
+    public function __construct(LoggerInterface|null $logger = null)
+    {
+        $this->logger = $logger ?? new NullLogger();
+    }
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -25,7 +34,11 @@ class MessengerEventSubscriber implements EventSubscriberInterface
 
     public function onSend(SendMessageToTransportsEvent $event): void
     {
-        $event->setEnvelope($event->getEnvelope()->with(new TraceContextStamp()));
+        try {
+            $event->setEnvelope($event->getEnvelope()->with(new TraceContextStamp()));
+        } catch (\Throwable $error) {
+            $this->logger->warning($error->getMessage(), ['exception' => $error]);
+        }
     }
 
     public function onConsume(WorkerMessageReceivedEvent $event): void

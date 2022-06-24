@@ -15,6 +15,8 @@ use OpenTelemetry\API\Trace\SpanContextKey;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\ScopeInterface;
 use PhpSpec\ObjectBehavior;
+use Prophecy\Argument;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\SendMessageToTransportsEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
@@ -33,12 +35,13 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
         ]);
     }
 
-    public function let(): void
+    public function let(LoggerInterface $logger): void
     {
         // Needed to be able to undo the changes to the store when propagating a context trace
         // Otherwise we have conflict with other tests because of the global scope
         Context::storage()->fork(1);
         Context::storage()->switch(1);
+        $this->beConstructedWith($logger);
         $this->activateSpan();
     }
 
@@ -64,12 +67,21 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
         $this->span->end();
     }
 
-    public function it_fails_when_message_is_sent_without_being_able_to_propagate_trace_context(): void
-    {
+    public function it_silentely_logs_errors_as_warning_when_message_is_sent_without_being_able_to_propagate_trace_context(
+        LoggerInterface $logger,
+    ): void {
         $this->closeSpan();
-        $event = new SendMessageToTransportsEvent($this->createEnveloppeWithoutTraceContextStamp());
+        $originalEnveloppe = $this->createEnveloppeWithoutTraceContextStamp();
+        $event = new SendMessageToTransportsEvent($originalEnveloppe);
+        $expectedException = ContextPropagationException::becauseNoParentTrace();
 
-        $this->shouldThrow(ContextPropagationException::becauseNoParentTrace())->duringOnSend($event);
+        $this->onSend($event);
+
+        Assert::same($event->getEnvelope(), $originalEnveloppe, 'The enveloppe has been modified.');
+        $logger->warning(
+            $expectedException->getMessage(),
+            Argument::withEntry('exception', $expectedException),
+        )->shouldHaveBeenCalled();
     }
 
     private function createEnveloppeWithoutTraceContextStamp(): Envelope
