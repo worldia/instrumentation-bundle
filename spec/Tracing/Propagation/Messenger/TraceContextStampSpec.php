@@ -7,6 +7,7 @@
 
 namespace spec\Instrumentation\Tracing\Propagation\Messenger;
 
+use Instrumentation\Tracing\Propagation\Exception\ContextPropagationException;
 use OpenTelemetry\API\Trace\NonRecordingSpan;
 use OpenTelemetry\API\Trace\SpanContext;
 use OpenTelemetry\API\Trace\TraceState;
@@ -16,7 +17,9 @@ class TraceContextStampSpec extends ObjectBehavior
 {
     public function it_fails_when_there_is_no_parent_trace(): void
     {
-        $this->shouldThrow(\Throwable::class)->duringInstantiation();
+        $this->shouldThrow(
+            ContextPropagationException::becauseNoParentTrace(),
+        )->duringInstantiation();
     }
 
     public function it_creates_stamp_without_state(): void
