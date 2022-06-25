@@ -38,6 +38,11 @@
             "Instrumentation\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "spec\\Instrumentation\\": "spec/"
+        }
+    },
     "config": {
         "optimize-autoloader": true,
         "preferred-install": {

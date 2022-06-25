@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Propagation\Messenger;
 
+use Instrumentation\Tracing\Propagation\Exception\ContextPropagationException;
 use OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
 use Symfony\Component\Messenger\Stamp\StampInterface;
 
@@ -21,6 +22,10 @@ final class TraceContextStamp implements StampInterface
     {
         $traceContext = [];
         TraceContextPropagator::getInstance()->inject($traceContext);
+
+        if (!isset($traceContext[TraceContextPropagator::TRACEPARENT])) {
+            throw ContextPropagationException::becauseNoParentTrace();
+        }
 
         $this->traceParent = $traceContext[TraceContextPropagator::TRACEPARENT];
         $this->traceState = $traceContext[TraceContextPropagator::TRACESTATE] ?? null;
