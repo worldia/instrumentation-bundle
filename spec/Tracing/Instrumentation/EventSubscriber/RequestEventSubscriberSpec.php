@@ -260,11 +260,13 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         SpanInterface $requestSpan,
     ): void {
         $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $exceptionEvent = $this->createExceptionEvent($mainRequestEvent);
         $this->onRequestEvent($mainRequestEvent);
 
-        $this->onExceptionEvent($this->createExceptionEvent($mainRequestEvent));
+        $this->onExceptionEvent($exceptionEvent);
 
         $requestSpan->setStatus(StatusCode::STATUS_ERROR)->shouldHaveBeenCalled();
+        $requestSpan->recordException($exceptionEvent->getThrowable())->shouldHaveBeenCalled();
         $requestSpan->end()->shouldHaveBeenCalled();
     }
 
@@ -306,6 +308,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $requestSpan->updateName(Argument::type('string'))->willReturn($requestSpan);
         $requestSpan->setAttribute(Argument::cetera())->willReturn($requestSpan);
         $requestSpan->setStatus(Argument::cetera())->willReturn($requestSpan);
+        $requestSpan->recordException(Argument::type(\Throwable::class))->willReturn($requestSpan);
     }
 
     private function createControllerEvent(RequestEvent $requestEvent): ControllerEvent

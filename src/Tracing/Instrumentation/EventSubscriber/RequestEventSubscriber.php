@@ -135,6 +135,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
     public function onExceptionEvent(Event\ExceptionEvent $event): void
     {
         $span = $this->getSpanForRequest($event->getRequest());
+        $span->recordException($event->getThrowable());
         $span->setStatus(StatusCode::STATUS_ERROR);
         $span->end();
     }
