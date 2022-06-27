@@ -17,6 +17,7 @@ use OpenTelemetry\Context\ScopeInterface;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
+use spec\Instrumentation\IsolateContext;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\SendMessageToTransportsEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
@@ -24,6 +25,8 @@ use Webmozart\Assert\Assert;
 
 class MessengerEventSubscriberSpec extends ObjectBehavior
 {
+    use IsolateContext;
+
     private NonRecordingSpan $span;
     private ScopeInterface $scope;
 
@@ -37,10 +40,7 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
 
     public function let(LoggerInterface $logger): void
     {
-        // Needed to be able to undo the changes to the store when propagating a context trace
-        // Otherwise we have conflict with other tests because of the global scope
-        Context::storage()->fork(1);
-        Context::storage()->switch(1);
+        $this->forkMainContext();
         $this->beConstructedWith($logger);
         $this->activateSpan();
     }
@@ -48,8 +48,7 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
     public function letGo(): void
     {
         $this->closeSpan();
-        Context::storage()->destroy(1);
-        Context::storage()->switch(1);
+        $this->restoreMainContext();
     }
 
     private function activateSpan(): void

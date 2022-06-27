@@ -10,12 +10,22 @@ namespace spec\Instrumentation\Baggage\Propagation\Http;
 use Instrumentation\Baggage\Propagation\Http\BaggageHeaderProvider;
 use OpenTelemetry\API\Baggage\Baggage;
 use PhpSpec\ObjectBehavior;
+use spec\Instrumentation\IsolateContext;
 
 class BaggageHeaderProviderSpec extends ObjectBehavior
 {
+    use IsolateContext;
+
     public function let()
     {
+        $this->forkMainContext();
+
         Baggage::getBuilder()->set('foo', 'bar')->build()->activate();
+    }
+
+    public function letGo(): void
+    {
+        $this->restoreMainContext();
     }
 
     public function it_is_initializable(): void
