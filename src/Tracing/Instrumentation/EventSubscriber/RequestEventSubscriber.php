@@ -17,6 +17,7 @@ use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SDK\Trace\Span;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -30,11 +31,17 @@ class RequestEventSubscriber implements EventSubscriberInterface
     use TracerAwareTrait;
 
     private ?SpanInterface $serverSpan = null;
+    private ?ScopeInterface $serverScope = null;
 
     /**
      * @var \SplObjectStorage<Request,SpanInterface>
      */
     private \SplObjectStorage $spans;
+
+    /**
+     * @var \SplObjectStorage<Request,ScopeInterface>
+     */
+    private \SplObjectStorage $scopes;
 
     public static function getSubscribedEvents(): array
     {
@@ -56,6 +63,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         protected MainSpanContext $mainSpanContext
     ) {
         $this->spans = new \SplObjectStorage();
+        $this->scopes = new \SplObjectStorage();
     }
 
     public function onRequestEvent(Event\RequestEvent $event): void
@@ -71,7 +79,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
                 ->setStartTimestamp($startTime)
                 ->startSpan();
 
-            $this->serverSpan->activate();
+            $this->serverScope = $this->serverSpan->activate();
 
             $this->mainSpanContext->setMainSpan($this->serverSpan);
         }
@@ -124,16 +132,19 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function onFinishRequestEvent(Event\FinishRequestEvent $event): void
     {
+        $this->closeRequestScope($event->getRequest());
         $this->getSpanForRequest($event->getRequest())->end();
     }
 
     public function onTerminate(): void
     {
+        $this->serverScope?->detach();
         $this->serverSpan?->end();
     }
 
     public function onExceptionEvent(Event\ExceptionEvent $event): void
     {
+        $this->closeRequestScope($event->getRequest());
         $span = $this->getSpanForRequest($event->getRequest());
         $span->recordException($event->getThrowable());
         $span->setStatus(StatusCode::STATUS_ERROR);
@@ -145,7 +156,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         $span = $this->startSpan('request');
 
         if ($activate) {
-            $span->activate();
+            $this->scopes[$request] = $span->activate();
         }
 
         $this->spans[$request] = $span;
@@ -154,5 +165,12 @@ class RequestEventSubscriber implements EventSubscriberInterface
     private function getSpanForRequest(Request $request): SpanInterface
     {
         return $this->spans[$request] ?? $this->serverSpan ?: Span::getCurrent();
+    }
+
+    private function closeRequestScope(Request $request): void
+    {
+        if ($this->scopes->contains($request)) {
+            $this->scopes[$request]->detach();
+        }
     }
 }

@@ -40,6 +40,8 @@ use Symfony\Component\Routing\RouterInterface;
 
 class RequestEventSubscriberSpec extends ObjectBehavior
 {
+    use IsolateContext;
+
     private HttpKernelInterface|Collaborator $kernel;
     private array $requestAttributes = ['request' => 'attribute'];
     private array $responseAttributes = ['first' => 'attribute', 'second' => 'attribute'];
@@ -81,9 +83,11 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $serverSpan->setAttributes($this->requestAttributes)->willReturn($serverSpan);
         $serverSpan->setAttribute(Argument::cetera())->willReturn($serverSpan);
         $serverSpan->setStatus(Argument::cetera())->willReturn($serverSpan);
+        $serverScope->detach()->willReturn(0);
 
         $this->configureRequestSpanBuilder($tracer, $requestSpanBuilder, $requestSpan);
         $requestSpan->activate()->willReturn($requestScope);
+        $requestScope->detach()->willReturn(0);
 
         $this->beConstructedWith(
             $tracerProvider,
@@ -237,6 +241,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
     public function it_ends_span_for_the_request_once_finished(
         TracerInterface $tracer,
+        ScopeInterface $requestScope,
         SpanInterface $requestSpan,
         SpanBuilderInterface $subRequestSpanBuilder,
         SpanInterface $subRequestSpan,
@@ -253,10 +258,12 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $subRequestSpan->end()->shouldHaveBeenCalled();
 
         $this->onFinishRequestEvent($this->createFinishRequestEvent($mainRequestEvent));
+        $requestScope->detach()->shouldHaveBeenCalled();
         $requestSpan->end()->shouldHaveBeenCalled();
     }
 
     public function it_ends_span_for_the_request_and_marks_it_in_error_when_an_exception_is_catched(
+        ScopeInterface $requestScope,
         SpanInterface $requestSpan,
     ): void {
         $mainRequestEvent = $this->createMainRequestEvent('/test');
@@ -267,17 +274,43 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
         $requestSpan->setStatus(StatusCode::STATUS_ERROR)->shouldHaveBeenCalled();
         $requestSpan->recordException($exceptionEvent->getThrowable())->shouldHaveBeenCalled();
+        $requestScope->detach()->shouldHaveBeenCalled();
         $requestSpan->end()->shouldHaveBeenCalled();
     }
 
-    public function it_ends_server_span_when_kernel_is_terminated(SpanInterface $serverSpan): void
-    {
+    public function it_ends_server_span_when_kernel_is_terminated(
+        ScopeInterface $serverScope,
+        SpanInterface $serverSpan,
+    ): void {
         $mainRequestEvent = $this->createMainRequestEvent('/test');
         $this->onRequestEvent($mainRequestEvent);
 
         $this->onTerminate();
 
+        $serverScope->detach()->shouldHaveBeenCalled();
         $serverSpan->end()->shouldHaveBeenCalled();
+    }
+
+    public function it_lets_context_unchanged_after_handling_a_request(RouterInterface $router): void
+    {
+        $this->forkMainContext();
+        $originalContext = clone Context::getCurrent();
+        $this->beConstructedWith(
+            new TracerProvider(),
+            $router,
+            new ServerRequestAttributeProvider(),
+            new ServerResponseAttributeProvider(),
+            new MainSpanContext(),
+        );
+        $mainRequestEvent = $this->createMainRequestEvent('/test');
+
+        $this->onRequestEvent($mainRequestEvent);
+        $this->onFinishRequestEvent($this->createFinishRequestEvent($mainRequestEvent));
+        $this->onTerminate();
+
+        expect(Context::getCurrent())->shouldBeLike($originalContext);
+
+        $this->restoreMainContext();
     }
 
     private function createMainRequestEvent(string $path, string $method = Request::METHOD_GET): RequestEvent
