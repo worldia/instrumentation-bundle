@@ -41,6 +41,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $span->activate()->willReturn($scope);
         $span->recordException(Argument::type(\Throwable::class))->willReturn($span);
         $span->setStatus(Argument::cetera())->willReturn($span);
+        $scope->detach()->willReturn(0);
 
         $this->beConstructedWith(
             $tracerProvider,
@@ -98,25 +99,32 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $span->setStatus(StatusCode::STATUS_ERROR)->shouldHaveBeenCalled();
     }
 
-    public function it_closes_span_when_receiving_a_terminating_signal(SpanInterface $span): void
-    {
+    public function it_closes_span_when_receiving_a_terminating_signal(
+        ScopeInterface $scope,
+        SpanInterface $span,
+    ): void {
         $this->onCommand($this->createConsoleCommandEvent());
 
         $this->onSignal();
 
+        $scope->detach()->shouldHaveBeenCalled();
         $span->end()->shouldHaveBeenCalled();
     }
 
-    public function it_closes_span_when_receiving_terminate_event(SpanInterface $span): void
-    {
+    public function it_closes_span_when_receiving_terminate_event(
+        ScopeInterface $scope,
+        SpanInterface $span,
+    ): void {
         $this->onCommand($this->createConsoleCommandEvent());
 
         $this->onTerminate();
 
+        $scope->detach()->shouldHaveBeenCalled();
         $span->end()->shouldHaveBeenCalled();
     }
 
     public function it_does_nothing_when_error_happens_before_console_event_was_sent(
+        ScopeInterface $scope,
         SpanInterface $span,
     ): void {
         $this->shouldNotThrow()->duringOnError($this->createConsoleErrorEvent());
@@ -125,6 +133,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
 
         $span->recordException(Argument::type(\Throwable::class))->shouldNotHaveBeenCalled();
         $span->setStatus(StatusCode::STATUS_ERROR)->shouldNotHaveBeenCalled();
+        $scope->detach()->shouldNotHaveBeenCalled();
         $span->end()->shouldNotHaveBeenCalled();
     }
 
