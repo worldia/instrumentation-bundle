@@ -24,7 +24,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
 {
     use TracerAwareTrait;
 
-    private SpanInterface $span;
+    private ?SpanInterface $span = null;
 
     public static function getSubscribedEvents(): array
     {
@@ -52,17 +52,23 @@ class CommandEventSubscriber implements EventSubscriberInterface
 
     public function onError(ConsoleErrorEvent $event): void
     {
-        $this->span->recordException($event->getError());
-        $this->span->setStatus(StatusCode::STATUS_ERROR);
+        $this->span?->recordException($event->getError());
+        $this->span?->setStatus(StatusCode::STATUS_ERROR);
     }
 
     public function onSignal(): void
     {
-        $this->span->end();
+        $this->closeTrace();
     }
 
     public function onTerminate(): void
     {
-        $this->span->end();
+        $this->closeTrace();
+    }
+
+    private function closeTrace(): void
+    {
+        $this->span?->end();
+        $this->span = null;
     }
 }

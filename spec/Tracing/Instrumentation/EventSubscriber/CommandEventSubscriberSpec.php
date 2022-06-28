@@ -116,6 +116,18 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $span->end()->shouldHaveBeenCalled();
     }
 
+    public function it_does_nothing_when_error_happens_before_console_event_was_sent(
+        SpanInterface $span,
+    ): void {
+        $this->shouldNotThrow()->duringOnError($this->createConsoleErrorEvent());
+        $this->shouldNotThrow()->duringOnSignal();
+        $this->shouldNotThrow()->duringOnTerminate();
+
+        $span->recordException(Argument::type(\Throwable::class))->shouldNotHaveBeenCalled();
+        $span->setStatus(StatusCode::STATUS_ERROR)->shouldNotHaveBeenCalled();
+        $span->end()->shouldNotHaveBeenCalled();
+    }
+
     private function createConsoleCommandEvent(Command|null $command = null): ConsoleCommandEvent
     {
         return new ConsoleCommandEvent($command, new ArrayInput([]), new NullOutput());
