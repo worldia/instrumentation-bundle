@@ -18,6 +18,7 @@ use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ScopeInterface;
+use OpenTelemetry\SDK\Trace\Span;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
@@ -48,6 +49,7 @@ class MessageEventSubscriberSpec extends ObjectBehavior
         $span->activate()->willReturn($scope);
         $span->recordException(Argument::cetera())->willReturn($span);
         $span->setStatus(Argument::cetera())->willReturn($span);
+        $scope->detach()->willReturn(0);
 
         $spanProcessor->forceFlush()->willReturn(true);
 
@@ -152,6 +154,7 @@ class MessageEventSubscriberSpec extends ObjectBehavior
     }
 
     public function it_saves_and_clean_the_span_when_message_has_been_handled(
+        ScopeInterface $scope,
         SpanInterface $span,
         SpanProcessorInterface $spanProcessor,
     ): void {
@@ -160,11 +163,14 @@ class MessageEventSubscriberSpec extends ObjectBehavior
 
         $this->onHandled(new WorkerMessageHandledEvent($envelope, 'receiver name'));
 
+        $scope->detach()->shouldHaveBeenCalled();
         $span->end()->shouldHaveBeenCalled();
+        expect($this->mainSpanContext->getMainSpan())->shouldBe(Span::getCurrent());
         $spanProcessor->forceFlush()->shouldHaveBeenCalled();
     }
 
     public function it_saves_and_clean_the_span_when_message_has_failed(
+        ScopeInterface $scope,
         SpanInterface $span,
         SpanProcessorInterface $spanProcessor,
     ): void {
@@ -176,7 +182,9 @@ class MessageEventSubscriberSpec extends ObjectBehavior
 
         $span->recordException($failedEvent->getThrowable())->shouldHaveBeenCalled();
         $span->setStatus(StatusCode::STATUS_ERROR)->shouldHaveBeenCalled();
+        $scope->detach()->shouldHaveBeenCalled();
         $span->end()->shouldHaveBeenCalled();
+        expect($this->mainSpanContext->getMainSpan())->shouldBe(Span::getCurrent());
         $spanProcessor->forceFlush()->shouldHaveBeenCalled();
     }
 }

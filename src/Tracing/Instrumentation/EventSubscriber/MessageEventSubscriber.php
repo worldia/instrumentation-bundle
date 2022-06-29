@@ -12,9 +12,11 @@ use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
+use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SDK\Trace\Span;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use OpenTelemetry\SemConv\TraceAttributeValues;
@@ -32,6 +34,11 @@ class MessageEventSubscriber implements EventSubscriberInterface
 
     private bool $createSubSpan = true;
 
+    /**
+     * @var \SplObjectStorage<SpanInterface, ScopeInterface>
+     */
+    private \SplObjectStorage $scopes;
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -43,6 +50,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
 
     public function __construct(protected TracerProviderInterface $tracerProvider, protected SpanProcessorInterface $spanProcessor, protected MessageAttributeProviderInterface $attributeProvider, protected MainSpanContext $mainSpanContext)
     {
+        $this->scopes = new \SplObjectStorage();
     }
 
     public function onConsume(WorkerMessageReceivedEvent $event): void
@@ -65,7 +73,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
                 ->setSpanKind(SpanKind::KIND_CONSUMER)
                 ->setAttributes($attributes)
                 ->startSpan();
-            $span->activate();
+            $this->scopes[$span] = $span->activate();
         } else {
             $span = Span::getCurrent();
 
@@ -87,7 +95,12 @@ class MessageEventSubscriber implements EventSubscriberInterface
         }
 
         if ($this->createSubSpan) {
+            if (null !== $scope = $this->scopes[$span]) {
+                $scope->detach();
+                unset($this->scopes[$span]); // Free memory
+            }
             $span->end();
+            $this->mainSpanContext->setCurrent();
         }
 
         $this->spanProcessor->forceFlush();
