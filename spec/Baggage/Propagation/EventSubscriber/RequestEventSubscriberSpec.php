@@ -9,11 +9,11 @@ namespace spec\Instrumentation\Baggage\Propagation\EventSubscriber;
 
 use OpenTelemetry\API\Baggage\Baggage;
 use PhpSpec\ObjectBehavior;
+use spec\Instrumentation\IsolateContext;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
-use spec\Instrumentation\IsolateContext;
 
 class RequestEventSubscriberSpec extends ObjectBehavior
 {
