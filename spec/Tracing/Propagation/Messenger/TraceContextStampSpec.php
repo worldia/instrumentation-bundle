@@ -12,9 +12,22 @@ use OpenTelemetry\API\Trace\NonRecordingSpan;
 use OpenTelemetry\API\Trace\SpanContext;
 use OpenTelemetry\API\Trace\TraceState;
 use PhpSpec\ObjectBehavior;
+use spec\Instrumentation\IsolateContext;
 
 class TraceContextStampSpec extends ObjectBehavior
 {
+    use IsolateContext;
+
+    public function let(): void
+    {
+        $this->forkMainContext();
+    }
+
+    public function letGo(): void
+    {
+        $this->restoreMainContext();
+    }
+
     public function it_fails_when_there_is_no_parent_trace(): void
     {
         $this->shouldThrow(

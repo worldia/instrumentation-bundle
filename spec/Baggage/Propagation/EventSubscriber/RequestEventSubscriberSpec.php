@@ -9,6 +9,7 @@ namespace spec\Instrumentation\Baggage\Propagation\EventSubscriber;
 
 use OpenTelemetry\API\Baggage\Baggage;
 use PhpSpec\ObjectBehavior;
+use spec\Instrumentation\IsolateContext;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -16,9 +17,17 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 class RequestEventSubscriberSpec extends ObjectBehavior
 {
+    use IsolateContext;
+
     public function let()
     {
+        $this->forkMainContext();
         Baggage::getEmpty()->activate();
+    }
+
+    public function letGo(): void
+    {
+        $this->restoreMainContext();
     }
 
     public function it_is_initializable(): void

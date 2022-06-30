@@ -14,6 +14,7 @@ use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\Context\ScopeInterface;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\Console\Event\ConsoleSignalEvent;
@@ -24,7 +25,8 @@ class CommandEventSubscriber implements EventSubscriberInterface
 {
     use TracerAwareTrait;
 
-    private SpanInterface $span;
+    private ?SpanInterface $span = null;
+    private ?ScopeInterface $scope = null;
 
     public static function getSubscribedEvents(): array
     {
@@ -45,24 +47,31 @@ class CommandEventSubscriber implements EventSubscriberInterface
         $name = $event->getCommand()?->getName() ?: 'unknown-command';
 
         $this->span = $this->startSpan(sprintf('cli %s', $name), ['command' => $name]);
-        $this->span->activate();
+        $this->scope = $this->span->activate();
 
         $this->mainSpanContext->setMainSpan($this->span);
     }
 
     public function onError(ConsoleErrorEvent $event): void
     {
-        $this->span->recordException($event->getError());
-        $this->span->setStatus(StatusCode::STATUS_ERROR);
+        $this->span?->recordException($event->getError());
+        $this->span?->setStatus(StatusCode::STATUS_ERROR);
     }
 
     public function onSignal(): void
     {
-        $this->span->end();
+        $this->closeTrace();
     }
 
     public function onTerminate(): void
     {
-        $this->span->end();
+        $this->closeTrace();
+    }
+
+    private function closeTrace(): void
+    {
+        $this->scope?->detach();
+        $this->span?->end();
+        $this->span = null;
     }
 }
