@@ -292,9 +292,11 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('metrics.metrics', $metrics);
 
         if ('redis' === $config['storage']['adapter']) {
+            $prefix = $config['storage']['prefix'] ?? sprintf('metrics:%s', gethostname());
             $container->getDefinition(Adapter::class)
                 ->setFactory([Redis::class, 'fromExistingConnection'])
-                ->setArguments([new Reference($config['storage']['instance'])]);
+                ->setArguments([new Reference($config['storage']['instance'])])
+                ->addMethodCall('setPrefix', [$prefix]);
         } else {
             $map = [
                 'apc' => APC::class,
