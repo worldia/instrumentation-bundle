@@ -127,11 +127,15 @@ final class Connection implements ServerInfoAwareConnection
             return;
         }
 
-        $mainSpan = $this->mainSpanContext->getMainSpan();
-        $parentContext = new Context(SpanContextKey::instance(), $mainSpan);
+        $parentContext = Context::getRoot();
 
-        $doctrineSpan = $this->getTracer()->spanBuilder('db.orm')->setParent($parentContext)->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
-        $this->doctrineSpanContext = new Context(SpanContextKey::instance(), $doctrineSpan);
+        $doctrineSpan = $this->getTracer()
+            ->spanBuilder('db.orm')
+            ->setParent($parentContext)
+            ->setSpanKind(SpanKind::KIND_CLIENT)
+            ->setAttributes($this->attributes)
+            ->startSpan();
+        $this->doctrineSpanContext = Context::getCurrent();
         $doctrineSpan->end();
 
         $this->createdDoctrineSpanContext = true;

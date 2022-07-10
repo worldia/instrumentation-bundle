@@ -78,8 +78,8 @@ class Exporter implements SpanExporterInterface
             'timestamp' => Util::nanosToSeconds($rootSpan->getEndEpochNanos()),
             'platform' => 'php',
             'sdk' => [
-                'name' => $rootSpan->getInstrumentationLibrary()->getName(),
-                'version' => $rootSpan->getInstrumentationLibrary()->getVersion() ?: '1.0.0',
+                'name' => $rootSpan->getInstrumentationScope()->getName(),
+                'version' => $rootSpan->getInstrumentationScope()->getVersion() ?: '1.0.0',
             ],
             'release' => $resource[ResourceAttributes::SERVICE_VERSION] ?? null,
             'environment' => $resource[ResourceAttributes::DEPLOYMENT_ENVIRONMENT] ?? null,

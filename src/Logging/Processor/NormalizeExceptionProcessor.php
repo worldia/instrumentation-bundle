@@ -8,18 +8,19 @@
 namespace Instrumentation\Logging\Processor;
 
 use Instrumentation\Semantics\Normalizer\ExceptionNormalizer;
+use Monolog\LogRecord;
 
 class NormalizeExceptionProcessor
 {
-    /**
-     * @param array<mixed> $record
-     *
-     * @return array<mixed>
-     */
-    public function __invoke(array $record): array
+    public function __invoke(LogRecord $record): LogRecord
     {
-        if (isset($record['context']['exception']) && $record['context']['exception'] instanceof \Throwable) {
-            $record['context']['exception'] = ExceptionNormalizer::normalizeException($record['context']['exception']);
+        if (isset($record->context['exception']) && $record->context['exception'] instanceof \Throwable) {
+            $context = $record->context;
+            $context['exception'] = ExceptionNormalizer::normalizeException($record->context['exception']);
+
+            $record = $record->with(
+                context: $context,
+            );
         }
 
         return $record;

@@ -7,6 +7,7 @@
 
 namespace Instrumentation\Logging\Processor;
 
+use Monolog\LogRecord;
 use OpenTelemetry\SDK\Trace\Span;
 
 class TraceContextProcessor
@@ -18,12 +19,7 @@ class TraceContextProcessor
     {
     }
 
-    /**
-     * @param array<mixed> $record
-     *
-     * @return array<mixed>
-     */
-    public function __invoke(array $record): array
+    public function __invoke(LogRecord $record): LogRecord
     {
         $span = Span::getCurrent();
         $spanContext = $span->getContext();
@@ -32,28 +28,19 @@ class TraceContextProcessor
             return $record;
         }
 
-        $this->setRecordKey($record, $this->map['trace'], $spanContext->getTraceId());
-        $this->setRecordKey($record, $this->map['span'], $spanContext->getSpanId());
-        $this->setRecordKey($record, $this->map['sampled'], $spanContext->isSampled());
+        $context = $record->context;
+        $context[$this->map['trace']] = $spanContext->getTraceId();
+        $context[$this->map['span']] = $spanContext->getSpanId();
+        $context[$this->map['sampled']] = $spanContext->isSampled();
 
         if ($span instanceof Span) {
-            $this->setRecordKey($record, $this->map['operation'], $span->getName());
+            $context[$this->map['operation']] = $span->getName();
         }
+
+        $record = $record->with(
+            context: $context,
+        );
 
         return $record;
-    }
-
-    /**
-     * @param array<string,mixed> $record
-     * @param array<string>       $keys
-     * @param string|bool|int     $value
-     */
-    private function setRecordKey(array &$record, array $keys, $value): void
-    {
-        $temp = &$record;
-        foreach ($keys as $key) {
-            $temp = &$temp[$key];
-        }
-        $temp = $value;
     }
 }
