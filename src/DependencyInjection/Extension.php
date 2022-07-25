@@ -12,6 +12,7 @@ namespace Instrumentation\DependencyInjection;
 use Instrumentation\Health\HealtcheckInterface;
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
+use Instrumentation\Metrics\Storage\HostnamePrefixedRedisFactory;
 use Instrumentation\Tracing\Instrumentation\Doctrine\DBAL\Middleware;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\TraceUrlGenerator;
@@ -20,7 +21,6 @@ use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APC;
 use Prometheus\Storage\APCng;
 use Prometheus\Storage\InMemory;
-use Prometheus\Storage\Redis;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -292,11 +292,12 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('metrics.metrics', $metrics);
 
         if ('redis' === $config['storage']['adapter']) {
-            $prefix = $config['storage']['prefix'] ?? sprintf('metrics:%s', gethostname());
             $container->getDefinition(Adapter::class)
-                ->setFactory([Redis::class, 'fromExistingConnection'])
-                ->setArguments([new Reference($config['storage']['instance'])])
-                ->addMethodCall('setPrefix', [$prefix]);
+                ->setFactory([
+                    new Reference(HostnamePrefixedRedisFactory::class),
+                    'createFromExistingConnection',
+                ])
+                ->setArguments([new Reference($config['storage']['instance'])]);
         } else {
             $map = [
                 'apc' => APC::class,
