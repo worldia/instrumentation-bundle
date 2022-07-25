@@ -59,5 +59,14 @@ return static function (ContainerConfigurator $container) {
         ->autoconfigure()
         ->args([
             service(Metrics\RegistryInterface::class),
-        ]);
+        ])
+
+        ->set(Metrics\Storage\RedisPrefixProvider::class)
+        ->factory([Metrics\Storage\RedisPrefixProvider::class, 'getInstance'])
+
+        ->set(Metrics\Storage\HostnamePrefixedRedisFactory::class)
+        ->args([
+            service(Metrics\Storage\RedisPrefixProvider::class),
+        ])
+    ;
 };
