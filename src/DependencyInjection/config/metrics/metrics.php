@@ -14,6 +14,7 @@ use Prometheus\CollectorRegistry;
 use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APCng;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 

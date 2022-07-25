@@ -24,7 +24,6 @@ class Statement implements DoctrineStatement
     private const OP_STMT_EXECUTE = 'db.statement.execute';
 
     /**
-     * @param string               $sqlQuery
      * @param array<string,string> $attributes
      */
     public function __construct(protected TracerProviderInterface $tracerProvider, private Context $parentContext, private DoctrineStatement $decoratedStatement, private string $sqlQuery, private array $attributes)

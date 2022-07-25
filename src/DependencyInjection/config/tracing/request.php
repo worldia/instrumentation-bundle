@@ -17,7 +17,9 @@ use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
 use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
