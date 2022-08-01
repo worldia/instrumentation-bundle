@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics;
 
-use OpenTelemetry\SDK\Attributes;
+use OpenTelemetry\SDK\Common\Attribute\Attributes;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 
 class ResourceInfoProvider implements ResourceInfoProviderInterface

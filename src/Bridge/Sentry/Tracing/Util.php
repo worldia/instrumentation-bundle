@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Bridge\Sentry\Tracing;
 
-use Monolog\Logger;
+use Monolog\Level;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\ClockInterface;
 use Psr\Log\LogLevel;
@@ -33,21 +33,21 @@ final class Util
 
         return match ($severity) {
             LogLevel::DEBUG => self::SEVERITY_DEBUG,
-            Logger::DEBUG => self::SEVERITY_DEBUG,
+            Level::Debug->value => self::SEVERITY_DEBUG,
             LogLevel::INFO => self::SEVERITY_INFO,
-            Logger::INFO => self::SEVERITY_INFO,
+            Level::Info->value => self::SEVERITY_INFO,
             LogLevel::NOTICE => self::SEVERITY_INFO,
-            Logger::NOTICE => self::SEVERITY_INFO,
+            Level::Notice->value => self::SEVERITY_INFO,
             LogLevel::WARNING => self::SEVERITY_WARNING,
-            Logger::WARNING => self::SEVERITY_WARNING,
+            Level::Warning->value => self::SEVERITY_WARNING,
             LogLevel::ERROR => self::SEVERITY_ERROR,
-            Logger::ERROR => self::SEVERITY_ERROR,
+            Level::Error->value => self::SEVERITY_ERROR,
             LogLevel::EMERGENCY => self::SEVERITY_FATAL,
-            Logger::EMERGENCY => self::SEVERITY_FATAL,
+            Level::Emergency->value => self::SEVERITY_FATAL,
             LogLevel::ALERT => self::SEVERITY_FATAL,
-            Logger::ALERT => self::SEVERITY_FATAL,
+            Level::Alert->value => self::SEVERITY_FATAL,
             LogLevel::CRITICAL => self::SEVERITY_FATAL,
-            Logger::CRITICAL => self::SEVERITY_FATAL,
+            Level::Critical->value => self::SEVERITY_FATAL,
             default => throw new \InvalidArgumentException(sprintf('Unknown severity: "%s"', $severity))
         };
     }

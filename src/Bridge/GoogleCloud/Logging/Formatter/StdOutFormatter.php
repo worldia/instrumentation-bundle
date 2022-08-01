@@ -26,7 +26,7 @@ final class StdOutFormatter extends BaseJsonFormatter
      *
      * @return mixed
      */
-    protected function normalize($data, int $depth = 0)
+    protected function normalize(mixed $data, int $depth = 0): mixed
     {
         $data = parent::normalize($data, $depth);
 
