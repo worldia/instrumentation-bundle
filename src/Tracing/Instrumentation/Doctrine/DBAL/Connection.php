@@ -99,6 +99,14 @@ final class Connection implements ServerInfoAwareConnection
         return 'unknown';
     }
 
+    /**
+     * @return \PDO|object|resource
+     */
+    public function getNativeConnection()
+    {
+        return $this->decorated->getNativeConnection();
+    }
+
     protected function trace(string $operation, string $sql, callable $callback): mixed
     {
         $this->ensureMainSpan();
