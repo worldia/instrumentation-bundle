@@ -75,7 +75,7 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
     }
 
     /**
-     * @return array{bus:string,class:string}
+     * @return array{0:string,1:string}
      */
     private function getLabels(Envelope $envelope): array
     {
@@ -87,9 +87,6 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
             $busName = $stamp->getBusName();
         }
 
-        return [
-            'bus' => $busName,
-            'class' => \get_class($envelope->getMessage()),
-        ];
+        return [$busName, \get_class($envelope->getMessage())];
     }
 }
