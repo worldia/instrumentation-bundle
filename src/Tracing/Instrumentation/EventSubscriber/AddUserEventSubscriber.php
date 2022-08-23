@@ -52,15 +52,21 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
 
             if ($user) {
                 $span->setAttribute(TraceAttributes::ENDUSER_ID, $this->getUsername($user));
-                $span->setAttribute(TraceAttributes::ENDUSER_ROLE, $user->getRoles());
+                $span->setAttribute(TraceAttributes::ENDUSER_ROLE, $this->getRoles($user));
             }
         }
     }
 
-    /**
-     * @param UserInterface|object|string $user
-     */
-    private function getUsername($user): ?string
+    private function getRoles(UserInterface|string $user): array
+    {
+        if ($user instanceof UserInterface) {
+            return $user->getRoles();
+        }
+
+        return [];
+    }
+
+    private function getUsername(UserInterface|string $user): ?string
     {
         if ($user instanceof UserInterface) {
             if (method_exists($user, 'getUserIdentifier')) {
