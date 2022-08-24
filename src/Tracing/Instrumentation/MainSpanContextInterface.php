@@ -14,4 +14,8 @@ use OpenTelemetry\API\Trace\SpanInterface;
 interface MainSpanContextInterface
 {
     public function getMainSpan(): SpanInterface;
+
+    public function setMainSpan(SpanInterface $span): void;
+
+    public function setCurrent(): void;
 }

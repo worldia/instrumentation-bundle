@@ -56,6 +56,9 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         }
     }
 
+    /**
+     * @return string[]
+     */
     private function getRoles(UserInterface|string $user): array
     {
         if ($user instanceof UserInterface) {
