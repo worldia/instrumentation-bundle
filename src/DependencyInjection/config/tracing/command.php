@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Resources;
 
 use Instrumentation\Tracing;
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -21,7 +21,7 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Instrumentation\EventSubscriber\CommandEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(MainSpanContext::class),
+            service(MainSpanContextInterface::class),
         ])
         ->autoconfigure();
 };

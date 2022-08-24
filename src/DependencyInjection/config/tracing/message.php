@@ -11,7 +11,7 @@ namespace Instrumentation\Resources;
 
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
 use Instrumentation\Tracing;
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -28,7 +28,7 @@ return static function (ContainerConfigurator $container) {
             service(TracerProviderInterface::class),
             service(SpanProcessorInterface::class),
             service(MessageAttributeProviderInterface::class),
-            service(MainSpanContext::class),
+            service(MainSpanContextInterface::class),
         ])
         ->autoconfigure();
 };
