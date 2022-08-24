@@ -16,6 +16,7 @@ use Instrumentation\Tracing\Factory\SpanProcessorFactory;
 use Instrumentation\Tracing\Instrumentation\EventSubscriber\ToggleTracerSubscriber;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
 use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
 use Instrumentation\Tracing\Propagation\RegexIncomingTraceHeaderResolver;
@@ -113,7 +114,7 @@ return static function (ContainerConfigurator $container) {
         ->set(TracingHandler::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(MainSpanContext::class),
+            service(MainSpanContextInterface::class),
             param('tracing.logs.level'),
             param('tracing.logs.channels'),
         ])

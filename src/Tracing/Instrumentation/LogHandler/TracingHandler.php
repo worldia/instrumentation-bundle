@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\LogHandler;
 
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Logger;
 use Monolog\Processor\PsrLogMessageProcessor;
@@ -24,7 +24,7 @@ class TracingHandler extends AbstractProcessingHandler
     /**
      * @param array<string> $channels
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContext $mainSpanContext, $level = Logger::INFO, private array $channels = [], private string $strategy = self::STRATEGY_MAIN_SPAN, bool $bubble = true)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContextInterface $mainSpanContext, $level = Logger::INFO, private array $channels = [], private string $strategy = self::STRATEGY_MAIN_SPAN, bool $bubble = true)
     {
         parent::__construct($level, $bubble);
 

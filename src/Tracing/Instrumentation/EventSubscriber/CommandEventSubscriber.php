@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -38,7 +38,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContext $mainSpanContext)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContextInterface $mainSpanContext)
     {
     }
 
