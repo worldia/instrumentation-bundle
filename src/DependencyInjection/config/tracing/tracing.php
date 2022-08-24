@@ -109,7 +109,7 @@ return static function (ContainerConfigurator $container) {
         ])
         ->autoconfigure()
 
-        ->set(MainSpanContext::class)
+        ->set(MainSpanContextInterface::class, MainSpanContext::class)
 
         ->set(TracingHandler::class)
         ->args([
