@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -30,7 +30,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(private MainSpanContext $mainSpanContext, private ?TokenStorageInterface $tokenStorage = null)
+    public function __construct(private MainSpanContextInterface $mainSpanContext, private ?TokenStorageInterface $tokenStorage = null)
     {
     }
 
@@ -49,7 +49,6 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         if ($token && $this->isTokenAuthenticated($token)) {
             $span = $this->mainSpanContext->getMainSpan();
             $user = $token->getUser();
-
             if ($user) {
                 $span->setAttribute(TraceAttributes::ENDUSER_ID, $this->getUsername($user));
                 $span->setAttribute(TraceAttributes::ENDUSER_ROLE, $this->getRoles($user));

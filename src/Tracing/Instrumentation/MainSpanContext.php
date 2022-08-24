@@ -12,7 +12,7 @@ namespace Instrumentation\Tracing\Instrumentation;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\SDK\Trace\Span;
 
-final class MainSpanContext
+final class MainSpanContext implements MainSpanContextInterface
 {
     private ?SpanInterface $mainSpan = null;
 
