@@ -8,7 +8,7 @@
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
@@ -48,7 +48,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected SpanProcessorInterface $spanProcessor, protected MessageAttributeProviderInterface $attributeProvider, protected MainSpanContext $mainSpanContext)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected SpanProcessorInterface $spanProcessor, protected MessageAttributeProviderInterface $attributeProvider, protected MainSpanContextInterface $mainSpanContext)
     {
         $this->scopes = new \SplObjectStorage();
     }

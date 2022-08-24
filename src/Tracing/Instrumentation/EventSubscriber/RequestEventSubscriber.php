@@ -11,7 +11,7 @@ namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -60,7 +60,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         protected RouterInterface $router,
         protected ServerRequestAttributeProviderInterface $requestAttributeProvider,
         protected ServerResponseAttributeProviderInterface $responseAttributeProvider,
-        protected MainSpanContext $mainSpanContext
+        protected MainSpanContextInterface $mainSpanContext
     ) {
         $this->spans = new \SplObjectStorage();
         $this->scopes = new \SplObjectStorage();

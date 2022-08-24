@@ -14,7 +14,7 @@ use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\Driver\Statement as StatementInterface;
 use Doctrine\DBAL\ParameterType;
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanContextKey;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -38,7 +38,7 @@ final class Connection implements ServerInfoAwareConnection
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected ConnectionInterface $decorated, private MainSpanContext $mainSpanContext, private array $attributes)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected ConnectionInterface $decorated, private MainSpanContextInterface $mainSpanContext, private array $attributes)
     {
     }
 

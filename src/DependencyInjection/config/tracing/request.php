@@ -12,7 +12,7 @@ namespace Instrumentation\Resources;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
 use Instrumentation\Tracing;
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
 use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
@@ -38,13 +38,13 @@ return static function (ContainerConfigurator $container) {
             service(RouterInterface::class),
             service(ServerRequestAttributeProviderInterface::class),
             service(ServerResponseAttributeProviderInterface::class),
-            service(MainSpanContext::class),
+            service(MainSpanContextInterface::class),
         ])
         ->autoconfigure()
 
         ->set(Tracing\Instrumentation\EventSubscriber\AddUserEventSubscriber::class)
         ->args([
-            service(MainSpanContext::class),
+            service(MainSpanContextInterface::class),
             service(TokenStorageInterface::class)->nullOnInvalid(),
         ])
         ->autoconfigure();
