@@ -59,7 +59,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
     /**
      * @return string[]
      */
-    private function getRoles(UserInterface|string $user): array
+    private function getRoles(UserInterface|\Stringable|string $user): array
     {
         if ($user instanceof UserInterface) {
             return $user->getRoles();
@@ -68,7 +68,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         return [];
     }
 
-    private function getUsername(UserInterface|string $user): ?string
+    private function getUsername(UserInterface|\Stringable|string $user): ?string
     {
         if ($user instanceof UserInterface) {
             if (method_exists($user, 'getUserIdentifier')) {
