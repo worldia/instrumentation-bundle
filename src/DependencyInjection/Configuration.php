@@ -58,6 +58,14 @@ class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
+                        ->arrayNode('handlers')
+                            ->defaultValue([
+                                'main',
+                                'console',
+                            ])
+                            ->scalarPrototype()->end()
+                            ->info('Handlers to which the trace context processor should be bound')
+                        ->end()
                         ->arrayNode('keys')
                             ->addDefaultsIfNotSet()
                             ->children()

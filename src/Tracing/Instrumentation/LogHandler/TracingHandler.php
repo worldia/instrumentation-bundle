@@ -46,7 +46,7 @@ class TracingHandler extends AbstractProcessingHandler
         if (isset($record['context']['exception']) && $record['context']['exception'] instanceof \Throwable) {
             $span->recordException($record['context']['exception'], ['raw_stacktrace' => $record['context']['exception']->getTraceAsString()]);
         } else {
-            $span->addEvent($record['message'], ['_severity' => $record['level_name'], '_category' => $record['channel']]);
+            $span->addEvent($record['message']);
         }
     }
 }

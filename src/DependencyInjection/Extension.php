@@ -265,6 +265,11 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             $map[$property] = $keys;
         }
 
+        foreach ($config['handlers'] as $handler) {
+            $container->getDefinition(\Instrumentation\Logging\Processor\TraceContextProcessor::class)
+                ->addTag('monolog.processor', ['handler' => $handler]);
+        }
+
         $container->setParameter('logging.trace_context_keys', $map);
     }
 
