@@ -11,6 +11,7 @@ use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
+use Instrumentation\Tracing\Instrumentation\Messenger\StrategyStamp;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -68,11 +69,20 @@ class MessageEventSubscriber implements EventSubscriberInterface
                 TraceAttributeValues::MESSAGING_OPERATION_PROCESS
             );
 
-            $span = $this->getTracer()
+            $strategy = $this->getStrategy($event->getEnvelope());
+
+            $builder = $this->getTracer()
                 ->spanBuilder($operation)
                 ->setSpanKind(SpanKind::KIND_CONSUMER)
-                ->setAttributes($attributes)
-                ->startSpan();
+                ->setAttributes($attributes);
+
+            if (StrategyStamp::STRATEGY_LINK === $strategy) {
+                $linkContext = Span::getCurrent()->getContext();
+                $builder->setNoParent()->addLink($linkContext);
+            }
+
+            $span = $builder->startSpan();
+
             $this->scopes[$span] = $span->activate();
         } else {
             $span = Span::getCurrent();
@@ -152,5 +162,16 @@ class MessageEventSubscriber implements EventSubscriberInterface
         }
 
         return $attributes;
+    }
+
+    private function getStrategy(Envelope $envelope): string
+    {
+        /** @var StrategyStamp|null $stamp */
+        $stamp = $envelope->last(StrategyStamp::class);
+        if ($stamp) {
+            return $stamp->getStrategy();
+        }
+
+        return StrategyStamp::STRATEGY_PARENT;
     }
 }
