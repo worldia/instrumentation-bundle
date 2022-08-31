@@ -7,11 +7,11 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Tracing\Instrumentation\Messenger;
+namespace Instrumentation\Tracing\Propagation\Messenger;
 
 use Symfony\Component\Messenger\Stamp\StampInterface;
 
-final class StrategyStamp implements StampInterface
+final class PropagationStrategyStamp implements StampInterface
 {
     public const STRATEGY_LINK = 'link';
     public const STRATEGY_PARENT = 'parent';

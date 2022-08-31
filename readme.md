@@ -58,6 +58,7 @@ instrumentation:
     - [Add Urls to your traces in error messages](./docs/tracing/add-urls-to-your-traces.md)
     - [Use upstream request id as trace id](./docs/tracing/upstream-request-id.md)
     - [Customize operation (span) name for a message](./docs/tracing/custom-operation-name-for-message.md)
+    - [Link strategy for a message](./docs/tracing/link-strategy-for-message.md)    
     - [Propagating trace/baggage context in HTTP requests](./docs/tracing/propagating-context.md)
 - **Metrics**
     - [Adding a metric](./docs/metrics/adding-a-metric.md)
