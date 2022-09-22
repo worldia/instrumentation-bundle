@@ -59,7 +59,7 @@ class Exporter implements SpanExporterInterface
         }
 
         $resource = $rootSpan->getResource()->getAttributes()->toArray();
-        $eventId = str_replace('-', '', uuid_create(UUID_TYPE_RANDOM));
+        $eventId = $rootSpan->getTraceId();
 
         $envelopeHeader = json_encode([
             'event_id' => $eventId,
@@ -101,7 +101,7 @@ class Exporter implements SpanExporterInterface
             // 'status' => Util::toSentrySpanStatus($rootSpan->getStatus()->getCode()),
             'request' => self::getRequestData($rootSpan),
             'user' => self::getUserData($rootSpan),
-            'spans' => $this->getSpanConverter()->convert($spans),
+            'spans' => $this->getSpanConverter()->convert(self::getOtherSpans($spans, $rootSpan)),
             'breadcrumbs' => ['values' => self::getBreadcrumbs($spans)],
             'tags' => $rootSpan->getAttributes()->toArray(),
             'exception' => ['values' => self::getExceptions($spans)],
@@ -170,6 +170,20 @@ class Exporter implements SpanExporterInterface
         }
 
         return null;
+    }
+
+    /**
+     * @param iterable<SpanDataInterface> $spans
+     *
+     * @return iterable<SpanDataInterface>
+     */
+    private static function getOtherSpans(iterable $spans, SpanDataInterface $excluded): iterable
+    {
+        foreach ($spans as $span) {
+            if ($span !== $excluded) {
+                yield $span;
+            }
+        }
     }
 
     /**

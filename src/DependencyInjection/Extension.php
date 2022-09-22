@@ -99,6 +99,8 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         if ($container->hasDefinition(RegistryInterface::class)) {
             $metricProviders = $container->findTaggedServiceIds('app.metric');
+
+            /** @var array<string,array<mixed>> $metrics */
             $metrics = $container->getParameter('metrics.metrics');
 
             foreach (array_keys($metricProviders) as $serviceId) {

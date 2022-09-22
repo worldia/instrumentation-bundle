@@ -40,7 +40,9 @@ final class Driver implements VersionAwarePlatformDriver
 
     /**
      * @phpstan-template T of AbstractPlatform
+     *
      * @phpstan-param T $platform
+     *
      * @phpstan-return AbstractSchemaManager<T>
      */
     public function getSchemaManager(DBALConnection $conn, AbstractPlatform $platform): AbstractSchemaManager
