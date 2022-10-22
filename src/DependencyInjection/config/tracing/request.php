@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
+use Instrumentation\Routing\RoutePathResolver;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
 use Instrumentation\Tracing;
@@ -20,7 +21,6 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
-use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
 return static function (ContainerConfigurator $container) {
@@ -35,7 +35,7 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Instrumentation\EventSubscriber\RequestEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(RouterInterface::class),
+            service(RoutePathResolver::class),
             service(ServerRequestAttributeProviderInterface::class),
             service(ServerResponseAttributeProviderInterface::class),
             service(MainSpanContextInterface::class),

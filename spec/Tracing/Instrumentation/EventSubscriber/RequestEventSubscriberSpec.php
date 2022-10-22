@@ -7,6 +7,7 @@
 
 namespace spec\Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
+use Instrumentation\Routing\RoutePathResolverInterface;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProvider;
@@ -34,9 +35,7 @@ use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
-use Symfony\Component\Routing\RouterInterface;
 
 class RequestEventSubscriberSpec extends ObjectBehavior
 {
@@ -58,12 +57,13 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         SpanInterface $requestSpan,
         ScopeInterface $requestScope,
         TracerProviderInterface $tracerProvider,
-        RouterInterface $router,
+        RoutePathResolverInterface $routePathResolver,
         ServerRequestAttributeProviderInterface $requestAttributeProvider,
         ServerResponseAttributeProviderInterface $responseAttributeProvider,
     ): void {
         $this->kernel = $kernel;
-        $router->getRouteCollection()->willReturn($this->routeCollection = new RouteCollection());
+        $routePathResolver->resolve('main_route')->willReturn('/test/{id}');
+        $routePathResolver->resolve('sub_route')->willReturn('/sub-request/{id}');
 
         $requestAttributeProvider->getAttributes(Argument::type(Request::class))->willReturn(
             $this->requestAttributes,
@@ -91,7 +91,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
         $this->beConstructedWith(
             $tracerProvider,
-            $router,
+            $routePathResolver,
             $requestAttributeProvider,
             $responseAttributeProvider,
             $this->mainSpanContext = new MainSpanContext(),
@@ -157,7 +157,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $request = $mainRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
-        $this->routeCollection->add('main_route', new Route('/test/{id}'));
         $this->onRequestEvent($mainRequestEvent);
 
         $this->onControllerEvent($this->createControllerEvent($mainRequestEvent));
@@ -169,9 +168,8 @@ class RequestEventSubscriberSpec extends ObjectBehavior
     public function it_does_not_update_server_span_when_controller_is_resolved_for_main_request_with_unknown_route(
         SpanInterface $serverSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
+        $mainRequestEvent = $this->createMainRequestEvent('/unknown');
         $request = $mainRequestEvent->getRequest();
-        $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
         $this->onRequestEvent($mainRequestEvent);
 
         $this->onControllerEvent($this->createControllerEvent($mainRequestEvent));
@@ -207,7 +205,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $subRequestEvent = $this->createSubRequestEvent('/sub-request/1', Request::METHOD_GET);
         $request = $subRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Sub::controller', '_route' => 'sub_route']);
-        $this->routeCollection->add('sub_route', new Route('/sub-request/{id}'));
         $this->onRequestEvent($mainRequestEvent);
         $this->onRequestEvent($subRequestEvent);
 
@@ -291,13 +288,13 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $serverSpan->end()->shouldHaveBeenCalled();
     }
 
-    public function it_lets_context_unchanged_after_handling_a_request(RouterInterface $router): void
+    public function it_lets_context_unchanged_after_handling_a_request(RoutePathResolverInterface $routePathResolver): void
     {
         $this->forkMainContext();
         $originalContext = clone Context::getCurrent();
         $this->beConstructedWith(
             new TracerProvider(),
-            $router,
+            $routePathResolver,
             new ServerRequestAttributeProvider(),
             new ServerResponseAttributeProvider(),
             new MainSpanContext(),
