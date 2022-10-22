@@ -139,7 +139,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
     public function it_updates_main_request_span_when_controller_is_resolved(SpanInterface $requestSpan): void
     {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $request = $mainRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
         $this->onRequestEvent($mainRequestEvent);
@@ -154,7 +154,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
     public function it_updates_server_span_when_controller_is_resolved_for_main_request_with_known_route(
         SpanInterface $serverSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $request = $mainRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
         $this->routeCollection->add('main_route', new Route('/test/{id}'));
@@ -169,7 +169,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
     public function it_does_not_update_server_span_when_controller_is_resolved_for_main_request_with_unknown_route(
         SpanInterface $serverSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $request = $mainRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
         $this->onRequestEvent($mainRequestEvent);
@@ -182,7 +182,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
     public function it_updates_sub_request_span_when_controller_is_resolved(SpanInterface $requestSpan): void
     {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $request = $mainRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
         $subRequestEvent = $this->createSubRequestEvent('/sub-request', Request::METHOD_GET);
@@ -201,10 +201,10 @@ class RequestEventSubscriberSpec extends ObjectBehavior
     public function it_does_not_update_server_span_when_controller_is_resolved_for_sub_request(
         SpanInterface $serverSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $request = $mainRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
-        $subRequestEvent = $this->createSubRequestEvent('/sub-request', Request::METHOD_GET);
+        $subRequestEvent = $this->createSubRequestEvent('/sub-request/1', Request::METHOD_GET);
         $request = $subRequestEvent->getRequest();
         $request->attributes->add(['_controller' => 'Sub::controller', '_route' => 'sub_route']);
         $this->routeCollection->add('sub_route', new Route('/sub-request/{id}'));
@@ -219,7 +219,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
     public function it_adds_response_attributes_to_server_span(SpanInterface $serverSpan): void
     {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $this->onRequestEvent($mainRequestEvent);
 
         $this->onResponseEvent($this->createResponseEvent($mainRequestEvent, 200));
@@ -231,7 +231,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
     public function it_sets_server_span_status_to_error_when_responses_status_code_is_greater_than_or_equal_to_500(
         SpanInterface $serverSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $this->onRequestEvent($mainRequestEvent);
 
         $this->onResponseEvent($this->createResponseEvent($mainRequestEvent, 500));
@@ -266,7 +266,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         ScopeInterface $requestScope,
         SpanInterface $requestSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $exceptionEvent = $this->createExceptionEvent($mainRequestEvent);
         $this->onRequestEvent($mainRequestEvent);
 
@@ -282,7 +282,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         ScopeInterface $serverScope,
         SpanInterface $serverSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
         $this->onRequestEvent($mainRequestEvent);
 
         $this->onTerminate();
@@ -302,7 +302,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
             new ServerResponseAttributeProvider(),
             new MainSpanContext(),
         );
-        $mainRequestEvent = $this->createMainRequestEvent('/test');
+        $mainRequestEvent = $this->createMainRequestEvent('/test/1');
 
         $this->onRequestEvent($mainRequestEvent);
         $this->onFinishRequestEvent($this->createFinishRequestEvent($mainRequestEvent));
