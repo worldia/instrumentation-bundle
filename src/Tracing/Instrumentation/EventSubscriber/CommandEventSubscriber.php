@@ -46,7 +46,10 @@ class CommandEventSubscriber implements EventSubscriberInterface
     {
         $name = $event->getCommand()?->getName() ?: 'unknown-command';
 
-        $this->span = $this->startSpan(sprintf('cli %s', $name), ['command' => $name]);
+        $startTime = $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true); // Float with microsecond precision
+        $kernelBootTime = round(microtime(true) - $startTime, 3);
+
+        $this->span = $this->startSpan(sprintf('cli %s', $name), ['command' => $name, 'sf.kernel_boot_duration' => $kernelBootTime]);
         $this->scope = $this->span->activate();
 
         $this->mainSpanContext->setMainSpan($this->span);

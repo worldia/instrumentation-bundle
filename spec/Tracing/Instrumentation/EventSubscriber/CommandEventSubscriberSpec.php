@@ -57,7 +57,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $this->onCommand($this->createConsoleCommandEvent(new Command('test:cmd')));
 
         $tracer->spanBuilder('cli test:cmd')->shouldHaveBeenCalled();
-        $spanBuilder->setAttributes(['command' => 'test:cmd'])->shouldHaveBeenCalled();
+        $spanBuilder->setAttributes(Argument::allOf(Argument::withEntry('command', 'test:cmd'), Argument::withKey('sf.kernel_boot_duration')))->shouldHaveBeenCalled();
         $span->activate()->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($span);
     }
@@ -70,7 +70,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $this->onCommand($this->createConsoleCommandEvent(new Command()));
 
         $tracer->spanBuilder('cli unknown-command')->shouldHaveBeenCalled();
-        $spanBuilder->setAttributes(['command' => 'unknown-command'])->shouldHaveBeenCalled();
+        $spanBuilder->setAttributes(Argument::allOf(Argument::withEntry('command', 'unknown-command'), Argument::withKey('sf.kernel_boot_duration')))->shouldHaveBeenCalled();
         $span->activate()->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($span);
     }
@@ -83,7 +83,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $this->onCommand($this->createConsoleCommandEvent());
 
         $tracer->spanBuilder('cli unknown-command')->shouldHaveBeenCalled();
-        $spanBuilder->setAttributes(['command' => 'unknown-command'])->shouldHaveBeenCalled();
+        $spanBuilder->setAttributes(Argument::allOf(Argument::withEntry('command', 'unknown-command'), Argument::withKey('sf.kernel_boot_duration')))->shouldHaveBeenCalled();
         $span->activate()->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($span);
     }
