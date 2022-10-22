@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
+use Instrumentation\Routing\RoutePathResolverInterface;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
@@ -24,7 +25,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Routing\RouterInterface;
 
 class RequestEventSubscriber implements EventSubscriberInterface
 {
@@ -57,10 +57,10 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function __construct(
         protected TracerProviderInterface $tracerProvider,
-        protected RouterInterface $router,
+        protected RoutePathResolverInterface $routePathResolver,
         protected ServerRequestAttributeProviderInterface $requestAttributeProvider,
         protected ServerResponseAttributeProviderInterface $responseAttributeProvider,
-        protected MainSpanContextInterface $mainSpanContext
+        protected MainSpanContextInterface $mainSpanContext,
     ) {
         $this->spans = new \SplObjectStorage();
         $this->scopes = new \SplObjectStorage();
@@ -107,9 +107,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         $span->setAttribute('sf.controller', $controller);
         $span->setAttribute('sf.route', $routeAlias);
 
-        if ($routeAlias && $event->isMainRequest() && $route = $this->router->getRouteCollection()->get($routeAlias)) {
-            /** @var non-empty-string $path */
-            $path = $route->getPath();
+        if ($routeAlias && $event->isMainRequest() && $path = $this->routePathResolver->resolve($routeAlias)) {
             $this->serverSpan?->updateName(sprintf('http.%s %s', strtolower($request->getMethod()), $path));
             $this->serverSpan?->setAttribute(TraceAttributes::HTTP_ROUTE, $path);
         }

@@ -225,6 +225,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $loader->load('tracing.php');
         $loader->load('http.php');
+        $loader->load('routing.php');
 
         if (isset($config['trace_url'])) {
             $container->register(TraceUrlGeneratorInterface::class)
