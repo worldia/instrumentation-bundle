@@ -46,12 +46,14 @@ class RequestEventSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => [['onRequestEvent', 100]],
-            KernelEvents::CONTROLLER => ['onControllerEvent'],
+            KernelEvents::REQUEST => [
+                ['onRequestEvent', 512], // before all SF listeners
+                ['onRouteResolved', 31], // right after Symfony\Component\HttpKernel\EventListener\RouterListener::onKernelRequest()
+            ],
             KernelEvents::RESPONSE => ['onResponseEvent'],
-            KernelEvents::FINISH_REQUEST => [['onFinishRequestEvent', -100]],
-            KernelEvents::EXCEPTION => [['onExceptionEvent', -100]],
-            KernelEvents::TERMINATE => [['onTerminate', -100]],
+            KernelEvents::FINISH_REQUEST => [['onFinishRequestEvent', -512]],
+            KernelEvents::EXCEPTION => [['onExceptionEvent', -512]],
+            KernelEvents::TERMINATE => [['onTerminate', -512]],
         ];
     }
 
@@ -94,7 +96,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         $this->startSpanForRequest($request, $event->isMainRequest());
     }
 
-    public function onControllerEvent(Event\ControllerEvent $event): void
+    public function onRouteResolved(Event\RequestEvent $event): void
     {
         $request = $event->getRequest();
 

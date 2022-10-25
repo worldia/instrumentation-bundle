@@ -43,9 +43,9 @@ class MessageEventSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            WorkerMessageReceivedEvent::class => [['onConsume', 100]],
-            WorkerMessageHandledEvent::class => [['onHandled', -100]],
-            WorkerMessageFailedEvent::class => [['onHandled', -100]],
+            WorkerMessageReceivedEvent::class => [['onConsume', 512]], // before all SF listeners
+            WorkerMessageHandledEvent::class => [['onHandled', -512]],
+            WorkerMessageFailedEvent::class => [['onHandled', -512]],
         ];
     }
 

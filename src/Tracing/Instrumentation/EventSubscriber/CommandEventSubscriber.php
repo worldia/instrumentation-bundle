@@ -31,10 +31,10 @@ class CommandEventSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            ConsoleCommandEvent::class => [['onCommand', 100]],
-            ConsoleErrorEvent::class => [['onError', -100]],
-            ConsoleTerminateEvent::class => [['onTerminate', -100]],
-            ConsoleSignalEvent::class => [['onSignal', -100]],
+            ConsoleCommandEvent::class => [['onCommand', 512]], // before all SF listeners
+            ConsoleErrorEvent::class => [['onError', -512]],
+            ConsoleTerminateEvent::class => [['onTerminate', -512]],
+            ConsoleSignalEvent::class => [['onSignal', -512]],
         ];
     }
 
