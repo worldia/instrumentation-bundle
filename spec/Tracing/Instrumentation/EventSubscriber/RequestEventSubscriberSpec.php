@@ -29,7 +29,6 @@ use Prophecy\Argument;
 use spec\Instrumentation\IsolateContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -144,7 +143,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
         $this->onRequestEvent($mainRequestEvent);
 
-        $this->onControllerEvent($this->createControllerEvent($mainRequestEvent));
+        $this->onRouteResolved($mainRequestEvent);
 
         $requestSpan->updateName('sf.controller.main')->shouldHaveBeenCalled();
         $requestSpan->setAttribute('sf.controller', 'Main::controller')->shouldHaveBeenCalled();
@@ -159,7 +158,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $request->attributes->add(['_controller' => 'Main::controller', '_route' => 'main_route']);
         $this->onRequestEvent($mainRequestEvent);
 
-        $this->onControllerEvent($this->createControllerEvent($mainRequestEvent));
+        $this->onRouteResolved($mainRequestEvent);
 
         $serverSpan->updateName('http.get /test/{id}')->shouldHaveBeenCalled();
         $serverSpan->setAttribute(TraceAttributes::HTTP_ROUTE, '/test/{id}')->shouldHaveBeenCalled();
@@ -172,7 +171,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $request = $mainRequestEvent->getRequest();
         $this->onRequestEvent($mainRequestEvent);
 
-        $this->onControllerEvent($this->createControllerEvent($mainRequestEvent));
+        $this->onRouteResolved($mainRequestEvent);
 
         $serverSpan->updateName('http.get /test/{id}')->shouldNotHaveBeenCalled();
         $serverSpan->setAttribute(TraceAttributes::HTTP_ROUTE, '/test/{id}')->shouldNotHaveBeenCalled();
@@ -188,8 +187,8 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $request->attributes->add(['_controller' => 'Sub::controller', '_route' => 'sub_route']);
         $this->onRequestEvent($mainRequestEvent);
         $this->onRequestEvent($subRequestEvent);
-
-        $this->onControllerEvent($this->createControllerEvent($subRequestEvent));
+        $this->onRouteResolved($mainRequestEvent);
+        $this->onRouteResolved($subRequestEvent);
 
         $requestSpan->updateName('sf.controller.sub')->shouldHaveBeenCalled();
         $requestSpan->setAttribute('sf.controller', 'Sub::controller')->shouldHaveBeenCalled();
@@ -208,7 +207,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $this->onRequestEvent($mainRequestEvent);
         $this->onRequestEvent($subRequestEvent);
 
-        $this->onControllerEvent($this->createControllerEvent($subRequestEvent));
+        $this->onRouteResolved($mainRequestEvent);
 
         $serverSpan->updateName('http.get /sub-request/{id}')->shouldNotHaveBeenCalled();
         $serverSpan->setAttribute(TraceAttributes::HTTP_ROUTE, 'sub-request')->shouldNotHaveBeenCalled();
@@ -339,19 +338,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $requestSpan->setAttribute(Argument::cetera())->willReturn($requestSpan);
         $requestSpan->setStatus(Argument::cetera())->willReturn($requestSpan);
         $requestSpan->recordException(Argument::type(\Throwable::class))->willReturn($requestSpan);
-    }
-
-    private function createControllerEvent(RequestEvent $requestEvent): ControllerEvent
-    {
-        $callable = function () {
-        };
-
-        return new ControllerEvent(
-            $this->kernel->getWrappedObject(),
-            $callable,
-            $requestEvent->getRequest(),
-            $requestEvent->getRequestType(),
-        );
     }
 
     private function createResponseEvent(RequestEvent $requestEvent, int $statusCode): ResponseEvent

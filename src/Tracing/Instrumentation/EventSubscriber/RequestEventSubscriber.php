@@ -47,7 +47,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
     {
         return [
             KernelEvents::REQUEST => [
-                ['onRequestEvent', 512], // before all SF listeners
+                ['onRequestEvent', 512], // before all Symfony listeners
                 ['onRouteResolved', 31], // right after Symfony\Component\HttpKernel\EventListener\RouterListener::onKernelRequest()
             ],
             KernelEvents::RESPONSE => ['onResponseEvent'],
