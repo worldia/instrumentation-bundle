@@ -71,14 +71,12 @@ class RequestEventSubscriber implements EventSubscriberInterface
     public function onRequestEvent(Event\RequestEvent $event): void
     {
         $request = $event->getRequest();
+        $startTime = $request->server->get('REQUEST_TIME_FLOAT'); // Float with microsecond precision
 
         if (!$this->serverSpan) {
-            $startTime = $request->server->get('REQUEST_TIME_FLOAT'); // Float with microsecond precision
-            $startTime = (int) ($startTime * 1000 * 1000 * 1000); // Convert to nanoseconds
-
             $this->serverSpan = $this->getTracer()->spanBuilder('server')
                 ->setSpanKind(SpanKind::KIND_SERVER)
-                ->setStartTimestamp($startTime)
+                ->setStartTimestamp((int) ($startTime * 1000 * 1000 * 1000))  // Convert to nanoseconds
                 ->startSpan();
 
             $this->serverScope = $this->serverSpan->activate();
@@ -88,6 +86,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
         if ($event->isMainRequest()) {
             $attributes = $this->requestAttributeProvider->getAttributes($request);
+            $attributes['sf.kernel_boot_duration'] = round(microtime(true) - $startTime, 3);
 
             $this->serverSpan->updateName(sprintf('http.%s %s', strtolower($request->getMethod()), $request->getPathInfo()));
             $this->serverSpan->setAttributes($attributes);

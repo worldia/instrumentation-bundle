@@ -79,7 +79,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $serverSpanBuilder->startSpan()->willReturn($serverSpan);
         $serverSpan->activate()->willReturn($serverScope);
         $serverSpan->updateName(Argument::type('string'))->willReturn($serverSpan);
-        $serverSpan->setAttributes($this->requestAttributes)->willReturn($serverSpan);
+        $serverSpan->setAttributes(Argument::withKey('request'))->willReturn($serverSpan);
         $serverSpan->setAttribute(Argument::cetera())->willReturn($serverSpan);
         $serverSpan->setStatus(Argument::cetera())->willReturn($serverSpan);
         $serverScope->detach()->willReturn(0);
@@ -111,7 +111,7 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $serverSpanBuilder->setStartTimestamp($startTime * 1000 ** 3)->shouldHaveBeenCalled();
         $serverSpan->activate()->shouldHaveBeenCalled();
         $serverSpan->updateName('http.put /test/{id}')->shouldHaveBeenCalled();
-        $serverSpan->setAttributes($this->requestAttributes)->shouldHaveBeenCalled();
+        $serverSpan->setAttributes(Argument::allOf(Argument::withEntry('request', 'attribute'), Argument::withKey('sf.kernel_boot_duration')))->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($serverSpan);
         $requestSpan->activate()->shouldHaveBeenCalled();
     }
