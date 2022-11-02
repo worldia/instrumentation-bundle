@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Factory;
 
-use InvalidArgumentException;
 use Nyholm\Dsn\DsnParser;
 use OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
 use OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
@@ -39,7 +38,7 @@ class SamplerFactory
             self::PARENTBASED_TRACEIDRATIO => new ParentBased(new TraceIdRatioBasedSampler((float) $ratio)),
             self::PARENTBASED_ALWAYS_ON => new ParentBased(new AlwaysOnSampler()),
             self::PARENTBASED_ALWAYS_OFF => new ParentBased(new AlwaysOffSampler()),
-            default => throw new InvalidArgumentException('Unknown sampler: '.$type)
+            default => throw new \InvalidArgumentException('Unknown sampler: '.$type)
         };
     }
 

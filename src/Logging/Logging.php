@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Logging;
 
-use OpenTelemetry\SDK\GlobalLoggerHolder;
+use OpenTelemetry\SDK\Common\Log\LoggerHolder;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
@@ -24,7 +24,7 @@ class Logging
         }
 
         self::$logger = $logger ?: new NullLogger();
-        GlobalLoggerHolder::set(self::$logger);
+        LoggerHolder::set(self::$logger);
     }
 
     public static function getLogger(): LoggerInterface

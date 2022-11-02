@@ -26,16 +26,16 @@ class SpanProcessorFactorySpec extends ObjectBehavior
         $this->beAnInstanceOf(SpanProcessorFactory::class);
     }
 
-    public function it_creates_span_processors(): void
+    public function it_creates_span_processors(SpanExporterInterface $exporter): void
     {
-        $this->create('batch')->shouldReturnAnInstanceOf(BatchSpanProcessor::class);
-        $this->create('simple')->shouldReturnAnInstanceOf(SimpleSpanProcessor::class);
-        $this->create('noop')->shouldReturnAnInstanceOf(NoopSpanProcessor::class);
-        $this->create('none')->shouldReturnAnInstanceOf(NoopSpanProcessor::class);
+        $this->create('batch', $exporter)->shouldReturnAnInstanceOf(BatchSpanProcessor::class);
+        $this->create('simple', $exporter)->shouldReturnAnInstanceOf(SimpleSpanProcessor::class);
+        $this->create('noop', $exporter)->shouldReturnAnInstanceOf(NoopSpanProcessor::class);
+        $this->create('none', $exporter)->shouldReturnAnInstanceOf(NoopSpanProcessor::class);
     }
 
-    public function it_throws_an_exception_for_unknown_span_processor(): void
+    public function it_throws_an_exception_for_unknown_span_processor(SpanExporterInterface $exporter): void
     {
-        $this->shouldThrow(\InvalidArgumentException::class)->during('create', ['some_processor']);
+        $this->shouldThrow(\InvalidArgumentException::class)->during('create', ['some_processor', $exporter]);
     }
 }

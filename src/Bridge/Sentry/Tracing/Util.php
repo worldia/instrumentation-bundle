@@ -11,7 +11,7 @@ namespace Instrumentation\Bridge\Sentry\Tracing;
 
 use Monolog\Logger;
 use OpenTelemetry\API\Trace\StatusCode;
-use OpenTelemetry\SDK\ClockInterface;
+use OpenTelemetry\SDK\Common\Time\ClockInterface;
 use Psr\Log\LogLevel;
 
 final class Util
