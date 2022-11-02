@@ -20,6 +20,7 @@ use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SDK\Trace\Span;
+use OpenTelemetry\SDK\Trace\TracerProvider;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -140,6 +141,10 @@ class RequestEventSubscriber implements EventSubscriberInterface
     {
         $this->serverScope?->detach();
         $this->serverSpan?->end();
+
+        if ($this->tracerProvider instanceof TracerProvider) {
+            $this->tracerProvider->forceFlush();
+        }
     }
 
     public function onExceptionEvent(Event\ExceptionEvent $event): void

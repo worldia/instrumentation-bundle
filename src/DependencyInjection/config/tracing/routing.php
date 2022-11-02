@@ -28,7 +28,7 @@ return static function (ContainerConfigurator $container) {
 
         ->set(RoutePathResolver::class)
         ->args([
-            service(RouterInterface::class),
+            service(RouteCacheWarmer::class),
             param('kernel.cache_dir'),
         ])
         ->autoconfigure()

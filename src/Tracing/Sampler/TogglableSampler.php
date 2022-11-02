@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\Sampler;
 
 use OpenTelemetry\Context\Context;
-use OpenTelemetry\SDK\AttributesInterface;
+use OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
 use OpenTelemetry\SDK\Trace\SamplerInterface;
 use OpenTelemetry\SDK\Trace\SamplingResult;
 use Symfony\Contracts\Service\ResetInterface;
@@ -26,7 +26,7 @@ final class TogglableSampler implements SamplerInterface, ResetInterface
     {
     }
 
-    public function shouldSample(Context $parentContext, string $traceId, string $spanName, int $spanKind, ?AttributesInterface $attributes = null, array $links = []): SamplingResult
+    public function shouldSample(Context $parentContext, string $traceId, string $spanName, int $spanKind, AttributesInterface $attributes, array $links): SamplingResult
     {
         $result = $this->decorated->shouldSample($parentContext, $traceId, $spanName, $spanKind, $attributes, $links);
 

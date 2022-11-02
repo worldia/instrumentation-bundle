@@ -7,12 +7,10 @@
 
 namespace Instrumentation\Routing;
 
-use Symfony\Component\Routing\RouterInterface;
-
 class RoutePathResolver implements RoutePathResolverInterface
 {
     public function __construct(
-        private RouterInterface $router,
+        private RouteCacheWarmer $routerCacheWarmer,
         private string $cacheDir,
     ) {
     }
@@ -20,8 +18,8 @@ class RoutePathResolver implements RoutePathResolverInterface
     public function resolve(string $routeName): ?string
     {
         // if the cache is not warmed up, then regenerate it and return the corresponding path
-        if (!file_exists($routePathCacheFilename = $this->cacheDir.'/'.RouteCacheWarmer::ROUTE_PATHS_CACHE_FILE)) {
-            return $this->router->getRouteCollection()->get($routeName)?->getPath();
+        if (!file_exists($routePathCacheFilename = $this->routerCacheWarmer->getCacheFile($this->cacheDir))) {
+            $this->routerCacheWarmer->warmup($this->cacheDir);
         }
 
         // get the route path from the cache

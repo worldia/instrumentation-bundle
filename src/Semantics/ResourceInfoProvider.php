@@ -9,8 +9,9 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics;
 
-use OpenTelemetry\SDK\Attributes;
+use OpenTelemetry\SDK\Common\Attribute\Attributes;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
+use OpenTelemetry\SDK\Resource\ResourceInfoFactory;
 
 class ResourceInfoProvider implements ResourceInfoProviderInterface
 {
@@ -23,9 +24,9 @@ class ResourceInfoProvider implements ResourceInfoProviderInterface
 
     public function getInfo(): ResourceInfo
     {
-        $default = ResourceInfo::defaultResource();
+        $default = ResourceInfoFactory::defaultResource();
         $attributes = array_merge($default->getAttributes()->toArray(), $this->attributes);
 
-        return ResourceInfo::create(new Attributes($attributes));
+        return ResourceInfo::create(new Attributes($attributes, 0));
     }
 }

@@ -15,6 +15,7 @@ use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ScopeInterface;
+use OpenTelemetry\SDK\Trace\TracerProvider;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\Console\Event\ConsoleSignalEvent;
@@ -73,5 +74,9 @@ class CommandEventSubscriber implements EventSubscriberInterface
         $this->scope?->detach();
         $this->span?->end();
         $this->span = null;
+
+        if ($this->tracerProvider instanceof TracerProvider) {
+            $this->tracerProvider->forceFlush();
+        }
     }
 }
