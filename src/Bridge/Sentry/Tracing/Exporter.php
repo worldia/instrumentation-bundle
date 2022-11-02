@@ -11,7 +11,6 @@ namespace Instrumentation\Bridge\Sentry\Tracing;
 
 use Http\Discovery\HttpClientDiscovery;
 use Http\Discovery\Psr17FactoryDiscovery;
-use JsonException;
 use Nyholm\Dsn\DsnParser;
 use OpenTelemetry\SDK\Trace\Behavior\HttpSpanExporterTrait;
 use OpenTelemetry\SDK\Trace\Behavior\UsesSpanConverterTrait;
@@ -50,7 +49,7 @@ class Exporter implements SpanExporterInterface
     /**
      * @param iterable<SpanDataInterface> $spans
      *
-     * @throws JsonException
+     * @throws \JsonException
      */
     protected function serializeTrace(iterable $spans): string
     {
@@ -78,8 +77,8 @@ class Exporter implements SpanExporterInterface
             'timestamp' => Util::nanosToSeconds($rootSpan->getEndEpochNanos()),
             'platform' => 'php',
             'sdk' => [
-                'name' => $rootSpan->getInstrumentationLibrary()->getName(),
-                'version' => $rootSpan->getInstrumentationLibrary()->getVersion() ?: '1.0.0',
+                'name' => $rootSpan->getInstrumentationScope()->getName(),
+                'version' => $rootSpan->getInstrumentationScope()->getVersion() ?: '1.0.0',
             ],
             'release' => $resource[ResourceAttributes::SERVICE_VERSION] ?? null,
             'environment' => $resource[ResourceAttributes::DEPLOYMENT_ENVIRONMENT] ?? null,
@@ -113,7 +112,7 @@ class Exporter implements SpanExporterInterface
     /**
      * @param iterable<SpanDataInterface> $spans
      *
-     * @throws JsonException
+     * @throws \JsonException
      */
     protected function marshallRequest(iterable $spans): RequestInterface
     {

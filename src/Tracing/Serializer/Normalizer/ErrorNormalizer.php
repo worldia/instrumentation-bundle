@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Serializer\Normalizer;
 
-use ArrayObject;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use OpenTelemetry\SDK\Trace\Span;
 use Symfony\Component\Serializer\Normalizer\CacheableSupportsMethodInterface;
@@ -24,9 +23,9 @@ class ErrorNormalizer implements NormalizerInterface, CacheableSupportsMethodInt
     /**
      * @param array<mixed> $context
      *
-     * @return array<mixed>|ArrayObject<int|string,mixed>
+     * @return array<mixed>|\ArrayObject<int|string,mixed>
      */
-    public function normalize($exception, string $format = null, array $context = []): array|string|int|float|bool|ArrayObject|null
+    public function normalize($exception, string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         $data = $this->decorated->normalize($exception, $format, $context);
 

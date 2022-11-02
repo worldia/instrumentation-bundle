@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation;
 
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\SDK\Common\Util\ShutdownHandler;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class InstrumentationBundle extends Bundle
@@ -26,5 +27,9 @@ class InstrumentationBundle extends Bundle
         /** @var TracerProviderInterface $tracerProvider */
         $tracerProvider = $this->container->get(TracerProviderInterface::class);
         Tracing\Tracing::setProvider($tracerProvider);
+
+        if (method_exists($tracerProvider, 'shutdown')) {
+            ShutdownHandler::register([$tracerProvider, 'shutdown']);
+        }
     }
 }
