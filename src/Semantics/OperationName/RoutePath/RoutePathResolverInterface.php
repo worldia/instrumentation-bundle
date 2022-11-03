@@ -5,7 +5,7 @@
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Routing;
+namespace Instrumentation\Semantics\OperationName\RoutePath;
 
 interface RoutePathResolverInterface
 {

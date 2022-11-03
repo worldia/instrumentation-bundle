@@ -7,11 +7,11 @@
 
 namespace spec\Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
-use Instrumentation\Routing\RoutePathResolverInterface;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\ServerRequestOperationNameResolverInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\TracerInterface;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
@@ -56,13 +56,12 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         SpanInterface $requestSpan,
         ScopeInterface $requestScope,
         TracerProviderInterface $tracerProvider,
-        RoutePathResolverInterface $routePathResolver,
+        ServerRequestOperationNameResolverInterface $operationNameResolver,
         ServerRequestAttributeProviderInterface $requestAttributeProvider,
         ServerResponseAttributeProviderInterface $responseAttributeProvider,
     ): void {
         $this->kernel = $kernel;
-        $routePathResolver->resolve('main_route')->willReturn('/test/{id}');
-        $routePathResolver->resolve('sub_route')->willReturn('/sub-request/{id}');
+        $operationNameResolver->getOperationName(Argument::type(Request::class))->willReturn('http.get /test/{id}');
 
         $requestAttributeProvider->getAttributes(Argument::type(Request::class))->willReturn(
             $this->requestAttributes,
@@ -90,10 +89,10 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
         $this->beConstructedWith(
             $tracerProvider,
-            $routePathResolver,
+            $this->mainSpanContext = new MainSpanContext(),
+            $operationNameResolver,
             $requestAttributeProvider,
             $responseAttributeProvider,
-            $this->mainSpanContext = new MainSpanContext(),
         );
     }
 
@@ -147,7 +146,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
         $requestSpan->updateName('sf.controller.main')->shouldHaveBeenCalled();
         $requestSpan->setAttribute('sf.controller', 'Main::controller')->shouldHaveBeenCalled();
-        $requestSpan->setAttribute('sf.route', 'main_route')->shouldHaveBeenCalled();
     }
 
     public function it_updates_server_span_when_controller_is_resolved_for_main_request_with_known_route(
@@ -161,20 +159,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $this->onRouteResolved($mainRequestEvent);
 
         $serverSpan->updateName('http.get /test/{id}')->shouldHaveBeenCalled();
-        $serverSpan->setAttribute(TraceAttributes::HTTP_ROUTE, '/test/{id}')->shouldHaveBeenCalled();
-    }
-
-    public function it_does_not_update_server_span_when_controller_is_resolved_for_main_request_with_unknown_route(
-        SpanInterface $serverSpan,
-    ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/unknown');
-        $request = $mainRequestEvent->getRequest();
-        $this->onRequestEvent($mainRequestEvent);
-
-        $this->onRouteResolved($mainRequestEvent);
-
-        $serverSpan->updateName('http.get /test/{id}')->shouldNotHaveBeenCalled();
-        $serverSpan->setAttribute(TraceAttributes::HTTP_ROUTE, '/test/{id}')->shouldNotHaveBeenCalled();
     }
 
     public function it_updates_sub_request_span_when_controller_is_resolved(SpanInterface $requestSpan): void
@@ -192,7 +176,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
         $requestSpan->updateName('sf.controller.sub')->shouldHaveBeenCalled();
         $requestSpan->setAttribute('sf.controller', 'Sub::controller')->shouldHaveBeenCalled();
-        $requestSpan->setAttribute('sf.route', 'sub_route')->shouldHaveBeenCalled();
     }
 
     public function it_does_not_update_server_span_when_controller_is_resolved_for_sub_request(
@@ -287,16 +270,16 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $serverSpan->end()->shouldHaveBeenCalled();
     }
 
-    public function it_lets_context_unchanged_after_handling_a_request(RoutePathResolverInterface $routePathResolver): void
+    public function it_lets_context_unchanged_after_handling_a_request(ServerRequestOperationNameResolverInterface $operationNameResolver): void
     {
         $this->forkMainContext();
         $originalContext = clone Context::getCurrent();
         $this->beConstructedWith(
             new TracerProvider(),
-            $routePathResolver,
+            new MainSpanContext(),
+            $operationNameResolver,
             new ServerRequestAttributeProvider(),
             new ServerResponseAttributeProvider(),
-            new MainSpanContext(),
         );
         $mainRequestEvent = $this->createMainRequestEvent('/test/1');
 

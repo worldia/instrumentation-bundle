@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Resources;
 
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\MessageOperationNameResolverInterface;
 use Instrumentation\Tracing;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
@@ -26,9 +27,10 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Instrumentation\EventSubscriber\MessageEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(SpanProcessorInterface::class),
-            service(MessageAttributeProviderInterface::class),
             service(MainSpanContextInterface::class),
+            service(MessageOperationNameResolverInterface::class),
+            service(MessageAttributeProviderInterface::class),
+            service(SpanProcessorInterface::class),
         ])
         ->autoconfigure();
 };

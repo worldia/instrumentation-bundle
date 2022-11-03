@@ -8,9 +8,9 @@
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\MessageOperationNameResolverInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
-use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use Instrumentation\Tracing\Propagation\Messenger\PropagationStrategyStamp;
 use OpenTelemetry\API\Trace\SpanInterface;
@@ -49,8 +49,13 @@ class MessageEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected SpanProcessorInterface $spanProcessor, protected MessageAttributeProviderInterface $attributeProvider, protected MainSpanContextInterface $mainSpanContext)
-    {
+    public function __construct(
+        protected TracerProviderInterface $tracerProvider,
+        protected MainSpanContextInterface $mainSpanContext,
+        protected MessageOperationNameResolverInterface $operationNameResolver,
+        protected MessageAttributeProviderInterface $attributeProvider,
+        protected SpanProcessorInterface $spanProcessor,
+    ) {
         $this->scopes = new \SplObjectStorage();
     }
 
@@ -63,8 +68,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
         ]);
 
         if ($this->createSubSpan) {
-            /** @var string&non-empty-string $operation */
-            $operation = $this->getOperationName(
+            $operationName = $this->operationNameResolver->getOperationName(
                 $event->getEnvelope(),
                 TraceAttributeValues::MESSAGING_OPERATION_PROCESS
             );
@@ -72,7 +76,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
             $strategy = $this->getStrategy($event->getEnvelope());
 
             $builder = $this->getTracer()
-                ->spanBuilder($operation)
+                ->spanBuilder($operationName)
                 ->setSpanKind(SpanKind::KIND_CONSUMER)
                 ->setAttributes($attributes);
 
@@ -114,23 +118,6 @@ class MessageEventSubscriber implements EventSubscriberInterface
         }
 
         $this->spanProcessor->forceFlush();
-    }
-
-    /**
-     * @see https://github.com/open-telemetry/opentelemetry-specification/blob/v1.9.0/specification/trace/semantic_conventions/messaging.md#operation-names
-     *
-     * @param TraceAttributeValues::MESSAGING_OPERATION_* $operation One of 'send', 'receive' or 'process'
-     */
-    private function getOperationName(Envelope $envelope, string $operation): string
-    {
-        $name = \get_class($envelope->getMessage());
-        /** @var OperationNameStamp|null $stamp */
-        $stamp = $envelope->last(OperationNameStamp::class);
-        if ($stamp) {
-            $name = $stamp->getOperationName();
-        }
-
-        return sprintf('message.%s %s', $name, $operation);
     }
 
     /**

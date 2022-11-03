@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
-use Instrumentation\Routing\RoutePathResolver;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\ServerRequestOperationNameResolverInterface;
 use Instrumentation\Tracing;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
@@ -35,10 +35,10 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Instrumentation\EventSubscriber\RequestEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(RoutePathResolver::class),
+            service(MainSpanContextInterface::class),
+            service(ServerRequestOperationNameResolverInterface::class),
             service(ServerRequestAttributeProviderInterface::class),
             service(ServerResponseAttributeProviderInterface::class),
-            service(MainSpanContextInterface::class),
         ])
         ->autoconfigure()
 

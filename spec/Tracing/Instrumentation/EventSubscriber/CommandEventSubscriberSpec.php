@@ -7,6 +7,7 @@
 
 namespace spec\Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
+use Instrumentation\Semantics\OperationName\CommandOperationNameResolverInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\TracerInterface;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
@@ -29,6 +30,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
     public function let(
         TracerProviderInterface $tracerProvider,
         TracerInterface $tracer,
+        CommandOperationNameResolverInterface $operationNameResolver,
         SpanBuilderInterface $spanBuilder,
         SpanInterface $span,
         ScopeInterface $scope,
@@ -43,9 +45,13 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $span->setStatus(Argument::cetera())->willReturn($span);
         $scope->detach()->willReturn(0);
 
+        $operationNameResolver->getOperationName(Argument::type(Command::class))->willReturn('cli test:cmd');
+        $operationNameResolver->getOperationName(null)->willReturn('cli unknown-command');
+
         $this->beConstructedWith(
             $tracerProvider,
             $this->mainSpanContext = new MainSpanContext(),
+            $operationNameResolver
         );
     }
 
@@ -57,7 +63,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $this->onCommand($this->createConsoleCommandEvent(new Command('test:cmd')));
 
         $tracer->spanBuilder('cli test:cmd')->shouldHaveBeenCalled();
-        $spanBuilder->setAttributes(['command' => 'test:cmd'])->shouldHaveBeenCalled();
+
         $span->activate()->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($span);
     }
@@ -69,8 +75,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
     ): void {
         $this->onCommand($this->createConsoleCommandEvent(new Command()));
 
-        $tracer->spanBuilder('cli unknown-command')->shouldHaveBeenCalled();
-        $spanBuilder->setAttributes(['command' => 'unknown-command'])->shouldHaveBeenCalled();
+        $tracer->spanBuilder('cli test:cmd')->shouldHaveBeenCalled();
         $span->activate()->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($span);
     }
@@ -83,7 +88,6 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $this->onCommand($this->createConsoleCommandEvent());
 
         $tracer->spanBuilder('cli unknown-command')->shouldHaveBeenCalled();
-        $spanBuilder->setAttributes(['command' => 'unknown-command'])->shouldHaveBeenCalled();
         $span->activate()->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($span);
     }

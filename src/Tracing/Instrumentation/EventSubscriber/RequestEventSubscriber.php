@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
-use Instrumentation\Routing\RoutePathResolverInterface;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\ServerRequestOperationNameResolverInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
@@ -20,7 +20,6 @@ use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SDK\Trace\Span;
-use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event;
@@ -59,10 +58,10 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function __construct(
         protected TracerProviderInterface $tracerProvider,
-        protected RoutePathResolverInterface $routePathResolver,
+        protected MainSpanContextInterface $mainSpanContext,
+        protected ServerRequestOperationNameResolverInterface $operationNameResolver,
         protected ServerRequestAttributeProviderInterface $requestAttributeProvider,
         protected ServerResponseAttributeProviderInterface $responseAttributeProvider,
-        protected MainSpanContextInterface $mainSpanContext,
     ) {
         $this->spans = new \SplObjectStorage();
         $this->scopes = new \SplObjectStorage();
@@ -101,17 +100,15 @@ class RequestEventSubscriber implements EventSubscriberInterface
         $request = $event->getRequest();
 
         $controller = $request->attributes->get('_controller');
-        $routeAlias = $request->attributes->get('_route');
 
         $span = $this->getSpanForRequest($request);
 
         $span->updateName(sprintf('sf.controller.%s', $event->isMainRequest() ? 'main' : 'sub'));
         $span->setAttribute('sf.controller', $controller);
-        $span->setAttribute('sf.route', $routeAlias);
 
-        if ($routeAlias && $event->isMainRequest() && $path = $this->routePathResolver->resolve($routeAlias)) {
-            $this->serverSpan?->updateName(sprintf('http.%s %s', strtolower($request->getMethod()), $path));
-            $this->serverSpan?->setAttribute(TraceAttributes::HTTP_ROUTE, $path);
+        if ($event->isMainRequest()) {
+            $operationName = $this->operationNameResolver->getOperationName($request);
+            $this->serverSpan?->updateName($operationName);
         }
     }
 

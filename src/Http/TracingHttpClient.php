@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Instrumentation\Http;
 
+use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolver;
+use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverInterface;
 use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -21,12 +23,16 @@ use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 final class TracingHttpClient implements HttpClientInterface
 {
     private HttpClientInterface $decorated;
+    private ClientRequestOperationNameResolverInterface $operationNameResolver;
 
     /**
      * @param HttpClientInterface|array<mixed>|null $decorated
      */
-    public function __construct(private string $serviceName, HttpClientInterface|array|null $decorated = null)
-    {
+    public function __construct(
+        private string $serviceName,
+        HttpClientInterface|array|null $decorated = null,
+        ClientRequestOperationNameResolverInterface $operationNameResolver = null
+    ) {
         if (null === $decorated) {
             $this->decorated = HttpClient::create();
         } elseif ($decorated instanceof HttpClientInterface) {
@@ -34,6 +40,8 @@ final class TracingHttpClient implements HttpClientInterface
         } else {
             $this->decorated = HttpClient::create($decorated);
         }
+
+        $this->operationNameResolver = $operationNameResolver ?: new ClientRequestOperationNameResolver();
     }
 
     /**
@@ -43,9 +51,10 @@ final class TracingHttpClient implements HttpClientInterface
     {
         $onProgress = $options['on_progress'] ?? null;
         $headers = $options['headers'] ?? [];
+        $operationName = $this->operationNameResolver->getOperationName($method, $url, $this->serviceName);
 
         $span = Tracing::getTracer()
-            ->spanBuilder(sprintf('http.%s %s', strtolower($method), $url))
+            ->spanBuilder($operationName)
             ->setSpanKind(SpanKind::KIND_CLIENT)
             ->setAttributes([
                 TraceAttributes::HTTP_METHOD => $method,
