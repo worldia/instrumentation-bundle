@@ -85,13 +85,6 @@ class RequestEventSubscriber implements EventSubscriberInterface
             $this->mainSpanContext->setMainSpan($this->serverSpan);
         }
 
-        if ($event->isMainRequest()) {
-            $attributes = $this->requestAttributeProvider->getAttributes($request);
-
-            $this->serverSpan->updateName(sprintf('http.%s %s', strtolower($request->getMethod()), $request->getPathInfo()));
-            $this->serverSpan->setAttributes($attributes);
-        }
-
         $this->startSpanForRequest($request, $event->isMainRequest());
     }
 
@@ -108,7 +101,10 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
         if ($event->isMainRequest()) {
             $operationName = $this->operationNameResolver->getOperationName($request);
+            $attributes = $this->requestAttributeProvider->getAttributes($request);
+
             $this->serverSpan?->updateName($operationName);
+            $this->serverSpan?->setAttributes($attributes);
         }
     }
 

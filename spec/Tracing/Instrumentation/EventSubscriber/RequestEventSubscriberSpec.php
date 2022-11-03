@@ -101,15 +101,16 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         SpanInterface $serverSpan,
         SpanInterface $requestSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test/{id}', Request::METHOD_PUT);
+        $mainRequestEvent = $this->createMainRequestEvent('/test/{id}', Request::METHOD_GET);
         $startTime = 1656320753.1187;
         $mainRequestEvent->getRequest()->server->set('REQUEST_TIME_FLOAT', $startTime);
 
         $this->onRequestEvent($mainRequestEvent);
+        $this->onRouteResolved($mainRequestEvent);
 
         $serverSpanBuilder->setStartTimestamp($startTime * 1000 ** 3)->shouldHaveBeenCalled();
         $serverSpan->activate()->shouldHaveBeenCalled();
-        $serverSpan->updateName('http.put /test/{id}')->shouldHaveBeenCalled();
+        $serverSpan->updateName('http.get /test/{id}')->shouldHaveBeenCalled();
         $serverSpan->setAttributes($this->requestAttributes)->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($serverSpan);
         $requestSpan->activate()->shouldHaveBeenCalled();
@@ -121,15 +122,16 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         SpanBuilderInterface $subRequestSpanBuilder,
         SpanInterface $subRequestSpan,
     ): void {
-        $mainRequestEvent = $this->createMainRequestEvent('/test/{id}', Request::METHOD_PUT);
+        $mainRequestEvent = $this->createMainRequestEvent('/test/{id}', Request::METHOD_GET);
         $subRequestEvent = $this->createSubRequestEvent('/sub-request', Request::METHOD_GET);
         $this->onRequestEvent($mainRequestEvent);
         $this->configureRequestSpanBuilder($tracer, $subRequestSpanBuilder, $subRequestSpan);
 
         $this->onRequestEvent($subRequestEvent);
+        $this->onRouteResolved($mainRequestEvent);
 
         $serverSpan->activate()->shouldHaveBeenCalledOnce();
-        $serverSpan->updateName('http.put /test/{id}')->shouldHaveBeenCalledOnce();
+        $serverSpan->updateName('http.get /test/{id}')->shouldHaveBeenCalledOnce();
         expect($this->mainSpanContext->getMainSpan())->shouldBe($serverSpan);
         $subRequestSpanBuilder->startSpan()->shouldHaveBeenCalled();
         $subRequestSpan->activate()->shouldNotHaveBeenCalled();
