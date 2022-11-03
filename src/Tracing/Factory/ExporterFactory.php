@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Factory;
 
-use Instrumentation\Bridge\Sentry\Tracing\Exporter;
 use Nyholm\Dsn\DsnParser;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SDK\Trace\ExporterFactory as BaseExporterFactory;
@@ -36,12 +35,6 @@ class ExporterFactory
             ->withoutParameter('processor')
             ->withoutParameter('sampler')
             ->withoutParameter('ratio');
-
-        if ('sentry+https' === $dsn->getScheme()) {
-            $url = $url->withScheme(str_replace('sentry+', '', (string) $url->getScheme()));
-
-            return Exporter::fromConnectionString((string) $url, $this->serviceName, '');
-        }
 
         return $this->exporterFactory->fromConnectionString((string) $url);
     }
