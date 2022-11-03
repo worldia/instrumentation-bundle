@@ -5,7 +5,7 @@
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Routing;
+namespace Instrumentation\Semantics\OperationName\RoutePath;
 
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\Routing\RouterInterface;
@@ -14,9 +14,8 @@ class RouteCacheWarmer implements CacheWarmerInterface
 {
     public const ROUTE_PATHS_CACHE_FILE = 'route_paths.php';
 
-    public function __construct(
-        private RouterInterface $router,
-    ) {
+    public function __construct(private RouterInterface $router)
+    {
     }
 
     public function isOptional()
@@ -32,8 +31,13 @@ class RouteCacheWarmer implements CacheWarmerInterface
         }
 
         $content = '<?php return '.var_export($routes, true).';'.\PHP_EOL;
-        file_put_contents($cacheDir.\DIRECTORY_SEPARATOR.self::ROUTE_PATHS_CACHE_FILE, $content);
+        file_put_contents($this->getCacheFile($cacheDir), $content);
 
         return [];
+    }
+
+    public function getCacheFile(string $cacheDir): string
+    {
+        return $cacheDir.'/'.self::ROUTE_PATHS_CACHE_FILE;
     }
 }

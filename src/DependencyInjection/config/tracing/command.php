@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
+use Instrumentation\Semantics\OperationName\CommandOperationNameResolverInterface;
 use Instrumentation\Tracing;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
@@ -22,6 +23,7 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service(TracerProviderInterface::class),
             service(MainSpanContextInterface::class),
+            service(CommandOperationNameResolverInterface::class),
         ])
         ->autoconfigure();
 };

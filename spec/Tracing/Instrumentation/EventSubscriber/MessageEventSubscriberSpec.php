@@ -8,9 +8,9 @@
 namespace spec\Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\MessageOperationNameResolverInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
-use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
 use Instrumentation\Tracing\TracerInterface;
 use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
@@ -35,6 +35,7 @@ class MessageEventSubscriberSpec extends ObjectBehavior
     public function let(
         TracerProviderInterface $tracerProvider,
         SpanProcessorInterface $spanProcessor,
+        MessageOperationNameResolverInterface $operationNameResolver,
         MessageAttributeProviderInterface $attributeProvider,
         TracerInterface $tracer,
         SpanBuilderInterface $spanBuilder,
@@ -54,6 +55,7 @@ class MessageEventSubscriberSpec extends ObjectBehavior
         $scope->detach()->willReturn(0);
 
         $spanProcessor->forceFlush()->willReturn(true);
+        $operationNameResolver->getOperationName(Argument::type(Envelope::class), 'process')->willReturn('message.stdClass process');
 
         $attributeProvider->getAttributes(Argument::type(Envelope::class))->willReturn([
             'from_provider' => 'value',
@@ -61,9 +63,10 @@ class MessageEventSubscriberSpec extends ObjectBehavior
 
         $this->beConstructedWith(
             $tracerProvider,
-            $spanProcessor,
-            $attributeProvider,
             $this->mainSpanContext = new MainSpanContext(),
+            $operationNameResolver,
+            $attributeProvider,
+            $spanProcessor,
         );
     }
 
@@ -77,27 +80,6 @@ class MessageEventSubscriberSpec extends ObjectBehavior
         $this->onConsume(new WorkerMessageReceivedEvent($envelope, 'receiver name'));
 
         $tracer->spanBuilder('message.stdClass process')->shouldHaveBeenCalled();
-        $spanBuilder->setSpanKind(SpanKind::KIND_CONSUMER)->shouldHaveBeenCalled();
-        $spanBuilder->setAttributes([
-            'from_provider' => 'value',
-            'messaging.operation' => 'process',
-            'messaging.consumer_id' => gethostname(),
-            'messaging.destination' => 'receiver name',
-            'messenger.message' => 'stdClass',
-        ])->shouldHaveBeenCalled();
-        expect($this->mainSpanContext->getMainSpan())->shouldBe($span);
-    }
-
-    public function it_starts_a_new_span_when_receiving_a_message_with_operation_name_stamp(
-        TracerInterface $tracer,
-        SpanBuilderInterface $spanBuilder,
-        SpanInterface $span,
-    ): void {
-        $envelope = new Envelope(new \stdClass(), [new OperationNameStamp('operation_name')]);
-
-        $this->onConsume(new WorkerMessageReceivedEvent($envelope, 'receiver name'));
-
-        $tracer->spanBuilder('message.operation_name process')->shouldHaveBeenCalled();
         $spanBuilder->setSpanKind(SpanKind::KIND_CONSUMER)->shouldHaveBeenCalled();
         $spanBuilder->setAttributes([
             'from_provider' => 'value',

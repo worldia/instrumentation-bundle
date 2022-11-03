@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 
+use Instrumentation\Semantics\OperationName\CommandOperationNameResolverInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
@@ -38,15 +39,18 @@ class CommandEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContextInterface $mainSpanContext)
-    {
+    public function __construct(
+        protected TracerProviderInterface $tracerProvider,
+        protected MainSpanContextInterface $mainSpanContext,
+        protected CommandOperationNameResolverInterface $operationNameResolver
+    ) {
     }
 
     public function onCommand(ConsoleCommandEvent $event): void
     {
-        $name = $event->getCommand()?->getName() ?: 'unknown-command';
+        $operationName = $this->operationNameResolver->getOperationName($event->getCommand());
 
-        $this->span = $this->startSpan(sprintf('cli %s', $name), ['command' => $name]);
+        $this->span = $this->startSpan($operationName);
         $this->scope = $this->span->activate();
 
         $this->mainSpanContext->setMainSpan($this->span);

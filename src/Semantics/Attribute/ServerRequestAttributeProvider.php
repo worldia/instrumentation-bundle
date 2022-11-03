@@ -28,6 +28,7 @@ class ServerRequestAttributeProvider implements ServerRequestAttributeProviderIn
             TraceAttributes::HTTP_METHOD => $request->getMethod(),
             TraceAttributes::HTTP_TARGET => $request->getRequestUri(),
             TraceAttributes::HTTP_HOST => $request->headers->get('host'), // Per spec, only if host header is present
+            TraceAttributes::HTTP_ROUTE => $request->attributes->get('_route'),
             TraceAttributes::HTTP_SCHEME => $request->getScheme(),
             TraceAttributes::HTTP_FLAVOR => substr((string) $request->getProtocolVersion(), 5),
             TraceAttributes::HTTP_USER_AGENT => $request->headers->get('user-agent', null),
