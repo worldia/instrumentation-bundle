@@ -11,15 +11,17 @@ namespace Instrumentation\Tracing\Sampling\EventSubscriber;
 
 use Instrumentation\Tracing\Sampling\TogglableSampler;
 use Instrumentation\Tracing\Sampling\Voter\VoterInterface;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 
 abstract class AbstractEventSubscriber implements EventSubscriberInterface
 {
     public static function getSubscribedEvents(): array
     {
         return [
-            static::getEventClass() => [['onRequest', 8092]],
+            static::getEventClass() => [['onEvent', 8092]],
         ];
     }
 
@@ -27,7 +29,10 @@ abstract class AbstractEventSubscriber implements EventSubscriberInterface
     {
     }
 
-    public function onRequest(RequestEvent $event): void
+    /**
+     * @param RequestEvent|ConsoleCommandEvent|WorkerMessageReceivedEvent $event
+     */
+    public function onEvent(object $event): void
     {
         $vote = $this->voter->vote($event);
 
