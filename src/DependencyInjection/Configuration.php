@@ -143,6 +143,16 @@ class Configuration implements ConfigurationInterface
                                     ])
                                     ->scalarPrototype()->end()
                                 ->end()
+                                ->arrayNode('methods')
+                                    ->defaultValue([
+                                        'GET',
+                                        'POST',
+                                        'PUT',
+                                        'DELETE',
+                                        'PATCH',
+                                    ])
+                                    ->scalarPrototype()->end()
+                                ->end()
                             ->end()
                         ->end()
                         ->arrayNode('command')

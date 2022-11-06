@@ -9,21 +9,37 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
-use Instrumentation\Semantics\OperationName\CommandOperationNameResolverInterface;
-use Instrumentation\Tracing;
+use Instrumentation\Semantics;
+use Instrumentation\Tracing\Instrumentation;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
+use Instrumentation\Tracing\Sampling;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
-        ->set(Tracing\Instrumentation\EventSubscriber\CommandEventSubscriber::class)
+        ->set(Instrumentation\EventSubscriber\CommandEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
             service(MainSpanContextInterface::class),
-            service(CommandOperationNameResolverInterface::class),
+            service(Semantics\OperationName\CommandOperationNameResolverInterface::class),
         ])
-        ->autoconfigure();
+        ->autoconfigure()
+
+        ->set(Sampling\Voter\CommandVoterInterface::class, Sampling\Voter\CommandVoter::class)
+        ->args([
+            param('tracing.command.blacklist'),
+        ])
+        ->autoconfigure()
+
+        ->set(Sampling\EventSubscriber\CommandEventSubscriber::class)
+        ->args([
+            service(Sampling\TogglableSampler::class),
+            service(Sampling\Voter\CommandVoterInterface::class),
+        ])
+        ->autoconfigure()
+    ;
 };

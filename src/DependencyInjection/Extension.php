@@ -240,8 +240,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
             $loader->load($feature.'.php');
 
-            if (isset($config[$feature]['blacklist'])) {
-                $container->setParameter(sprintf('tracing.%s.blacklist', $feature), $config[$feature]['blacklist']);
+            foreach (['blacklist', 'methods'] as $property) {
+                if (isset($config[$feature][$property])) {
+                    $container->setParameter(sprintf('tracing.%s.%s', $feature, $property), $config[$feature][$property]);
+                }
             }
         }
 

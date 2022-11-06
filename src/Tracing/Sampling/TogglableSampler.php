@@ -7,7 +7,7 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Tracing\Sampler;
+namespace Instrumentation\Tracing\Sampling;
 
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
