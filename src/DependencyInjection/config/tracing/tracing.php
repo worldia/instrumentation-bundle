@@ -13,14 +13,13 @@ use Instrumentation\Tracing\Exporter\ResetSpanExporter;
 use Instrumentation\Tracing\Factory\ExporterFactory;
 use Instrumentation\Tracing\Factory\SamplerFactory;
 use Instrumentation\Tracing\Factory\SpanProcessorFactory;
-use Instrumentation\Tracing\Instrumentation\EventSubscriber\ToggleTracerSubscriber;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
 use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
 use Instrumentation\Tracing\Propagation\RegexIncomingTraceHeaderResolver;
-use Instrumentation\Tracing\Sampler\TogglableSampler;
+use Instrumentation\Tracing\Sampling\TogglableSampler;
 use Instrumentation\Tracing\Serializer\Normalizer\ErrorNormalizer;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Twig\Extension\TracingExtension;
@@ -32,7 +31,6 @@ use OpenTelemetry\SDK\Trace\SamplerInterface;
 use OpenTelemetry\SDK\Trace\SpanExporterInterface;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use OpenTelemetry\SDK\Trace\TracerProvider;
-use Psr\Log\LoggerInterface;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -70,7 +68,6 @@ return static function (ContainerConfigurator $container) {
         ->decorate(SamplerInterface::class)
         ->args([
             service('.inner'),
-            service(LoggerInterface::class),
         ])
 
         ->set(SpanExporterInterface::class)
@@ -99,15 +96,6 @@ return static function (ContainerConfigurator $container) {
             service(IdGeneratorInterface::class),
         ])
         ->public()
-
-        ->set(ToggleTracerSubscriber::class)
-        ->args([
-            service(TogglableSampler::class),
-            param('tracing.request.blacklist'),
-            param('tracing.command.blacklist'),
-            param('tracing.message.blacklist'),
-        ])
-        ->autoconfigure()
 
         ->set(MainSpanContextInterface::class, MainSpanContext::class)
 

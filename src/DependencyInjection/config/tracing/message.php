@@ -9,14 +9,13 @@ declare(strict_types=1);
 
 namespace Instrumentation\Resources;
 
-use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
-use Instrumentation\Semantics\OperationName\MessageOperationNameResolverInterface;
+use Instrumentation\Semantics;
 use Instrumentation\Tracing;
-use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
@@ -27,10 +26,23 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Instrumentation\EventSubscriber\MessageEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(MainSpanContextInterface::class),
-            service(MessageOperationNameResolverInterface::class),
-            service(MessageAttributeProviderInterface::class),
+            service(Tracing\Instrumentation\MainSpanContextInterface::class),
+            service(Semantics\OperationName\MessageOperationNameResolverInterface::class),
+            service(Semantics\Attribute\MessageAttributeProviderInterface::class),
             service(SpanProcessorInterface::class),
         ])
-        ->autoconfigure();
+        ->autoconfigure()
+
+        ->set(Tracing\Sampling\Voter\MessageVoterInterface::class, Tracing\Sampling\Voter\MessageVoter::class)
+        ->args([
+            param('tracing.message.blacklist'),
+        ])
+        ->autoconfigure()
+        ->set(Tracing\Sampling\EventSubscriber\MessageEventSubscriber::class)
+        ->args([
+            service(Tracing\Sampling\TogglableSampler::class),
+            service(Tracing\Sampling\Voter\MessageVoterInterface::class),
+        ])
+        ->autoconfigure()
+    ;
 };
