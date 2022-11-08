@@ -118,8 +118,12 @@ class RequestEventSubscriber implements EventSubscriberInterface
             $this->serverSpan?->setAttribute($key, $value);
         }
 
-        if ($response->getStatusCode() >= 500) {
+        if (500 <= $response->getStatusCode()) {
             $this->serverSpan?->setStatus(StatusCode::STATUS_ERROR);
+        }
+
+        if (404 === $response->getStatusCode()) {
+            $this->serverSpan?->updateName('http.error 404');
         }
     }
 
