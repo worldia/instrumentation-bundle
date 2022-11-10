@@ -7,7 +7,7 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Tracing\Instrumentation\Doctrine\DBAL;
+namespace Instrumentation\Tracing\Propagation\Doctrine\DBAL;
 
 use Doctrine\DBAL\Connection as DBALConnection;
 use Doctrine\DBAL\Driver\API\ExceptionConverter;
@@ -16,21 +16,17 @@ use Doctrine\DBAL\Driver\Connection as DriverConnection;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\VersionAwarePlatformDriver;
-use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
-use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
-use OpenTelemetry\API\Trace\TracerProviderInterface;
+use Instrumentation\Tracing\Propagation\Doctrine\TraceContextInfoProviderInterface;
 
 final class Driver implements VersionAwarePlatformDriver
 {
-    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private DriverInterface $decorated, private MainSpanContextInterface $mainSpanContext, private bool $logQueries)
+    public function __construct(private DriverInterface $decorated, private TraceContextInfoProviderInterface $infoProvider)
     {
     }
 
     public function connect(array $params): DriverConnection
     {
-        $attributes = $this->attributeProvider->getAttributes($this->decorated->getDatabasePlatform(), $params);
-
-        return new Connection($this->tracerProvider, $this->decorated->connect($params), $this->mainSpanContext, $attributes, $this->logQueries);
+        return new Connection($this->decorated->connect($params), $this->infoProvider);
     }
 
     public function getDatabasePlatform(): AbstractPlatform

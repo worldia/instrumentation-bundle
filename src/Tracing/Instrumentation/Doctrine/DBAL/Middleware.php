@@ -17,12 +17,12 @@ use OpenTelemetry\API\Trace\TracerProviderInterface;
 
 final class Middleware implements MiddlewareInterface
 {
-    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private MainSpanContextInterface $mainSpanContext)
+    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private MainSpanContextInterface $mainSpanContext, private bool $logQueries = false)
     {
     }
 
     public function wrap(BaseDriver $driver): BaseDriver
     {
-        return new Driver($this->tracerProvider, $this->attributeProvider, $driver, $this->mainSpanContext);
+        return new Driver($this->tracerProvider, $this->attributeProvider, $driver, $this->mainSpanContext, $this->logQueries);
     }
 }

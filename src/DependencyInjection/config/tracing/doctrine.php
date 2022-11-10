@@ -15,6 +15,7 @@ use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
@@ -24,5 +25,19 @@ return static function (ContainerConfigurator $container) {
             service(TracerProviderInterface::class),
             service(DoctrineConnectionAttributeProviderInterface::class),
             service(MainSpanContextInterface::class),
-        ]);
+            param('tracing.doctrine.log_queries'),
+        ])
+
+        ->set(Tracing\Propagation\Doctrine\DBAL\Middleware::class)
+        ->args([
+            service(Tracing\Propagation\Doctrine\TraceContextInfoProviderInterface::class),
+        ])
+
+        ->set(Tracing\Propagation\Doctrine\TraceContextInfoProviderInterface::class, Tracing\Propagation\Doctrine\TraceContextInfoProvider::class)
+        ->args([
+            service(MainSpanContextInterface::class),
+            param('service.name'),
+        ])
+        ->public()
+    ;
 };

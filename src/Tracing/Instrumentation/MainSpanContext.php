@@ -15,15 +15,11 @@ use OpenTelemetry\SDK\Trace\Span;
 final class MainSpanContext implements MainSpanContextInterface
 {
     private ?SpanInterface $mainSpan = null;
+    private ?string $operationName = null;
 
     public function setCurrent(): void
     {
         $this->mainSpan = Span::getCurrent();
-    }
-
-    public function setMainSpan(SpanInterface $span): void
-    {
-        $this->mainSpan = $span;
     }
 
     public function getMainSpan(): SpanInterface
@@ -33,5 +29,20 @@ final class MainSpanContext implements MainSpanContextInterface
         }
 
         return $this->mainSpan;
+    }
+
+    public function setMainSpan(SpanInterface $span): void
+    {
+        $this->mainSpan = $span;
+    }
+
+    public function getOperationName(): ?string
+    {
+        return $this->operationName;
+    }
+
+    public function setOperationName(?string $name): void
+    {
+        $this->operationName = $name;
     }
 }
