@@ -38,7 +38,7 @@ abstract class AbstractEventSubscriber implements EventSubscriberInterface
 
         if (VoterInterface::VOTE_RECORD === $vote) {
             $this->sampler->recordAndSampleNext();
-        } elseif (VoterInterface::VOTE_ABSTAIN === $vote) {
+        } elseif (VoterInterface::VOTE_DROP === $vote) {
             $this->sampler->dropNext();
         }
     }
