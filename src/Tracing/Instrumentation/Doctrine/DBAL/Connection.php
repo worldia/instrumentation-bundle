@@ -38,7 +38,7 @@ final class Connection implements ServerInfoAwareConnection
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected ConnectionInterface $decorated, private MainSpanContextInterface $mainSpanContext, private array $attributes)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected ConnectionInterface $decorated, private MainSpanContextInterface $mainSpanContext, private array $attributes, private bool $logQueries)
     {
     }
 
@@ -118,7 +118,7 @@ final class Connection implements ServerInfoAwareConnection
             ->setAttributes($this->attributes)
             ->startSpan();
 
-        if ($sql) {
+        if ($this->logQueries) {
             $span->addEvent($sql);
         }
 

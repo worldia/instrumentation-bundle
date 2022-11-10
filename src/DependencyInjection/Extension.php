@@ -13,8 +13,9 @@ use Instrumentation\Health\HealtcheckInterface;
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
 use Instrumentation\Metrics\Storage\HostnamePrefixedRedisFactory;
-use Instrumentation\Tracing\Instrumentation\Doctrine\DBAL\Middleware;
+use Instrumentation\Tracing\Instrumentation\Doctrine\DBAL\Middleware as InstrumentationMiddleware;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
+use Instrumentation\Tracing\Propagation\Doctrine\DBAL\Middleware as PropagationMiddleware;
 use Instrumentation\Tracing\TraceUrlGenerator;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use Prometheus\Storage\Adapter;
@@ -148,9 +149,18 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
                     }
                 }
 
+                $addedMiddlewares = [];
+
+                if ($container->getParameter('tracing.doctrine.instrumentation')) {
+                    $addedMiddlewares[] = new Reference(InstrumentationMiddleware::class);
+                }
+                if ($container->getParameter('tracing.doctrine.propagation')) {
+                    $addedMiddlewares[] = new Reference(PropagationMiddleware::class);
+                }
+
                 $configDef
                     ->removeMethodCall('setMiddlewares')
-                    ->addMethodCall('setMiddlewares', [array_merge($middlewares, [new Reference(Middleware::class)])]);
+                    ->addMethodCall('setMiddlewares', [array_merge($middlewares, $addedMiddlewares)]);
             }
         }
     }
@@ -233,6 +243,8 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
                 ]);
         }
 
+        $config['doctrine']['enabled'] = $config['doctrine']['instrumentation'] || $config['doctrine']['propagation'];
+
         foreach (['request', 'command', 'message', 'doctrine'] as $feature) {
             if (!$this->isConfigEnabled($container, $config[$feature])) {
                 continue;
@@ -247,9 +259,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             }
         }
 
-        if ($this->isConfigEnabled($container, $config['doctrine'])) {
-            $container->setParameter('tracing.doctrine.connections', $config['doctrine']['connections']);
-        }
+        $container->setParameter('tracing.doctrine.connections', $config['doctrine']['connections']);
+        $container->setParameter('tracing.doctrine.log_queries', $config['doctrine']['log_queries']);
+        $container->setParameter('tracing.doctrine.propagation', $config['doctrine']['propagation']);
+        $container->setParameter('tracing.doctrine.instrumentation', $config['doctrine']['instrumentation']);
     }
 
     /**

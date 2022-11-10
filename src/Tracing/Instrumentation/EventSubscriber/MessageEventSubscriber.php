@@ -88,6 +88,8 @@ class MessageEventSubscriber implements EventSubscriberInterface
             $span = $builder->startSpan();
 
             $this->scopes[$span] = $span->activate();
+
+            $this->mainSpanContext->setOperationName($operationName);
         } else {
             $span = Span::getCurrent();
 
