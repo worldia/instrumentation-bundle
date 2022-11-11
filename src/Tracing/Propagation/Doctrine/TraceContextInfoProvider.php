@@ -27,8 +27,8 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
         $trace->inject($info);
 
         $info['framework'] = 'symfony-'.Kernel::VERSION;
-        $info['service'] = $this->serviceName;
-        $info['operation'] = $this->mainSpanContext?->getOperationName();
+        $info['app_name'] = $this->serviceName;
+        $info['action'] = $this->mainSpanContext?->getOperationName();
 
         return array_filter($info);
     }
