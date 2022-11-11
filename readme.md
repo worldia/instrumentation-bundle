@@ -5,7 +5,7 @@
 #### Tracing
 - Using the official [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-php)
 - Minimal auto-instrumentation for **requests**, console **commands**, **consumers** and **doctrine**
-- Trace context propagation from incoming **requests** to **consumers** and **outgoing http calls**
+- Trace context propagation from incoming **requests** to **consumers**, **outgoing http calls** and **databases** (using [`sqlcommenter`](https://google.github.io/sqlcommenter/))
 - Configurable blacklisting of requests by path to avoid useless traces, eg. `/metrics` or `/_healthz`
 - Automatic log inclusion with configurable log level and channels
 

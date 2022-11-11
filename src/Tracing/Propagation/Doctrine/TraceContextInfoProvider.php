@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\Kernel;
 
 class TraceContextInfoProvider implements TraceContextInfoProviderInterface
 {
-    public function __construct(private ?MainSpanContextInterface $mainSpanContext = null, private ?RequestStack $requestStack, private ?string $serviceName = null)
+    public function __construct(private ?MainSpanContextInterface $mainSpanContext = null, private ?RequestStack $requestStack = null, private ?string $serviceName = null)
     {
     }
 

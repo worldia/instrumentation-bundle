@@ -3,6 +3,7 @@
 As output by ```bin/console config:dump-reference instrumentation```.
 
 ```yaml
+# Default configuration for extension with alias: "instrumentation"
 instrumentation:
 
     # Use semantic tags defined in the OpenTelemetry specification (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md)
@@ -21,6 +22,13 @@ instrumentation:
         path:                 /_healthz
     logging:
         enabled:              true
+
+        # Handlers to which the trace context processor should be bound
+        handlers:
+
+            # Defaults:
+            - main
+            - console
         keys:
             trace:                context.trace
             span:                 context.span
@@ -41,6 +49,15 @@ instrumentation:
             channels:             []
         request:
             enabled:              true
+            attributes:
+
+                # Use the primary server name of the matched virtual host
+                server_name:          null # Example: example.com
+                headers:
+
+                    # Examples:
+                    - accept
+                    - accept-encoding
             incoming_header:
                 name:                 ~
                 regex:                ~
@@ -49,6 +66,15 @@ instrumentation:
                 # Defaults:
                 - ^/_fragment
                 - ^/_profiler
+                - ^/_wdt
+            methods:
+
+                # Defaults:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+                - PATCH
         command:
             enabled:              true
             blacklist:
@@ -59,6 +85,11 @@ instrumentation:
         message:
             enabled:              true
             blacklist:            []
+        doctrine:
+            instrumentation:      true
+            propagation:          true
+            log_queries:          true
+            connections:          []
     metrics:
         enabled:              true
         path:                 /metrics
@@ -70,6 +101,9 @@ instrumentation:
 
             # When using the redis adapter, set "instance" to a service id that is an instance of \Redis
             instance:             null
+
+            # Set a prefix for Redis keys to avoid collisions, defaults to "metrics:<hostname>"
+            prefix:               null
         metrics:
 
             # Prototype
