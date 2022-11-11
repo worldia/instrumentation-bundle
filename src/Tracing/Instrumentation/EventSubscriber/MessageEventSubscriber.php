@@ -20,6 +20,7 @@ use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SDK\Trace\Span;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
+use OpenTelemetry\SDK\Trace\TracerProvider;
 use OpenTelemetry\SemConv\TraceAttributeValues;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
@@ -120,6 +121,9 @@ class MessageEventSubscriber implements EventSubscriberInterface
         }
 
         $this->spanProcessor->forceFlush();
+        if ($this->tracerProvider instanceof TracerProvider) {
+            $this->tracerProvider->forceFlush();
+        }
     }
 
     /**
