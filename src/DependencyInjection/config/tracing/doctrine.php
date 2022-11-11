@@ -18,6 +18,8 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
+use Symfony\Component\HttpFoundation\RequestStack;
+
 return static function (ContainerConfigurator $container) {
     $container->services()
         ->set(Tracing\Instrumentation\Doctrine\DBAL\Middleware::class)
@@ -36,6 +38,7 @@ return static function (ContainerConfigurator $container) {
         ->set(Tracing\Propagation\Doctrine\TraceContextInfoProviderInterface::class, Tracing\Propagation\Doctrine\TraceContextInfoProvider::class)
         ->args([
             service(MainSpanContextInterface::class),
+            service(RequestStack::class)->nullOnInvalid(),
             param('service.name'),
         ])
         ->public()
