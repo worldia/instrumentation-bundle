@@ -93,20 +93,9 @@ final class Connection implements ServerInfoAwareConnection
         return '/*'.implode(
             ',',
             array_map(
-                static fn (string $value, string $key) => self::escapeUrlEncode($key)."='".self::escapeUrlEncode($value)."'", $comments,
+                static fn (string $value, string $key) => $key."=".str_replace('%', '%%', $value), $comments,
                 array_keys($comments)
             ),
         ).'*/';
-    }
-
-    /**
-     * Since SQL uses '%' as a keyword, '%' is a by-product of url quoting
-     *   e.g. foo,bar --> foo%2Cbar
-     * thus in our quoting, we need to escape it too to finally give
-     *        foo,bar --> foo%%2Cbar.
-     */
-    private static function escapeUrlEncode(string $input): string
-    {
-        return str_replace('%', '%%', urlencode($input));
     }
 }
