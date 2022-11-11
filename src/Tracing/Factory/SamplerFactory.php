@@ -46,7 +46,7 @@ class SamplerFactory
     {
         $dsn = DsnParser::parseUrl($dsn);
         $type = $dsn->getParameter('sampler', self::PARENTBASED_ALWAYS_ON);
-        $ratio = $dsn->getParameter('ratio', .5);
+        $ratio = (float) $dsn->getParameter('ratio', .5);
 
         return $this->create($type, $ratio);
     }

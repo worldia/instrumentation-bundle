@@ -43,6 +43,21 @@ class SamplerFactorySpec extends ObjectBehavior
         $sampler->getDescription()->shouldReturn('ParentBased+AlwaysOffSampler');
     }
 
+    public function it_creates_samplers_from_url(): void
+    {
+        $sampler = $this->createFromDsn('scheme://host');
+        $sampler->shouldReturnAnInstanceOf(ParentBased::class);
+        $sampler->getDescription()->shouldReturn('ParentBased+AlwaysOnSampler');
+
+        $sampler = $this->createFromDsn('scheme://host?type=parentbased_always_off');
+        $sampler->shouldReturnAnInstanceOf(ParentBased::class);
+        $sampler->getDescription()->shouldReturn('ParentBased+AlwaysOffSampler');
+
+        $sampler = $this->createFromDsn('scheme://host?type=parentbased_traceidratio&ratio=0.2');
+        $sampler->shouldReturnAnInstanceOf(ParentBased::class);
+        $sampler->getDescription()->shouldReturn('ParentBased+TraceIdRatioBasedSampler{0.200000}');
+    }
+
     public function it_throws_an_exception_with_needed_ratio_is_not_provided(): void
     {
         $this->shouldThrow(\RuntimeException::class)->during('create', ['traceidratio']);
