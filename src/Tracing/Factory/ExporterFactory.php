@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Factory;
 
+use Instrumentation\Tracing\Exporter\NullExporter;
 use Nyholm\Dsn\DsnParser;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SDK\Trace\ExporterFactory as BaseExporterFactory;
@@ -29,6 +30,10 @@ class ExporterFactory
     public function createFromDsn(string $dsn): SpanExporterInterface
     {
         $dsn = DsnParser::parseUrl($dsn);
+
+        if ('null' === $dsn->getScheme()) {
+            return new NullExporter();
+        }
 
         $url = $dsn
             ->withParameter('serviceName', $this->serviceName)
