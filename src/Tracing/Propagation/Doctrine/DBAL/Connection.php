@@ -93,7 +93,7 @@ final class Connection implements ServerInfoAwareConnection
         return '/*'.implode(
             ',',
             array_map(
-                static fn (string $value, string $key) => $key."=".str_replace('%', '%%', $value), $comments,
+                static fn (string $value, string $key) => $key.'='.str_replace('%', '%%', $value), $comments,
                 array_keys($comments)
             ),
         ).'*/';

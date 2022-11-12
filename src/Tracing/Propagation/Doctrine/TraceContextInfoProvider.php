@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Propagation\Doctrine;
 
+use Composer\InstalledVersions;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -16,8 +17,15 @@ use Symfony\Component\HttpKernel\Kernel;
 
 class TraceContextInfoProvider implements TraceContextInfoProviderInterface
 {
+    private ?string $dbDriver = null;
+
     public function __construct(private ?MainSpanContextInterface $mainSpanContext = null, private ?RequestStack $requestStack = null, private ?string $serviceName = null)
     {
+        try {
+            $this->dbDriver = InstalledVersions::getVersion('doctrine/dbal');
+        } catch (\Exception) {
+            // Ignore
+        }
     }
 
     public function getTraceContext(): array
@@ -27,8 +35,9 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
         $trace = TraceContextPropagator::getInstance();
         $trace->inject($info);
 
+        $info['db_driver'] = $this->dbDriver;
         $info['framework'] = 'symfony-'.Kernel::VERSION;
-        $info['app_name'] = $this->serviceName;
+        $info['app'] = $this->serviceName;
         $info['action'] = $this->mainSpanContext?->getOperationName();
         $info['controller'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_controller');
         $info['route'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_route');

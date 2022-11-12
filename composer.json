@@ -21,6 +21,7 @@
     "require-dev": {
         "doctrine/dbal": "^3.0",
         "friends-of-phpspec/phpspec-expect": "^4.0",
+        "open-telemetry/opentelemetry-php-contrib": "^0.0.15",
         "php-http/httplug": "^2.3",
         "phpspec/phpspec": "^7.2",
         "phpstan/phpstan": "^1.4",
