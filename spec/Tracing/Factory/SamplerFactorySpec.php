@@ -49,11 +49,11 @@ class SamplerFactorySpec extends ObjectBehavior
         $sampler->shouldReturnAnInstanceOf(ParentBased::class);
         $sampler->getDescription()->shouldReturn('ParentBased+AlwaysOnSampler');
 
-        $sampler = $this->createFromDsn('scheme://host?type=parentbased_always_off');
+        $sampler = $this->createFromDsn('scheme://host?sampler=parentbased_always_off');
         $sampler->shouldReturnAnInstanceOf(ParentBased::class);
         $sampler->getDescription()->shouldReturn('ParentBased+AlwaysOffSampler');
 
-        $sampler = $this->createFromDsn('scheme://host?type=parentbased_traceidratio&ratio=0.2');
+        $sampler = $this->createFromDsn('scheme://host?sampler=parentbased_traceidratio&ratio=0.2');
         $sampler->shouldReturnAnInstanceOf(ParentBased::class);
         $sampler->getDescription()->shouldReturn('ParentBased+TraceIdRatioBasedSampler{0.200000}');
     }
