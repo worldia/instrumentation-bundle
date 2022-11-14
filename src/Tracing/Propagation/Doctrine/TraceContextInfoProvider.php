@@ -25,7 +25,7 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
         $this->framework = 'symfony-'.Kernel::VERSION;
 
         try {
-            $this->dbDriver = InstalledVersions::getVersion('doctrine/dbal');
+            $this->dbDriver = sprintf('doctrine/dbal-%s', InstalledVersions::getVersion('doctrine/dbal'));
         } catch (\Exception) {
             // Ignore
         }
@@ -40,7 +40,7 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
 
         $info['db_driver'] = $this->dbDriver;
         $info['framework'] = $this->framework;
-        $info['app'] = $this->serviceName;
+        $info['application'] = $this->serviceName;
         $info['action'] = $this->mainSpanContext?->getOperationName();
         $info['controller'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_controller');
         $info['route'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_route');
