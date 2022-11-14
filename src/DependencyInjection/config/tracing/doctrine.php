@@ -13,6 +13,7 @@ use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInter
 use Instrumentation\Tracing;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
@@ -37,9 +38,9 @@ return static function (ContainerConfigurator $container) {
 
         ->set(Tracing\Propagation\Doctrine\TraceContextInfoProviderInterface::class, Tracing\Propagation\Doctrine\TraceContextInfoProvider::class)
         ->args([
+            service(ResourceInfo::class),
             service(MainSpanContextInterface::class),
             service(RequestStack::class)->nullOnInvalid(),
-            param('service.name'),
         ])
         ->public()
     ;
