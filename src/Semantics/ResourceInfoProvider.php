@@ -15,6 +15,8 @@ use OpenTelemetry\SDK\Resource\ResourceInfoFactory;
 
 class ResourceInfoProvider implements ResourceInfoProviderInterface
 {
+    private ?ResourceInfo $info = null;
+
     /**
      * @param array<string,string> $attributes
      */
@@ -24,9 +26,13 @@ class ResourceInfoProvider implements ResourceInfoProviderInterface
 
     public function getInfo(): ResourceInfo
     {
-        $default = ResourceInfoFactory::defaultResource();
-        $attributes = array_merge($default->getAttributes()->toArray(), $this->attributes);
+        if (null === $this->info) {
+            $default = ResourceInfoFactory::defaultResource();
+            $attributes = array_merge($default->getAttributes()->toArray(), $this->attributes);
 
-        return ResourceInfo::create(Attributes::create($attributes));
+            $this->info = ResourceInfo::create(Attributes::create($attributes));
+        }
+
+        return $this->info;
     }
 }
