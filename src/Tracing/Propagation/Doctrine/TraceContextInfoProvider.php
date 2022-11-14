@@ -19,36 +19,47 @@ use Symfony\Component\HttpKernel\Kernel;
 
 class TraceContextInfoProvider implements TraceContextInfoProviderInterface
 {
-    private ?string $dbDriver = null;
-    private string $framework;
-    private ?string $serviceName = null;
+    /**
+     * @var array<string,string>
+     */
+    private ?array $info = null;
 
-    public function __construct(ResourceInfo $resourceInfo, private ?MainSpanContextInterface $mainSpanContext = null, private ?RequestStack $requestStack = null)
+    public function __construct(private ResourceInfo $resourceInfo, private ?MainSpanContextInterface $mainSpanContext = null, private ?RequestStack $requestStack = null)
     {
-        $this->framework = 'symfony-'.Kernel::VERSION;
-        $this->serviceName = $resourceInfo->getAttributes()[ResourceAttributes::SERVICE_NAME] ?? 'app';
-
-        try {
-            $this->dbDriver = sprintf('doctrine/dbal-%s', InstalledVersions::getVersion('doctrine/dbal'));
-        } catch (\Exception) {
-            // Ignore
-        }
     }
 
     public function getTraceContext(): array
     {
-        $info = [];
+        if (!$this->info) {
+            $info = [];
 
-        $traceContext = TraceContextPropagator::getInstance();
-        $traceContext->inject($info);
+            $traceContext = TraceContextPropagator::getInstance();
+            $traceContext->inject($info);
 
-        $info['db_driver'] = $this->dbDriver;
-        $info['framework'] = $this->framework;
-        $info['application'] = $this->serviceName;
-        $info['action'] = $this->mainSpanContext?->getOperationName();
-        $info['controller'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_controller');
-        $info['route'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_route');
+            $info['action'] = $this->mainSpanContext?->getOperationName();
+            $info['framework'] = 'symfony-'.Kernel::VERSION;
 
-        return array_filter($info);
+            try {
+                $info['db_driver'] = sprintf('doctrine/dbal-%s', InstalledVersions::getVersion('doctrine/dbal'));
+            } catch (\Exception) {
+                // Ignore
+            }
+
+            if ($this->resourceInfo->getAttributes()->has(ResourceAttributes::SERVICE_NAME)) {
+                $info['application'] = $this->resourceInfo->getAttributes()->get(ResourceAttributes::SERVICE_NAME);
+            }
+
+            if ($controller = $this->requestStack?->getCurrentRequest()?->attributes->get('_controller')) {
+                if (\is_string($controller)) {
+                    $info['controller'] = str_replace('\\', '\\\\', $controller);
+                }
+            }
+
+            $info['route'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_route');
+
+            $this->info = array_filter($info);
+        }
+
+        return $this->info;
     }
 }
