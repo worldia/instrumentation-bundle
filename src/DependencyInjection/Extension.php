@@ -175,6 +175,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $loader->load('semconv.php');
 
         $container->setParameter('app.resource_info', $config);
+        $container->setParameter('app.resource_info.service_name', $config['service.name']);
 
         $container->setParameter('tracing.request.attributes.server_name', null);
         $container->setParameter('tracing.request.attributes.headers', []);

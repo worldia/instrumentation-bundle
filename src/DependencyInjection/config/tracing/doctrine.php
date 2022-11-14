@@ -39,7 +39,7 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service(MainSpanContextInterface::class),
             service(RequestStack::class)->nullOnInvalid(),
-            param('service.name'),
+            param('app.resource_info.service_name'),
         ])
         ->public()
     ;
