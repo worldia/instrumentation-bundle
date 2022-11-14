@@ -7,7 +7,7 @@ jobs:
     name: PHPStan
     strategy:
       matrix:
-        php-version: [ '8.0', '8.1' ]
+        php-version: [ '8.1' ]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -44,7 +44,7 @@ jobs:
     name: PHP-CS-Fixer
     strategy:
       matrix:
-        php-version: [ '8.0', '8.1' ]
+        php-version: [ '8.1' ]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -81,7 +81,7 @@ jobs:
     name: PHPSpec
     strategy:
       matrix:
-        php-version: [ '8.0', '8.1' ]
+        php-version: [ '8.1' ]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
