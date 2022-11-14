@@ -18,9 +18,12 @@ use Symfony\Component\HttpKernel\Kernel;
 class TraceContextInfoProvider implements TraceContextInfoProviderInterface
 {
     private ?string $dbDriver = null;
+    private string $framework;
 
     public function __construct(private ?MainSpanContextInterface $mainSpanContext = null, private ?RequestStack $requestStack = null, private ?string $serviceName = null)
     {
+        $this->framework = 'symfony-'.Kernel::VERSION;
+
         try {
             $this->dbDriver = InstalledVersions::getVersion('doctrine/dbal');
         } catch (\Exception) {
@@ -36,7 +39,7 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
         $trace->inject($info);
 
         $info['db_driver'] = $this->dbDriver;
-        $info['framework'] = 'symfony-'.Kernel::VERSION;
+        $info['framework'] = $this->framework;
         $info['app'] = $this->serviceName;
         $info['action'] = $this->mainSpanContext?->getOperationName();
         $info['controller'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_controller');
