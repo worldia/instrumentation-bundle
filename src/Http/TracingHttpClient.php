@@ -59,11 +59,9 @@ final class TracingHttpClient implements HttpClientInterface
             ->setAttributes([
                 TraceAttributes::HTTP_METHOD => $method,
                 TraceAttributes::HTTP_URL => $url,
-                TraceAttributes::NET_PEER_NAME => $this->serviceName,
+                TraceAttributes::PEER_SERVICE => $this->serviceName,
             ])
             ->startSpan();
-
-        $span->activate();
 
         $options = array_merge($options, [
             'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span) {
