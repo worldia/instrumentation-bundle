@@ -14,6 +14,7 @@ use OpenTelemetry\SDK\Trace\Sampler\AlwaysOffSampler;
 use OpenTelemetry\SDK\Trace\Sampler\AlwaysOnSampler;
 use OpenTelemetry\SDK\Trace\Sampler\ParentBased;
 use OpenTelemetry\SDK\Trace\Sampler\TraceIdRatioBasedSampler;
+use OpenTelemetry\SDK\Trace\SamplerFactory as OtelSamplerFactory;
 use OpenTelemetry\SDK\Trace\SamplerInterface;
 
 class SamplerFactory
@@ -25,7 +26,25 @@ class SamplerFactory
     public const PARENTBASED_ALWAYS_ON = 'parentbased_always_on';
     public const PARENTBASED_ALWAYS_OFF = 'parentbased_always_off';
 
-    public function create(string $type, ?float $ratio = null): SamplerInterface
+    public function create(?string $dsn): SamplerInterface
+    {
+        if ($dsn) {
+            return $this->createFromDsn($dsn);
+        }
+
+        return (new OtelSamplerFactory())->fromEnvironment();
+    }
+
+    private function createFromDsn(string $dsn): SamplerInterface
+    {
+        $dsn = DsnParser::parseUrl($dsn);
+        $type = $dsn->getParameter('sampler', self::PARENTBASED_ALWAYS_ON);
+        $ratio = (float) $dsn->getParameter('ratio', .5);
+
+        return $this->doCreate($type, $ratio);
+    }
+
+    private function doCreate(string $type, ?float $ratio = null): SamplerInterface
     {
         if (!\is_float($ratio) && \in_array($type, [self::TRACEIDRATIO, self::PARENTBASED_TRACEIDRATIO])) {
             throw new \RuntimeException('You must provide a ratio to use trace id ratio sampling.');
@@ -40,14 +59,5 @@ class SamplerFactory
             self::PARENTBASED_ALWAYS_OFF => new ParentBased(new AlwaysOffSampler()),
             default => throw new \InvalidArgumentException('Unknown sampler: '.$type)
         };
-    }
-
-    public function createFromDsn(string $dsn): SamplerInterface
-    {
-        $dsn = DsnParser::parseUrl($dsn);
-        $type = $dsn->getParameter('sampler', self::PARENTBASED_ALWAYS_ON);
-        $ratio = (float) $dsn->getParameter('ratio', .5);
-
-        return $this->create($type, $ratio);
     }
 }

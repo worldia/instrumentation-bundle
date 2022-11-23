@@ -61,7 +61,7 @@ return static function (ContainerConfigurator $container) {
         ])
 
         ->set(SamplerInterface::class)
-        ->factory([service(SamplerFactory::class), 'createFromDsn'])
+        ->factory([service(SamplerFactory::class), 'create'])
         ->args([param('tracer.dsn')])
 
         ->set(TogglableSampler::class)
@@ -71,7 +71,7 @@ return static function (ContainerConfigurator $container) {
         ])
 
         ->set(SpanExporterInterface::class)
-        ->factory([service(ExporterFactory::class), 'createFromDsn'])
+        ->factory([service(ExporterFactory::class), 'create'])
         ->args([
             param('tracer.dsn'),
         ])
@@ -82,14 +82,14 @@ return static function (ContainerConfigurator $container) {
         ])
 
         ->set(SpanProcessorInterface::class)
-        ->factory([service(SpanProcessorFactory::class), 'createFromDsn'])
+        ->factory([service(SpanProcessorFactory::class), 'create'])
         ->args([
             param('tracer.dsn'),
         ])
 
         ->set(TracerProviderInterface::class, TracerProvider::class)
         ->args([
-            [service(SpanProcessorInterface::class)],
+            [service(SpanProcessorInterface::class)->ignoreOnInvalid()],
             service(SamplerInterface::class),
             service(ResourceInfo::class),
             null,

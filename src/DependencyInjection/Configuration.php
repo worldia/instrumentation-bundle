@@ -83,7 +83,7 @@ class Configuration implements ConfigurationInterface
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
                         ->scalarNode('dsn')
-                            ->defaultValue('%env(TRACER_URL)%')
+                            ->defaultValue('%env(default::TRACER_URL)%')
                             ->info('Accepts any DSN handled by OpenTelemetry\'s ExporterFactory. See: https://github.com/open-telemetry/opentelemetry-php/blob/main/src/SDK/Trace/ExporterFactory.php')
                             ->example('zipkin+http://jaeger:9411/api/v2/spans')
                         ->end()
