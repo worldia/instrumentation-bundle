@@ -15,30 +15,31 @@ use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SemConv\TraceAttributes;
+use Symfony\Component\HttpClient\DecoratorTrait;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
-use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
 final class TracingHttpClient implements HttpClientInterface
 {
-    private HttpClientInterface $decorated;
+    use DecoratorTrait;
+
     private ClientRequestOperationNameResolverInterface $operationNameResolver;
 
     /**
-     * @param HttpClientInterface|array<mixed>|null $decorated
+     * @param HttpClientInterface|array<mixed>|null $client
      */
     public function __construct(
         private string $serviceName,
-        HttpClientInterface|array|null $decorated = null,
+        HttpClientInterface|array|null $client = null,
         ClientRequestOperationNameResolverInterface $operationNameResolver = null
     ) {
-        if (null === $decorated) {
-            $this->decorated = HttpClient::create();
-        } elseif ($decorated instanceof HttpClientInterface) {
-            $this->decorated = $decorated;
+        if (null === $client) {
+            $this->client = HttpClient::create();
+        } elseif ($client instanceof HttpClientInterface) {
+            $this->client = $client;
         } else {
-            $this->decorated = HttpClient::create($decorated);
+            $this->client = HttpClient::create($client);
         }
 
         $this->operationNameResolver = $operationNameResolver ?: new ClientRequestOperationNameResolver();
@@ -86,12 +87,7 @@ final class TracingHttpClient implements HttpClientInterface
             ),
         ]);
 
-        return $this->decorated->request($method, $url, $options);
-    }
-
-    public function stream(ResponseInterface|iterable $responses, float $timeout = null): ResponseStreamInterface
-    {
-        return $this->decorated->stream($responses, $timeout);
+        return $this->client->request($method, $url, $options);
     }
 
     /**
@@ -99,6 +95,6 @@ final class TracingHttpClient implements HttpClientInterface
      */
     public function withOptions(array $options): static
     {
-        return new static($this->serviceName, $this->decorated->withOptions($options));
+        return new static($this->serviceName, $this->client->withOptions($options));
     }
 }
