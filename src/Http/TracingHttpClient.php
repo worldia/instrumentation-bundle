@@ -54,10 +54,10 @@ final class TracingHttpClient implements HttpClientInterface
             ])
             ->startSpan();
 
-        $span->activate();
+        $scope = $span->activate();
 
         $options = array_merge($options, [
-            'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span) {
+            'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span, $scope) {
                 if (null !== $onProgress) {
                     $onProgress($dlNow, $dlSize, $info);
                 }
@@ -70,6 +70,7 @@ final class TracingHttpClient implements HttpClientInterface
                         $span->setStatus(StatusCode::STATUS_ERROR);
                     }
 
+                    $scope->detach();
                     $span->end();
                 }
             },
