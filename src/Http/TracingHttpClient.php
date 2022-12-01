@@ -37,13 +37,15 @@ final class TracingHttpClient implements HttpClientInterface
         HttpClientInterface|array|null $client = null,
         ClientRequestOperationNameResolverInterface $operationNameResolver = null,
         ClientRequestAttributeProviderInterface $attributeProvider = null,
+        int $maxHostConnections = 6,
+        int $maxPendingPushes = 50
     ) {
         if (null === $client) {
-            $this->client = HttpClient::create();
+            $this->client = HttpClient::create([], $maxHostConnections, $maxPendingPushes);
         } elseif ($client instanceof HttpClientInterface) {
             $this->client = $client;
         } else {
-            $this->client = HttpClient::create($client);
+            $this->client = HttpClient::create($client, $maxHostConnections, $maxPendingPushes);
         }
 
         $this->operationNameResolver = $operationNameResolver ?: new ClientRequestOperationNameResolver();
@@ -68,19 +70,19 @@ final class TracingHttpClient implements HttpClientInterface
 
         $options = array_merge($options, [
             'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span) {
+                static $dlStarted = false;
+
                 if (null !== $onProgress) {
                     $onProgress($dlNow, $dlSize, $info);
                 }
 
-                if (isset($info['http_code']) && 0 !== $info['http_code']) {
-                    $span->setAttribute(TraceAttributes::HTTP_URL, $info['url']);
+                if (!$dlStarted && isset($info['http_code']) && 0 !== $info['http_code']) {
+                    $dlStarted = true;
                     $span->setAttribute(TraceAttributes::HTTP_STATUS_CODE, $info['http_code']);
 
                     if ($info['http_code'] >= 400) {
                         $span->setStatus(StatusCode::STATUS_ERROR);
                     }
-
-                    $span->end();
                 }
             },
             'headers' => array_merge(
@@ -89,7 +91,7 @@ final class TracingHttpClient implements HttpClientInterface
             ),
         ]);
 
-        return $this->client->request($method, $url, $options);
+        return new TracedResponse($this->client->request($method, $url, $options), $span);
     }
 
     /**
