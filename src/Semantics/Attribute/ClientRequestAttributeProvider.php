@@ -26,6 +26,7 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
             TraceAttributes::PEER_SERVICE => $peerName,
             TraceAttributes::HTTP_SERVER_NAME => $peerName,
             TraceAttributes::HTTP_METHOD => strtoupper($method),
+            TraceAttributes::HTTP_URL => $url,
         ];
 
         foreach ($this->capturedHeaders as $header) {
