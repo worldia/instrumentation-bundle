@@ -13,13 +13,12 @@ class ClientRequestOperationNameResolver implements ClientRequestOperationNameRe
 {
     public function getOperationName(string $method, string $url, string $peerName): string
     {
-        $hostname = parse_url($url, \PHP_URL_HOST);
         $protocol = parse_url($url, \PHP_URL_SCHEME);
 
-        if (!empty($hostname) && !empty($protocol)) {
-            $url = sprintf('%s://%s', $protocol, $hostname);
+        if (empty($protocol)) {
+            $protocol = 'http';
         }
 
-        return sprintf('http.%s %s', strtolower($method), $url);
+        return sprintf('http.%s %s://%s', strtolower($method), $protocol, $peerName);
     }
 }
