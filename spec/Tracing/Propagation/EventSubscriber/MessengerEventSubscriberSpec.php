@@ -71,7 +71,7 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
     ): void {
         $this->closeSpan();
         $originalEnveloppe = $this->createEnveloppeWithoutTraceContextStamp();
-        $event = new SendMessageToTransportsEvent($originalEnveloppe);
+        $event = new SendMessageToTransportsEvent($originalEnveloppe, []);
         $expectedException = ContextPropagationException::becauseNoParentTrace();
 
         $this->onSend($event);
@@ -90,7 +90,7 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
 
     public function it_adds_trace_context_stamp_when_message_is_sent(): void
     {
-        $event = new SendMessageToTransportsEvent($this->createEnveloppeWithoutTraceContextStamp());
+        $event = new SendMessageToTransportsEvent($this->createEnveloppeWithoutTraceContextStamp(), []);
 
         $this->onSend($event);
 

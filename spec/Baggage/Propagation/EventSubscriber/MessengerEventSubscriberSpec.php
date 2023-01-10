@@ -47,7 +47,7 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
     public function it_adds_baggage_stamp(): void
     {
         $envelope = new Envelope(new \stdClass());
-        $event = new SendMessageToTransportsEvent($envelope);
+        $event = new SendMessageToTransportsEvent($envelope, []);
 
         $this->onSend($event);
 
