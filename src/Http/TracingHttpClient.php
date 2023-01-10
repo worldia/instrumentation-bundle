@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Instrumentation\Http;
 
+use Instrumentation\Semantics\Attribute\ClientRequestAttributeProvider;
+use Instrumentation\Semantics\Attribute\ClientRequestAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverInterface;
 use Instrumentation\Tracing\Tracing;
@@ -25,6 +27,7 @@ final class TracingHttpClient implements HttpClientInterface
     use DecoratorTrait;
 
     private ClientRequestOperationNameResolverInterface $operationNameResolver;
+    private ClientRequestAttributeProviderInterface $attributeProvider;
 
     /**
      * @param HttpClientInterface|array<mixed>|null $client
@@ -32,7 +35,8 @@ final class TracingHttpClient implements HttpClientInterface
     public function __construct(
         private string $serviceName,
         HttpClientInterface|array|null $client = null,
-        ClientRequestOperationNameResolverInterface $operationNameResolver = null
+        ClientRequestOperationNameResolverInterface $operationNameResolver = null,
+        ClientRequestAttributeProviderInterface $attributeProvider = null,
     ) {
         if (null === $client) {
             $this->client = HttpClient::create();
@@ -43,6 +47,7 @@ final class TracingHttpClient implements HttpClientInterface
         }
 
         $this->operationNameResolver = $operationNameResolver ?: new ClientRequestOperationNameResolver();
+        $this->attributeProvider = $attributeProvider ?: new ClientRequestAttributeProvider();
     }
 
     /**
@@ -53,15 +58,12 @@ final class TracingHttpClient implements HttpClientInterface
         $onProgress = $options['on_progress'] ?? null;
         $headers = $options['headers'] ?? [];
         $operationName = $this->operationNameResolver->getOperationName($method, $url, $this->serviceName);
+        $attributes = $this->attributeProvider->getAttributes($method, $url, $this->serviceName, $headers);
 
         $span = Tracing::getTracer()
             ->spanBuilder($operationName)
             ->setSpanKind(SpanKind::KIND_CLIENT)
-            ->setAttributes([
-                TraceAttributes::HTTP_METHOD => $method,
-                TraceAttributes::HTTP_URL => $url,
-                TraceAttributes::PEER_SERVICE => $this->serviceName,
-            ])
+            ->setAttributes($attributes)
             ->startSpan();
 
         $options = array_merge($options, [
