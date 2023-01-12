@@ -79,6 +79,7 @@ final class TracingHttpClient implements HttpClientInterface
                 if (!$dlStarted && isset($info['http_code']) && 0 !== $info['http_code']) {
                     $dlStarted = true;
                     $span->setAttribute(TraceAttributes::HTTP_STATUS_CODE, $info['http_code']);
+                    $span->setAttribute(TraceAttributes::HTTP_URL, $info['url']);
 
                     if ($info['http_code'] >= 400) {
                         $span->setStatus(StatusCode::STATUS_ERROR);
