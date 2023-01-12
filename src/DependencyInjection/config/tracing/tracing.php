@@ -42,9 +42,6 @@ use Symfony\Component\Serializer\Serializer;
 return static function (ContainerConfigurator $container) {
     $container->services()
         ->set(ExporterFactory::class)
-        ->args([
-            service(ResourceInfo::class),
-        ])
 
         ->set(SamplerFactory::class)
         ->set(SpanProcessorFactory::class)
@@ -71,7 +68,7 @@ return static function (ContainerConfigurator $container) {
         ])
 
         ->set(SpanExporterInterface::class)
-        ->factory([service(ExporterFactory::class), 'createFromDsn'])
+        ->factory([service(ExporterFactory::class), 'create'])
         ->args([
             param('tracer.dsn'),
         ])

@@ -83,7 +83,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
 
             if (PropagationStrategyStamp::STRATEGY_LINK === $strategy) {
                 $linkContext = Span::getCurrent()->getContext();
-                $builder->setNoParent()->addLink($linkContext);
+                $builder->setParent(false)->addLink($linkContext);
             }
 
             $span = $builder->startSpan();

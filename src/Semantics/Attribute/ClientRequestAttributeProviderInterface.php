@@ -18,5 +18,5 @@ interface ClientRequestAttributeProviderInterface
      *
      * @return array<string|TraceAttributes::*,string|array<string>>
      */
-    public function getAttributes(string $method, string $url, string $peerName, array $headers = []): array;
+    public function getAttributes(string $method, string $url, array $headers = []): array;
 }

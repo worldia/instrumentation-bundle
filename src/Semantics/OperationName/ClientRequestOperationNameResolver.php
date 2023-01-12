@@ -11,10 +11,10 @@ namespace Instrumentation\Semantics\OperationName;
 
 class ClientRequestOperationNameResolver implements ClientRequestOperationNameResolverInterface
 {
-    public function getOperationName(string $method, string $url, string $peerName): string
+    public function getOperationName(string $method, string $url): string
     {
         $url = parse_url($url);
 
-        return sprintf('http.%s %s://%s', strtolower($method), $url['scheme'] ?? 'http', $url['host'] ?? $peerName);
+        return sprintf('http.%s %s://%s', strtolower($method), $url['scheme'] ?? 'http', $url['host'] ?? 'unknown');
     }
 }

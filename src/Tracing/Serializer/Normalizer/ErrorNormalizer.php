@@ -44,9 +44,13 @@ class ErrorNormalizer implements NormalizerInterface, CacheableSupportsMethodInt
         return $data;
     }
 
-    public function supportsNormalization($data, string $format = null): bool
+    /**
+     * @param array<mixed> $context
+     */
+    public function supportsNormalization($data, string $format = null, array $context = []): bool
     {
-        return $this->decorated->supportsNormalization($data, $format);
+        // @phpstan-ignore-next-line
+        return $this->decorated->supportsNormalization($data, $format, $context);
     }
 
     public function hasCacheableSupportsMethod(): bool

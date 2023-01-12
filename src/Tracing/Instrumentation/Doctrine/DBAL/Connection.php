@@ -16,10 +16,11 @@ use Doctrine\DBAL\Driver\Statement as StatementInterface;
 use Doctrine\DBAL\ParameterType;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
-use OpenTelemetry\API\Trace\SpanContextKey;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\ContextInterface;
+use OpenTelemetry\Context\ContextKeys;
 
 final class Connection implements ServerInfoAwareConnection
 {
@@ -32,7 +33,7 @@ final class Connection implements ServerInfoAwareConnection
     private const OP_TRANSACTION_COMMIT = 'db.transaction.commit';
     private const OP_TRANSACTION_ROLLBACK = 'db.transaction.rollback';
 
-    private Context $doctrineSpanContext;
+    private ContextInterface $doctrineSpanContext;
     private bool $createdDoctrineSpanContext = false;
 
     /**
@@ -136,10 +137,10 @@ final class Connection implements ServerInfoAwareConnection
         }
 
         $mainSpan = $this->mainSpanContext->getMainSpan();
-        $parentContext = Context::getCurrent()->with(SpanContextKey::instance(), $mainSpan);
+        $parentContext = Context::getCurrent()->with(ContextKeys::span(), $mainSpan);
 
         $doctrineSpan = $this->getTracer()->spanBuilder('db.orm')->setParent($parentContext)->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
-        $this->doctrineSpanContext = Context::getCurrent()->with(SpanContextKey::instance(), $doctrineSpan);
+        $this->doctrineSpanContext = Context::getCurrent()->with(ContextKeys::span(), $doctrineSpan);
         $doctrineSpan->end();
 
         $this->createdDoctrineSpanContext = true;

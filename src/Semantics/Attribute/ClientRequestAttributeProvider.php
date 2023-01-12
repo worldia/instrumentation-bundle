@@ -20,11 +20,9 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
     {
     }
 
-    public function getAttributes(string $method, string $url, string $peerName, array $headers = []): array
+    public function getAttributes(string $method, string $url, array $headers = []): array
     {
         $attributes = [
-            TraceAttributes::PEER_SERVICE => $peerName,
-            TraceAttributes::HTTP_SERVER_NAME => $peerName,
             TraceAttributes::HTTP_METHOD => strtoupper($method),
             TraceAttributes::HTTP_URL => $url,
         ];

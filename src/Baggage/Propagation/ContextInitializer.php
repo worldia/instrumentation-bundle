@@ -11,43 +11,44 @@ namespace Instrumentation\Baggage\Propagation;
 
 use Instrumentation\Baggage\Propagation\Messenger\BaggageStamp;
 use OpenTelemetry\API\Baggage\Propagation\BaggagePropagator;
+use OpenTelemetry\Context\ScopeInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Messenger\Envelope;
 
 final class ContextInitializer
 {
-    public static function fromRequest(Request $request): void
+    public static function fromRequest(Request $request): ?ScopeInterface
     {
         if (!$baggage = $request->headers->get(BaggagePropagator::BAGGAGE)) {
-            return;
+            return null;
         }
 
-        static::activateContext($baggage);
+        return static::activateContext($baggage);
     }
 
-    public static function fromMessage(Envelope $envelope): void
+    public static function fromMessage(Envelope $envelope): ?ScopeInterface
     {
         /** @var BaggageStamp|null $stamp */
         $stamp = $envelope->last(BaggageStamp::class);
 
         if (!$stamp) {
-            return;
+            return null;
         }
 
-        static::activateContext($stamp->getBaggage());
+        return static::activateContext($stamp->getBaggage());
     }
 
-    public static function fromW3CHeader(string $header): void
+    public static function fromW3CHeader(string $header): ?ScopeInterface
     {
-        static::activateContext($header);
+        return static::activateContext($header);
     }
 
-    public static function activateContext(string $baggage): void
+    public static function activateContext(string $baggage): ScopeInterface
     {
         $context = BaggagePropagator::getInstance()->extract(array_filter([
             BaggagePropagator::BAGGAGE => $baggage,
         ]));
 
-        $context->activate();
+        return $context->activate();
     }
 }

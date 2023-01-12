@@ -14,5 +14,5 @@ interface ClientRequestOperationNameResolverInterface
     /**
      * @return string&non-empty-string
      */
-    public function getOperationName(string $method, string $url, string $peerName): string;
+    public function getOperationName(string $method, string $url): string;
 }
