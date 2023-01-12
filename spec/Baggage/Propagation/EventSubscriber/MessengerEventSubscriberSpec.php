@@ -10,7 +10,6 @@ namespace spec\Instrumentation\Baggage\Propagation\EventSubscriber;
 use Instrumentation\Baggage\Propagation\Messenger\BaggageStamp;
 use OpenTelemetry\API\Baggage\Baggage;
 use PhpSpec\ObjectBehavior;
-use spec\Instrumentation\IsolateContext;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\SendMessageToTransportsEvent;
@@ -19,18 +18,6 @@ use Symfony\Component\Messenger\Stamp\StampInterface;
 
 class MessengerEventSubscriberSpec extends ObjectBehavior
 {
-    use IsolateContext;
-
-    public function let(): void
-    {
-        $this->forkMainContext();
-    }
-
-    public function letGo(): void
-    {
-        $this->restoreMainContext();
-    }
-
     public function it_is_initializable(): void
     {
         $this->beAnInstanceOf(MessengerEventSubscriber::class);
@@ -59,12 +46,10 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
 
     public function it_initializes_context(): void
     {
-        Baggage::getBuilder()->set('foo', 'bar')->build()->activate();
+        $scope1 = Baggage::getBuilder()->set('foo', 'bar')->build()->activate();
         $stamp = new BaggageStamp();
-        Baggage::getEmpty()->activate();
-
+        $scope1->detach();
         expect($stamp->getBaggage())->shouldReturn('foo=bar');
-        expect(Baggage::getCurrent()->getValue('foo'))->shouldReturn(null);
 
         $envelope = new Envelope(new \stdClass(), [$stamp]);
         $event = new WorkerMessageReceivedEvent($envelope, 'receiver');
@@ -72,5 +57,8 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
         $this->onConsume($event);
 
         expect(Baggage::getCurrent()->getValue('foo'))->shouldReturn('bar');
+
+        $this->onHandled($event);
+        expect(Baggage::getCurrent()->getValue('foo'))->shouldReturn(null);
     }
 }

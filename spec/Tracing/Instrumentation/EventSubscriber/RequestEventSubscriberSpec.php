@@ -26,7 +26,6 @@ use OpenTelemetry\SemConv\TraceAttributes;
 use PhpSpec\ObjectBehavior;
 use PhpSpec\Wrapper\Collaborator;
 use Prophecy\Argument;
-use spec\Instrumentation\IsolateContext;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
@@ -38,8 +37,6 @@ use Symfony\Component\Routing\RouteCollection;
 
 class RequestEventSubscriberSpec extends ObjectBehavior
 {
-    use IsolateContext;
-
     private HttpKernelInterface|Collaborator $kernel;
     private array $requestAttributes = ['request' => 'attribute'];
     private array $responseAttributes = ['first' => 'attribute', 'second' => 'attribute'];
@@ -274,7 +271,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
 
     public function it_lets_context_unchanged_after_handling_a_request(ServerRequestOperationNameResolverInterface $operationNameResolver): void
     {
-        $this->forkMainContext();
         $originalContext = clone Context::getCurrent();
         $this->beConstructedWith(
             new TracerProvider(),
@@ -290,8 +286,6 @@ class RequestEventSubscriberSpec extends ObjectBehavior
         $this->onTerminate();
 
         expect(Context::getCurrent())->shouldBeLike($originalContext);
-
-        $this->restoreMainContext();
     }
 
     private function createMainRequestEvent(string $path, string $method = Request::METHOD_GET): RequestEvent

@@ -33,7 +33,6 @@ final class TracingHttpClient implements HttpClientInterface
      * @param HttpClientInterface|array<mixed>|null $client
      */
     public function __construct(
-        private string $serviceName,
         HttpClientInterface|array|null $client = null,
         ClientRequestOperationNameResolverInterface $operationNameResolver = null,
         ClientRequestAttributeProviderInterface $attributeProvider = null,
@@ -59,8 +58,8 @@ final class TracingHttpClient implements HttpClientInterface
     {
         $onProgress = $options['on_progress'] ?? null;
         $headers = $options['headers'] ?? [];
-        $operationName = $this->operationNameResolver->getOperationName($method, $url, $this->serviceName);
-        $attributes = $this->attributeProvider->getAttributes($method, $url, $this->serviceName, $headers);
+        $operationName = $options['extra']['operation_name'] ?? $this->operationNameResolver->getOperationName($method, $url);
+        $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
 
         $span = Tracing::getTracer()
             ->spanBuilder($operationName)
@@ -69,7 +68,7 @@ final class TracingHttpClient implements HttpClientInterface
             ->startSpan();
 
         $options = array_merge($options, [
-            'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span) {
+            'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span, $options) {
                 static $dlStarted = false;
 
                 if (null !== $onProgress) {
@@ -78,6 +77,12 @@ final class TracingHttpClient implements HttpClientInterface
 
                 if (!$dlStarted && isset($info['http_code']) && 0 !== $info['http_code']) {
                     $dlStarted = true;
+
+                    if (!isset($options['extra']['operation_name'])) {
+                        $operationName = $this->operationNameResolver->getOperationName($info['http_method'], $info['url']);
+                        $span->updateName($operationName);
+                    }
+
                     $span->setAttribute(TraceAttributes::HTTP_STATUS_CODE, $info['http_code']);
                     $span->setAttribute(TraceAttributes::HTTP_URL, $info['url']);
 
@@ -100,6 +105,6 @@ final class TracingHttpClient implements HttpClientInterface
      */
     public function withOptions(array $options): static
     {
-        return new static($this->serviceName, $this->client->withOptions($options));
+        return new static($this->client->withOptions($options));
     }
 }

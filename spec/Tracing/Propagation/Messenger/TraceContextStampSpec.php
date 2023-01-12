@@ -12,23 +12,10 @@ use OpenTelemetry\API\Trace\NonRecordingSpan;
 use OpenTelemetry\API\Trace\SpanContext;
 use OpenTelemetry\API\Trace\TraceState;
 use PhpSpec\ObjectBehavior;
-use spec\Instrumentation\IsolateContext;
 use Symfony\Component\Messenger\Stamp\StampInterface;
 
 class TraceContextStampSpec extends ObjectBehavior
 {
-    use IsolateContext;
-
-    public function let(): void
-    {
-        $this->forkMainContext();
-    }
-
-    public function letGo(): void
-    {
-        $this->restoreMainContext();
-    }
-
     public function it_implements_stamp_interface(): void
     {
         $this->shouldBeAnInstanceOf(StampInterface::class);

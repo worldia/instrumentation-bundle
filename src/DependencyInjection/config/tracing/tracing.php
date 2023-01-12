@@ -33,18 +33,14 @@ use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use OpenTelemetry\SDK\Trace\TracerProvider;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Serializer\Serializer;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
-use Symfony\Component\Serializer\Serializer;
-
 return static function (ContainerConfigurator $container) {
     $container->services()
         ->set(ExporterFactory::class)
-        ->args([
-            service(ResourceInfo::class),
-        ])
 
         ->set(SamplerFactory::class)
         ->set(SpanProcessorFactory::class)
@@ -71,7 +67,7 @@ return static function (ContainerConfigurator $container) {
         ])
 
         ->set(SpanExporterInterface::class)
-        ->factory([service(ExporterFactory::class), 'createFromDsn'])
+        ->factory([service(ExporterFactory::class), 'create'])
         ->args([
             param('tracer.dsn'),
         ])

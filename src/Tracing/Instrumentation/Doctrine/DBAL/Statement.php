@@ -15,7 +15,7 @@ use Doctrine\DBAL\ParameterType;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
-use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\ContextInterface;
 
 class Statement implements DoctrineStatement
 {
@@ -26,7 +26,7 @@ class Statement implements DoctrineStatement
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, private Context $parentContext, private DoctrineStatement $decoratedStatement, private string $sqlQuery, private array $attributes)
+    public function __construct(protected TracerProviderInterface $tracerProvider, private ContextInterface $parentContext, private DoctrineStatement $decoratedStatement, private string $sqlQuery, private array $attributes)
     {
     }
 

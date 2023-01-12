@@ -11,22 +11,21 @@ use Instrumentation\Tracing\Propagation\Exception\ContextPropagationException;
 use Instrumentation\Tracing\Propagation\Messenger\TraceContextStamp;
 use OpenTelemetry\API\Trace\NonRecordingSpan;
 use OpenTelemetry\API\Trace\SpanContext;
-use OpenTelemetry\API\Trace\SpanContextKey;
 use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\ContextKeys;
 use OpenTelemetry\Context\ScopeInterface;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
 use Psr\Log\LoggerInterface;
-use spec\Instrumentation\IsolateContext;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\SendMessageToTransportsEvent;
+use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
+use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Webmozart\Assert\Assert;
 
 class MessengerEventSubscriberSpec extends ObjectBehavior
 {
-    use IsolateContext;
-
     private NonRecordingSpan $span;
     private ScopeInterface $scope;
 
@@ -35,20 +34,14 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
         self::getSubscribedEvents()->shouldBe([
             SendMessageToTransportsEvent::class => [['onSend', 1000]],
             WorkerMessageReceivedEvent::class => [['onConsume', 1001]],
+            WorkerMessageHandledEvent::class => [['onHandled', -512]],
+            WorkerMessageFailedEvent::class => [['onHandled', -512]],
         ]);
     }
 
     public function let(LoggerInterface $logger): void
     {
-        $this->forkMainContext();
         $this->beConstructedWith($logger);
-        $this->activateSpan();
-    }
-
-    public function letGo(): void
-    {
-        $this->closeSpan();
-        $this->restoreMainContext();
     }
 
     private function activateSpan(): void
@@ -69,7 +62,6 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
     public function it_silentely_logs_errors_as_warning_when_message_is_sent_without_being_able_to_propagate_trace_context(
         LoggerInterface $logger,
     ): void {
-        $this->closeSpan();
         $originalEnveloppe = $this->createEnveloppeWithoutTraceContextStamp();
         $event = new SendMessageToTransportsEvent($originalEnveloppe, []);
         $expectedException = ContextPropagationException::becauseNoParentTrace();
@@ -92,7 +84,9 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
     {
         $event = new SendMessageToTransportsEvent($this->createEnveloppeWithoutTraceContextStamp(), []);
 
+        $this->activateSpan();
         $this->onSend($event);
+        $this->closeSpan();
 
         Assert::notNull(
             $event->getEnvelope()->last(TraceContextStamp::class),
@@ -102,7 +96,6 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
 
     public function it_does_nothing_when_receiving_message_without_trace_context_stamp(): void
     {
-        $this->closeSpan();
         $event = new WorkerMessageReceivedEvent(
             $this->createEnveloppeWithoutTraceContextStamp(),
             'receiverName',
@@ -116,20 +109,23 @@ class MessengerEventSubscriberSpec extends ObjectBehavior
 
     public function it_propagates_trace_context_when_receiving_message_with_trace_context_stamp(): void
     {
+        $this->activateSpan();
         $event = new WorkerMessageReceivedEvent(
             $this->createEnveloppeWithTraceContextStamp(),
             'receiverName',
         );
         $this->closeSpan();
+
         $previousContext = Context::getCurrent();
 
         $this->onConsume($event);
-
         Assert::notSame(Context::getCurrent(), $previousContext);
         Assert::notNull(
-            Context::getCurrent()->get(SpanContextKey::instance()),
+            Context::getCurrent()->get(ContextKeys::span()),
             'The context was not propagated.',
         );
+
+        $this->onHandled();
     }
 
     private function createEnveloppeWithTraceContextStamp(): Envelope

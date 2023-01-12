@@ -47,7 +47,7 @@ class MessageEventSubscriberSpec extends ObjectBehavior
         $spanBuilder->setSpanKind(Argument::type('int'))->willReturn($spanBuilder);
         $spanBuilder->setAttributes(Argument::type('iterable'))->willReturn($spanBuilder);
         $spanBuilder->addLink(Argument::cetera())->willReturn($spanBuilder);
-        $spanBuilder->setNoParent()->willReturn($spanBuilder);
+        $spanBuilder->setParent(false)->willReturn($spanBuilder);
         $spanBuilder->startSpan()->willReturn($span);
         $span->activate()->willReturn($scope);
         $span->recordException(Argument::cetera())->willReturn($span);

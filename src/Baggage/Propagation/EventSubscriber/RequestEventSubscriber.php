@@ -10,12 +10,15 @@ declare(strict_types=1);
 namespace Instrumentation\Baggage\Propagation\EventSubscriber;
 
 use Instrumentation\Baggage\Propagation\ContextInitializer;
+use OpenTelemetry\Context\ScopeInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 class RequestEventSubscriber implements EventSubscriberInterface
 {
+    private ?ScopeInterface $scope = null;
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -25,6 +28,11 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     public function onRequest(Event\RequestEvent $event): void
     {
-        ContextInitializer::fromRequest($event->getRequest());
+        $this->scope = ContextInitializer::fromRequest($event->getRequest());
+    }
+
+    public function onTerminate(): void
+    {
+        $this->scope?->detach();
     }
 }
