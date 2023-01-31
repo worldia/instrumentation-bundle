@@ -43,11 +43,27 @@ return [
 See the complete [configuration reference here](./docs/config-reference.md) or run ```bin/console config:dump-reference instrumentation```.
 
 ```yaml
-instrumentation:
-  resource:
-    service.name: my-app
-  tracing:
-    dsn: 'jaeger+http://jaeger:9411/api/v2/spans'
+// docker-compose.yaml
+
+services:
+  php:
+    image: php:8.1
+    environment:
+      - OTEL_PHP_TRACES_PROCESSOR=batch
+      - OTEL_TRACES_SAMPLER=parentbased_always_on
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+```
+
+```yaml
+// instrumentation.yaml
+
+instrumentation: ~
 ```
 
 ### Usage

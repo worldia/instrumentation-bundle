@@ -37,9 +37,6 @@ instrumentation:
     tracing:
         enabled:              true
 
-        # Accepts any DSN handled by OpenTelemetry's ExporterFactory. See: https://github.com/open-telemetry/opentelemetry-php/blob/main/src/SDK/Trace/ExporterFactory.php
-        dsn:                  '%env(TRACER_URL)%' # Example: 'zipkin+http://jaeger:9411/api/v2/spans'
-
         # Allows you to have links to your traces generated in error messages and twig.
         trace_url:            ~ # Example: 'http://localhost:16682/trace/{traceId}'
         logs:

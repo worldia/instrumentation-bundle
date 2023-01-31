@@ -10,9 +10,6 @@ declare(strict_types=1);
 namespace Instrumentation\Resources;
 
 use Instrumentation\Tracing\Exporter\ResetSpanExporter;
-use Instrumentation\Tracing\Factory\ExporterFactory;
-use Instrumentation\Tracing\Factory\SamplerFactory;
-use Instrumentation\Tracing\Factory\SpanProcessorFactory;
 use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
@@ -25,12 +22,16 @@ use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Twig\Extension\TracingExtension;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
+use OpenTelemetry\SDK\Trace\ExporterFactory;
 use OpenTelemetry\SDK\Trace\IdGeneratorInterface;
 use OpenTelemetry\SDK\Trace\RandomIdGenerator;
+use OpenTelemetry\SDK\Trace\SamplerFactory;
 use OpenTelemetry\SDK\Trace\SamplerInterface;
 use OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use OpenTelemetry\SDK\Trace\SpanProcessorFactory;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use OpenTelemetry\SDK\Trace\TracerProvider;
+use OpenTelemetry\SDK\Trace\TracerProviderFactory;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Serializer\Serializer;
@@ -41,8 +42,8 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return static function (ContainerConfigurator $container) {
     $container->services()
         ->set(ExporterFactory::class)
-
         ->set(SamplerFactory::class)
+
         ->set(SpanProcessorFactory::class)
         ->args([
             service(SpanExporterInterface::class),
@@ -57,8 +58,7 @@ return static function (ContainerConfigurator $container) {
         ])
 
         ->set(SamplerInterface::class)
-        ->factory([service(SamplerFactory::class), 'createFromDsn'])
-        ->args([param('tracer.dsn')])
+        ->factory([service(SamplerFactory::class), 'create'])
 
         ->set(TogglableSampler::class)
         ->decorate(SamplerInterface::class)
@@ -68,9 +68,6 @@ return static function (ContainerConfigurator $container) {
 
         ->set(SpanExporterInterface::class)
         ->factory([service(ExporterFactory::class), 'create'])
-        ->args([
-            param('tracer.dsn'),
-        ])
 
         ->set(ResetSpanExporter::class)
         ->args([
@@ -78,10 +75,10 @@ return static function (ContainerConfigurator $container) {
         ])
 
         ->set(SpanProcessorInterface::class)
-        ->factory([service(SpanProcessorFactory::class), 'createFromDsn'])
-        ->args([
-            param('tracer.dsn'),
-        ])
+        ->factory([service(SpanProcessorFactory::class), 'create'])
+        ->args([service(SpanExporterInterface::class)])
+
+        ->set(TracerProviderFactory::class)
 
         ->set(TracerProviderInterface::class, TracerProvider::class)
         ->args([

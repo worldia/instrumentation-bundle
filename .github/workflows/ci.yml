@@ -20,6 +20,7 @@ jobs:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
           coverage: xdebug
+          extensions: grpc
         env:
           fail-fast: true
 
@@ -57,6 +58,7 @@ jobs:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
           coverage: xdebug
+          extensions: grpc
         env:
           fail-fast: true
 
@@ -94,6 +96,7 @@ jobs:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
           coverage: xdebug
+          extensions: grpc
         env:
           fail-fast: true
 

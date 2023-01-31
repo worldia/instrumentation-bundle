@@ -1,61 +1,65 @@
 {
-    "name": "worldia/instrumentation-bundle",
-    "type": "symfony-bundle",
-    "license": "MIT",
-    "keywords": ["instrumentation", "tracing", "metrics", "open-telemetry", "prometheus"],
-    "authors": [{
-        "name": "Worldia developers",
-        "email": "developers@worldia.com"
-    }],
-    "require": {
-        "monolog/monolog": "^2.0",
-        "nyholm/dsn": "^2.0",
-        "nyholm/psr7": "^1.5",
-        "open-telemetry/sdk": "^1.0@dev",
-        "open-telemetry/api": "^1.0@dev",
-        "open-telemetry/context": "^1.0@dev",
-        "open-telemetry/sem-conv": "^1.0@dev",
-        "promphp/prometheus_client_php": "^2.4",
-        "psr/http-client": "^1.0",
-        "symfony/dependency-injection": "*"
-    },
-    "require-dev": {
-        "doctrine/dbal": "^3.0",
-        "friends-of-phpspec/phpspec-expect": "^4.0",
-        "open-telemetry/sdk-contrib": "^1.0@dev",
-        "open-telemetry/gen-otlp-protobuf": "^1.0@dev",
-        "php-http/httplug": "^2.3",
-        "phpspec/phpspec": "^7.2",
-        "phpstan/phpstan": "^1.4",
-        "symfony/framework-bundle": "*",
-        "symfony/http-client": "*",
-        "symfony/messenger": "*",
-        "symfony/monolog-bundle": "^3.7",
-        "symfony/security-core": "*",
-        "symfony/serializer": "*",
-        "symfony/twig-bundle": "*",
-        "worldia/coding-standards": "^1.0"
-    },
-    "autoload": {
-        "psr-4": {
-            "Instrumentation\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "spec\\Instrumentation\\": "spec/"
-        }
-    },
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": {
-            "*": "dist"
-        },
-        "sort-packages": true
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.0.x-dev"
-        }
+  "name": "worldia/instrumentation-bundle",
+  "type": "symfony-bundle",
+  "license": "MIT",
+  "keywords": ["instrumentation", "tracing", "metrics", "open-telemetry", "prometheus"],
+  "authors": [{
+    "name": "Worldia developers",
+    "email": "developers@worldia.com"
+  }],
+  "require": {
+    "monolog/monolog": "^2.0",
+    "nyholm/dsn": "^2.0",
+    "nyholm/psr7": "^1.5",
+    "open-telemetry/sdk": "^1.0@dev",
+    "open-telemetry/api": "^1.0@dev",
+    "open-telemetry/context": "^1.0@dev",
+    "open-telemetry/sem-conv": "^1.0@dev",
+    "promphp/prometheus_client_php": "^2.4",
+    "psr/http-client": "^1.0",
+    "symfony/dependency-injection": "*"
+  },
+  "require-dev": {
+    "doctrine/dbal": "^3.0",
+    "friends-of-phpspec/phpspec-expect": "^4.0",
+    "open-telemetry/sdk-contrib": "^1.0@dev",
+    "open-telemetry/transport-grpc": "^1.0@dev",
+    "open-telemetry/gen-otlp-protobuf": "^1.0@dev",
+    "php-http/httplug": "^2.3",
+    "phpspec/phpspec": "^7.2",
+    "phpstan/phpstan": "^1.4",
+    "symfony/framework-bundle": "*",
+    "symfony/http-client": "*",
+    "symfony/messenger": "*",
+    "symfony/monolog-bundle": "^3.7",
+    "symfony/security-core": "*",
+    "symfony/serializer": "*",
+    "symfony/twig-bundle": "*",
+    "worldia/coding-standards": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Instrumentation\\": "src/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "spec\\Instrumentation\\": "spec/"
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": {
+      "*": "dist"
+    },
+    "sort-packages": true,
+    "minimum-stability": "dev",
+    "prefer-stable": true
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.0.x-dev",
+      "dev-main": "1.0.x-dev"
+    }
+  }
 }
