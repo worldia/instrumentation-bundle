@@ -130,11 +130,14 @@ class TracedResponse implements ResponseInterface, StreamableInterface
             $endEpochNanos = (int) (($info['start_time'] + $info['total_time']) * 1_000_000_000);
         }
 
-        if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
-            $this->span->setAttribute('response.headers', $this->getHeaders(false));
-        }
-        if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
-            $this->span->setAttribute('response.body', $this->content);
+        try {
+            if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
+                $this->span->setAttribute('response.headers', $this->getHeaders(false));
+            }
+            if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
+                $this->span->setAttribute('response.body', $this->content);
+            }
+        } catch (\Throwable) {
         }
 
         $this->span->end($endEpochNanos);
