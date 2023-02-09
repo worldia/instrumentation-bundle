@@ -19,12 +19,16 @@ use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\HttpClient\DecoratorTrait;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpClient\HttpClientTrait;
+use Symfony\Component\HttpClient\Response\ResponseStream;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
+use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
 final class TracingHttpClient implements HttpClientInterface
 {
     use DecoratorTrait;
+    use HttpClientTrait;
 
     private ClientRequestOperationNameResolverInterface $operationNameResolver;
     private ClientRequestAttributeProviderInterface $attributeProvider;
@@ -52,6 +56,26 @@ final class TracingHttpClient implements HttpClientInterface
     }
 
     /**
+     * @param array<string> $attributes
+     *
+     * @return array<string>
+     */
+    protected function getExtraSpanAttributes(?array $attributes): array
+    {
+        $attributes = $attributes ?: $_SERVER['OTEL_PHP_HTTP_SPAN_ATTRIBUTES'] ?? [];
+
+        if (\is_string($attributes)) {
+            $attributes = explode(',', $attributes);
+        }
+
+        if (!\is_array($attributes)) {
+            throw new \RuntimeException(sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
+        }
+
+        return $attributes;
+    }
+
+    /**
      * @param array<mixed> $options
      */
     public function request(string $method, string $url, array $options = []): ResponseInterface
@@ -59,7 +83,13 @@ final class TracingHttpClient implements HttpClientInterface
         $onProgress = $options['on_progress'] ?? null;
         $headers = $options['headers'] ?? [];
         $operationName = $options['extra']['operation_name'] ?? $this->operationNameResolver->getOperationName($method, $url);
+
         $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
+
+        $options['user_data']['span_attributes'] = $this->getExtraSpanAttributes($options['extra']['operation_name'] ?? null);
+        if (\in_array('request.body', $options['user_data']['span_attributes'])) {
+            $attributes['request.body'] = self::getRequestBody($options);
+        }
 
         $span = Tracing::getTracer()
             ->spanBuilder($operationName)
@@ -100,11 +130,53 @@ final class TracingHttpClient implements HttpClientInterface
         return new TracedResponse($this->client->request($method, $url, $options), $span);
     }
 
+    public function stream(ResponseInterface|iterable $responses, float $timeout = null): ResponseStreamInterface
+    {
+        if ($responses instanceof ResponseInterface) {
+            $responses = [$responses];
+        }
+
+        return new ResponseStream(TracedResponse::stream($this->client, $responses, $timeout));
+    }
+
     /**
      * @param array<mixed> $options
      */
     public function withOptions(array $options): static
     {
         return new static($this->client->withOptions($options));
+    }
+
+    /**
+     * This code is extracted from the above trait to allow early body preparation.
+     *
+     * @see HttpClientTrait::prepareRequest()
+     *
+     * @param array{json?:array<mixed>,body?:array<mixed>|string|resource|\Traversable<mixed>|\Closure,normalized_headers?:array<mixed>} $options
+     *
+     * @return string|resource|\Closure
+     */
+    private static function getRequestBody(array $options)
+    {
+        $body = '';
+
+        if (isset($options['json'])) {
+            $body = self::jsonEncode($options['json']);
+        } elseif (isset($options['body'])) {
+            $body = $options['body'];
+        }
+
+        $body = self::normalizeBody($body);
+
+        if (\is_string($body)
+            && (string) \strlen($body) !== substr($h = $options['normalized_headers']['content-length'][0] ?? '', 16)
+            && ('' !== $h || '' !== $body)
+        ) {
+            if ('chunked' === substr($options['normalized_headers']['transfer-encoding'][0] ?? '', \strlen('Transfer-Encoding: '))) {
+                $body = self::dechunk($body);
+            }
+        }
+
+        return $body;
     }
 }
