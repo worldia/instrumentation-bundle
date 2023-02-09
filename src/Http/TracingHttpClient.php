@@ -87,8 +87,12 @@ final class TracingHttpClient implements HttpClientInterface
         $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
 
         $options['user_data']['span_attributes'] = $this->getExtraSpanAttributes($options['extra']['operation_name'] ?? null);
-        if (\in_array('request.body', $options['user_data']['span_attributes'])) {
-            $attributes['request.body'] = self::getRequestBody($options);
+
+        try {
+            if (\in_array('request.body', $options['user_data']['span_attributes'])) {
+                $attributes['request.body'] = self::getRequestBody($options);
+            }
+        } catch (\Throwable) {
         }
 
         $span = Tracing::getTracer()
