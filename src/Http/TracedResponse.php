@@ -12,10 +12,13 @@ namespace Instrumentation\Http;
 use OpenTelemetry\API\Trace\SpanInterface;
 use Symfony\Component\HttpClient\Response\StreamableInterface;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class TracedResponse implements ResponseInterface, StreamableInterface
 {
+    private ?string $content = null;
+
     public function __construct(
         private ResponseInterface $response,
         private SpanInterface $span
@@ -25,6 +28,11 @@ class TracedResponse implements ResponseInterface, StreamableInterface
     public function __destruct()
     {
         $this->endTracing();
+    }
+
+    public function getWrappedResponse(): ResponseInterface
+    {
+        return $this->response;
     }
 
     public function getStatusCode(): int
@@ -40,7 +48,9 @@ class TracedResponse implements ResponseInterface, StreamableInterface
     public function getContent(bool $throw = true): string
     {
         try {
-            return $this->response->getContent($throw);
+            $this->content = $this->response->getContent($throw);
+
+            return $this->content;
         } finally {
             $this->endTracing();
         }
@@ -86,6 +96,30 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         return StreamWrapper::createResource($this->response);
     }
 
+    /**
+     * @param iterable<int|string,ResponseInterface> $responses
+     *
+     * @internal
+     */
+    public static function stream(HttpClientInterface $client, iterable $responses, ?float $timeout): \Generator
+    {
+        $wrappedResponses = [];
+        $traceableMap = new \SplObjectStorage();
+
+        foreach ($responses as $r) {
+            if (!$r instanceof self) {
+                throw new \TypeError(sprintf('"%s::stream()" expects parameter 1 to be an iterable of TracedResponse objects, "%s" given.', TracingHttpClient::class, get_debug_type($r)));
+            }
+
+            $traceableMap[$r->response] = $r;
+            $wrappedResponses[] = $r->response;
+        }
+
+        foreach ($client->stream($wrappedResponses, $timeout) as $r => $chunk) {
+            yield $traceableMap[$r] => $chunk;
+        }
+    }
+
     protected function endTracing(): void
     {
         $endEpochNanos = null;
@@ -94,6 +128,13 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         $info = $this->response->getInfo();
         if (isset($info['start_time'], $info['total_time'])) {
             $endEpochNanos = (int) (($info['start_time'] + $info['total_time']) * 1_000_000_000);
+        }
+
+        if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
+            $this->span->setAttribute('response.headers', $this->getHeaders(false));
+        }
+        if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
+            $this->span->setAttribute('response.body', $this->content);
         }
 
         $this->span->end($endEpochNanos);

@@ -76,6 +76,7 @@ instrumentation: ~
     - [Customize operation (span) name for a message](./docs/tracing/custom-operation-name-for-message.md)
     - [Link strategy for a message](./docs/tracing/link-strategy-for-message.md)    
     - [Propagating trace/baggage context in HTTP requests](./docs/tracing/propagating-context.md)
+    - [Add request / response bodies as span attributes for HTTP requests](./docs/tracing/message-bodies.md)
 - **Metrics**
     - [Adding a metric](./docs/metrics/adding-a-metric.md)
     - [Using Redis as storage adapter](./docs/metrics/using-redis-as-storage.md) (Recommended)
