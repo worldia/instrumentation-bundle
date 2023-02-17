@@ -10,6 +10,9 @@ declare(strict_types=1);
 namespace Instrumentation\Http;
 
 use OpenTelemetry\API\Trace\SpanInterface;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Component\HttpClient\Exception\RedirectionException;
+use Symfony\Component\HttpClient\Exception\ServerException;
 use Symfony\Component\HttpClient\Response\StreamableInterface;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -48,9 +51,13 @@ class TracedResponse implements ResponseInterface, StreamableInterface
     public function getContent(bool $throw = true): string
     {
         try {
-            $this->content = $this->response->getContent($throw);
+            $this->content = $content = $this->response->getContent(false);
 
-            return $this->content;
+            if ($throw) {
+                $this->checkStatusCode();
+            }
+
+            return $content;
         } finally {
             $this->endTracing();
         }
@@ -141,5 +148,22 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
 
         $this->span->end($endEpochNanos);
+    }
+
+    private function checkStatusCode(): void
+    {
+        $code = $this->getInfo('http_code');
+
+        if (500 <= $code) {
+            throw new ServerException($this);
+        }
+
+        if (400 <= $code) {
+            throw new ClientException($this);
+        }
+
+        if (300 <= $code) {
+            throw new RedirectionException($this);
+        }
     }
 }
