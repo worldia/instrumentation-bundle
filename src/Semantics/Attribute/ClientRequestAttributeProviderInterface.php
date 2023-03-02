@@ -14,7 +14,7 @@ use OpenTelemetry\SemConv\TraceAttributes;
 interface ClientRequestAttributeProviderInterface
 {
     /**
-     * @param array<string> $headers
+     * @param array<string|array<string>> $headers
      *
      * @return array<string|TraceAttributes::*,string|array<string>>
      */
