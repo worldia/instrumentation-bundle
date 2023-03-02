@@ -123,7 +123,8 @@ class RequestEventSubscriber implements EventSubscriberInterface
             $this->serverSpan?->setStatus(StatusCode::STATUS_ERROR);
         }
 
-        if (404 === $response->getStatusCode()) {
+        $routeWasResolved = $event->getRequest()->attributes->get('_controller', false);
+        if (!$routeWasResolved && 404 === $response->getStatusCode()) {
             $this->serverSpan?->updateName('http.error 404');
         }
     }
