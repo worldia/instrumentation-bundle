@@ -93,6 +93,9 @@ final class TracingHttpClient implements HttpClientInterface
             if (\in_array('request.body', $options['user_data']['span_attributes'])) {
                 $attributes['request.body'] = self::getRequestBody($options);
             }
+            if (\in_array('request.headers', $options['user_data']['span_attributes'])) {
+                $attributes['request.headers'] = HttpMessageHelper::formatHeadersForSpanAttribute($headers);
+            }
         } catch (\Throwable) {
         }
 
