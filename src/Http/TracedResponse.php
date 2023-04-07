@@ -182,13 +182,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
         try {
             if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
-                $headers = [];
-                $raw = $this->getHeaders(false);
-                foreach ($raw as $header => $value) {
-                    $headers[$header] = $this->toReadableHeaderValue($value);
-                }
-
-                $this->span->setAttribute('response.headers', $headers);
+                $this->span->setAttribute('response.headers', HttpMessageHelper::formatHeadersForSpanAttribute($this->getHeaders(false)));
             }
 
             if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
