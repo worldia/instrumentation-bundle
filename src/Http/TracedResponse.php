@@ -139,7 +139,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
         try {
             if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
-                $this->span->setAttribute('response.headers', $this->getHeaders(false));
+                $this->span->setAttribute('response.headers', HttpMessageHelper::formatHeadersForSpanAttribute($this->getHeaders(false)));
             }
             if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
                 $this->span->setAttribute('response.body', $this->content);
