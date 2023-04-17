@@ -11,6 +11,7 @@ namespace Instrumentation\Metrics\EventSubscriber;
 
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Prometheus\Counter;
 use Prometheus\Gauge;
 use Prometheus\Histogram;
@@ -35,7 +36,7 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
             'response_codes_total' => [
                 'type' => Counter::TYPE,
                 'help' => 'Number of requests per status code',
-                'labels' => ['code'],
+                'labels' => ['code', 'operation'],
             ],
             'response_times_seconds' => [
                 'type' => Histogram::TYPE,
@@ -48,7 +49,7 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
     /**
      * @param array<string> $blacklist
      */
-    public function __construct(private RegistryInterface $registry, private array $blacklist)
+    public function __construct(private RegistryInterface $registry, private array $blacklist, private ?MainSpanContextInterface $mainSpanContext = null)
     {
     }
 
@@ -78,10 +79,11 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
 
         $time = microtime(true) - $event->getRequest()->server->get('REQUEST_TIME_FLOAT');
         $code = sprintf('%sxx', substr((string) $event->getResponse()->getStatusCode(), 0, 1));
+        $operation = $this->mainSpanContext?->getOperationName() ?: 'unknown';
 
         $this->registry->getGauge('requests_handling')->dec();
         $this->registry->getHistogram('response_times_seconds')->observe($time);
-        $this->registry->getCounter('response_codes_total')->inc([$code]);
+        $this->registry->getCounter('response_codes_total')->inc([$code, $operation]);
     }
 
     private function isBlacklisted(Request $request): bool

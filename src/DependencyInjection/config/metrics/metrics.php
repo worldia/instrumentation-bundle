@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Resources;
 
 use Instrumentation\Metrics;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Prometheus\CollectorRegistry;
 use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APCng;
@@ -48,6 +49,7 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service(Metrics\RegistryInterface::class),
             param('app.path_blacklist'),
+            service(MainSpanContextInterface::class)->nullOnInvalid(),
         ])
 
         ->set(Metrics\EventSubscriber\ConsumerEventSubscriber::class)
