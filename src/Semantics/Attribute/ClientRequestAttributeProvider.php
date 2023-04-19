@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\Attribute;
 
+use Instrumentation\Http\HttpSensitiveDataHelper;
 use OpenTelemetry\SemConv\TraceAttributes;
 
 class ClientRequestAttributeProvider implements ClientRequestAttributeProviderInterface
@@ -24,7 +25,7 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
     {
         $attributes = [
             TraceAttributes::HTTP_METHOD => strtoupper($method),
-            TraceAttributes::HTTP_URL => $url,
+            TraceAttributes::HTTP_URL => HttpSensitiveDataHelper::filterUrl($url),
         ];
 
         foreach ($this->capturedHeaders as $header) {
