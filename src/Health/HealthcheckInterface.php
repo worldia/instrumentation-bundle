@@ -9,7 +9,14 @@ declare(strict_types=1);
 
 namespace Instrumentation\Health;
 
-interface HealtcheckInterface
+/**
+ * @deprecated
+ */
+interface HealtcheckInterface extends HealthcheckInterface
+{
+}
+
+interface HealthcheckInterface
 {
     public const HEALTHY = 'healthy';
     public const DEGRADED = 'degraded';
@@ -27,7 +34,7 @@ interface HealtcheckInterface
     public function getStatusMessage(): string|null;
 
     /**
-     * @return string One of the HealtcheckInterface constants
+     * @return string One of the HealthcheckInterface constants
      */
     public function getStatus(): string;
 

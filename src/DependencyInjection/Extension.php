@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection;
 
-use Instrumentation\Health\HealtcheckInterface;
+use Instrumentation\Health\HealthcheckInterface;
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
 use Instrumentation\Metrics\Storage\HostnamePrefixedRedisFactory;
@@ -197,9 +197,9 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $loader->load('health.php');
 
         $this->addPathToBlacklist($config['path'], $container);
-        $container->setParameter('app.path.healtcheck', $config['path']);
+        $container->setParameter('app.path.healthcheck', $config['path']);
 
-        $container->registerForAutoconfiguration(HealtcheckInterface::class)->addTag('app.healthcheck');
+        $container->registerForAutoconfiguration(HealthcheckInterface::class)->addTag('app.healthcheck');
     }
 
     /**

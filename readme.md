@@ -23,7 +23,7 @@
 
 #### Health
 - A simple endpoint to expose application health (default: `/_healthz`)
-- Autoconfigurable healthcheck interface to add healtchecks to be made for global application health
+- Autoconfigurable healthcheck interface to add healthchecks to be made for global application health
 
 ### Installation and configuration
 
