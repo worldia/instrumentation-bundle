@@ -3,10 +3,10 @@
 ```php
 namespace App\Health;
 
-use Instrumentation\Health\HealtcheckInterface;
+use Instrumentation\Health\HealthcheckInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-class DummyHealthcheck implements HealtcheckInterface
+class DummyHealthcheck implements HealthcheckInterface
 {
     public function __construct(private RequestStack $requestStack)
     {
@@ -28,7 +28,7 @@ class DummyHealthcheck implements HealtcheckInterface
             return $header;
         }
 
-        return HealtcheckInterface::HEALTHY;
+        return HealthcheckInterface::HEALTHY;
     }
 
     public function getStatusMessage(): ?string
