@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Health\Controller;
 
-use Instrumentation\Health\HealtcheckInterface;
+use Instrumentation\Health\HealthcheckInterface;
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
@@ -29,7 +29,7 @@ class Endpoint implements MetricProviderInterface
     }
 
     /**
-     * @param iterable<HealtcheckInterface> $checks
+     * @param iterable<HealthcheckInterface> $checks
      */
     public function __construct(private ResourceInfo $resourceInfo, private iterable $checks, private RegistryInterface|null $registry = null, private Profiler|null $profiler = null)
     {
@@ -47,7 +47,7 @@ class Endpoint implements MetricProviderInterface
         $hasDegraded = false;
 
         foreach ($this->checks as $check) {
-            if (HealtcheckInterface::HEALTHY != $check->getStatus()) {
+            if (HealthcheckInterface::HEALTHY != $check->getStatus()) {
                 $hasDegraded = true;
                 if ($check->isCritical()) {
                     $hasDegradedCritical = true;
@@ -63,14 +63,14 @@ class Endpoint implements MetricProviderInterface
             ];
         }
 
-        $status = HealtcheckInterface::HEALTHY;
+        $status = HealthcheckInterface::HEALTHY;
         $statusInt = 2;
         if ($hasDegraded) {
-            $status = HealtcheckInterface::DEGRADED;
+            $status = HealthcheckInterface::DEGRADED;
             $statusInt = 1;
         }
         if ($hasDegradedCritical) {
-            $status = HealtcheckInterface::UNHEALTHY;
+            $status = HealthcheckInterface::UNHEALTHY;
             $statusInt = 0;
         }
 
@@ -80,6 +80,6 @@ class Endpoint implements MetricProviderInterface
             $this->registry->getGauge('app_health')->set($statusInt);
         }
 
-        return new JsonResponse($results, HealtcheckInterface::UNHEALTHY === $status ? 500 : 200);
+        return new JsonResponse($results, HealthcheckInterface::UNHEALTHY === $status ? 500 : 200);
     }
 }
