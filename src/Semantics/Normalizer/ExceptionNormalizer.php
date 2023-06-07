@@ -17,7 +17,7 @@ class ExceptionNormalizer
     public static function normalizeException(\Throwable $exception): array
     {
         return [
-            'type' => \get_class($exception),
+            'type' => $exception::class,
             'message' => 'PHP Warning: '.(string) $exception,
             // Stacktrace is already included in message
             // 'stacktrace' => $exception->getTraceAsString(),

@@ -55,9 +55,6 @@ final class Connection implements ServerInfoAwareConnection
         return $this->trace(self::OP_CONN_QUERY, $sql, fn (): Result => $this->decorated->query($sql));
     }
 
-    /**
-     * @return mixed
-     */
     public function quote($value, $type = ParameterType::STRING)
     {
         return $this->decorated->quote($value, $type);
