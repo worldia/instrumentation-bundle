@@ -21,7 +21,6 @@ use OpenTelemetry\Context\ScopeInterface;
 use OpenTelemetry\SDK\Trace\Span;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use OpenTelemetry\SDK\Trace\TracerProvider;
-use OpenTelemetry\SemConv\TraceAttributeValues;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\AbstractWorkerMessageEvent;
@@ -71,7 +70,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
         if ($this->createSubSpan) {
             $operationName = $this->operationNameResolver->getOperationName(
                 $event->getEnvelope(),
-                TraceAttributeValues::MESSAGING_OPERATION_PROCESS
+                'process'
             );
 
             $strategy = $this->getStrategy($event->getEnvelope());

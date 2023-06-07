@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\OperationName;
 
-use OpenTelemetry\SemConv\TraceAttributeValues;
 use Symfony\Component\Messenger\Envelope;
 
 interface MessageOperationNameResolverInterface
@@ -17,7 +16,7 @@ interface MessageOperationNameResolverInterface
     /**
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/v1.9.0/specification/trace/semantic_conventions/messaging.md#operation-names
      *
-     * @param TraceAttributeValues::MESSAGING_OPERATION_* $operation One of 'send', 'receive' or 'process'
+     * @param string $operation One of 'send', 'receive' or 'process'
      *
      * @return string&non-empty-string
      */
