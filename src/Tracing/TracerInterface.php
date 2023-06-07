@@ -21,5 +21,5 @@ interface TracerInterface extends BaseTracerInterface
      * @param array<string,string> $attributes
      * @param SpanKind::KIND_*     $kind
      */
-    public function trace(string $operation, ?array $attributes = null, ?int $kind = null, ?Context $parentContext = null): SpanInterface;
+    public function trace(string $operation, array $attributes = null, int $kind = null, Context $parentContext = null): SpanInterface;
 }

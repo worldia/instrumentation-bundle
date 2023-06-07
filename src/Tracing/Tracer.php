@@ -21,7 +21,7 @@ class Tracer implements TracerInterface
     {
     }
 
-    public function trace(string $operation, ?array $attributes = null, ?int $kind = null, ?Context $parentContext = null): SpanInterface
+    public function trace(string $operation, array $attributes = null, int $kind = null, Context $parentContext = null): SpanInterface
     {
         return $this->decorated->spanBuilder($operation)
             ->setAttributes($attributes ?: [])

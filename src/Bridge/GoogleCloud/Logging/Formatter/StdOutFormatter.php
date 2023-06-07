@@ -23,8 +23,6 @@ final class StdOutFormatter extends BaseJsonFormatter
      *
      * @see https://cloud.google.com/logging/docs/agent/configuration#process-payload
      * @see https://github.com/GoogleCloudPlatform/fluent-plugin-google-cloud/blob/master/lib/fluent/plugin/out_google_cloud.rb
-     *
-     * @return mixed
      */
     protected function normalize($data, int $depth = 0)
     {
