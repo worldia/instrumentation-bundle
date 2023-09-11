@@ -11,13 +11,32 @@ namespace Instrumentation\Tracing\Serializer\Normalizer;
 
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use OpenTelemetry\SDK\Trace\Span;
-use Symfony\Component\Serializer\Normalizer\CacheableSupportsMethodInterface;
+use Symfony\Component\ErrorHandler\Exception\FlattenException;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Component\Serializer\SerializerAwareInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
-class ErrorNormalizer implements NormalizerInterface, CacheableSupportsMethodInterface
+class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
 {
     public function __construct(private NormalizerInterface $decorated, private bool $addUrl = false, private ?TraceUrlGeneratorInterface $traceUrlGenerator = null)
     {
+    }
+
+    public function setSerializer(SerializerInterface $serializer)
+    {
+        if ($this->decorated instanceof SerializerAwareInterface) {
+            $this->decorated->setSerializer($serializer);
+        }
+    }
+
+    /**
+     * @return array<class-string, bool>
+     */
+    public function getSupportedTypes(?string $format): array
+    {
+        return [
+            FlattenException::class => __CLASS__ === self::class,
+        ];
     }
 
     /**
@@ -51,10 +70,5 @@ class ErrorNormalizer implements NormalizerInterface, CacheableSupportsMethodInt
     {
         // @phpstan-ignore-next-line
         return $this->decorated->supportsNormalization($data, $format, $context);
-    }
-
-    public function hasCacheableSupportsMethod(): bool
-    {
-        return $this->decorated instanceof CacheableSupportsMethodInterface && $this->decorated->hasCacheableSupportsMethod();
     }
 }
