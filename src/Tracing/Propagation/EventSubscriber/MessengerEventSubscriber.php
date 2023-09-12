@@ -23,7 +23,7 @@ class MessengerEventSubscriber implements EventSubscriberInterface
     private LoggerInterface $logger;
     private ?ScopeInterface $scope = null;
 
-    public function __construct(LoggerInterface|null $logger = null)
+    public function __construct(LoggerInterface $logger = null)
     {
         $this->logger = $logger ?? new NullLogger();
     }

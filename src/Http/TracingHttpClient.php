@@ -37,7 +37,7 @@ final class TracingHttpClient implements HttpClientInterface
      * @param HttpClientInterface|array<mixed>|null $client
      */
     public function __construct(
-        HttpClientInterface|array|null $client = null,
+        HttpClientInterface|array $client = null,
         ClientRequestOperationNameResolverInterface $operationNameResolver = null,
         ClientRequestAttributeProviderInterface $attributeProvider = null,
         int $maxHostConnections = 6,

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Logging;
 
-use OpenTelemetry\API\Common\Log\LoggerHolder;
+use OpenTelemetry\API\LoggerHolder;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 

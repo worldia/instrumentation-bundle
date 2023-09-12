@@ -22,6 +22,10 @@ class InstrumentationBundle extends Bundle
 
     public function boot(): void
     {
+        if (null === $this->container) {
+            return;
+        }
+
         $this->container->get(Logging\Logging::class);
 
         /** @var TracerProviderInterface $tracerProvider */

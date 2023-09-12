@@ -18,12 +18,12 @@ class RouteCacheWarmer implements CacheWarmerInterface
     {
     }
 
-    public function isOptional()
+    public function isOptional(): bool
     {
         return true;
     }
 
-    public function warmUp(string $cacheDir)
+    public function warmUp(string $cacheDir): array
     {
         $routes = [];
         foreach ($this->router->getRouteCollection() as $name => $route) {
