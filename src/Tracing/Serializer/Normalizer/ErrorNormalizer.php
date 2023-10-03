@@ -22,7 +22,7 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
     {
     }
 
-    public function setSerializer(SerializerInterface $serializer)
+    public function setSerializer(SerializerInterface $serializer): void
     {
         if ($this->decorated instanceof SerializerAwareInterface) {
             $this->decorated->setSerializer($serializer);

@@ -21,6 +21,8 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class TracedResponse implements ResponseInterface, StreamableInterface
 {
     private ?string $content = null;
+    /** @var resource|null */
+    private $stream;
 
     public function __construct(
         private ResponseInterface $response,
@@ -91,16 +93,20 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
     public function toStream(bool $throw = true)
     {
-        if ($throw) {
-            // Ensure headers arrived
-            $this->response->getHeaders();
-        }
+        try {
+            if ($throw) {
+                // Ensure headers arrived
+                $this->response->getHeaders();
+            }
 
-        if ($this->response instanceof StreamableInterface) {
-            return $this->response->toStream(false);
-        }
+            if ($this->response instanceof StreamableInterface) {
+                return $this->stream = $this->response->toStream(false);
+            }
 
-        return StreamWrapper::createResource($this->response);
+            return $this->stream = StreamWrapper::createResource($this->response);
+        } finally {
+            $this->endTracing();
+        }
     }
 
     /**
@@ -142,6 +148,9 @@ class TracedResponse implements ResponseInterface, StreamableInterface
                 $this->span->setAttribute('response.headers', $this->getHeaders(false));
             }
             if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
+                if (empty($this->content) && \is_resource($this->stream)) {
+                    $this->content = stream_get_contents($this->stream) ?: null;
+                }
                 $this->span->setAttribute('response.body', $this->content);
             }
         } catch (\Throwable) {
