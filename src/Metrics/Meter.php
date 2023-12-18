@@ -23,7 +23,7 @@ class Meter implements MeterInterface
     ) {
     }
 
-    public function createCounter(string $name, string $unit = null, string $description = null): CounterInterface
+    public function createCounter(string $name, string $unit = null, string $description = null, array $advisory = []): CounterInterface
     {
         return new CounterAdapter($name, $description ?: '', $this->collectorRegistry);
     }
@@ -33,22 +33,22 @@ class Meter implements MeterInterface
         throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
     }
 
-    public function createHistogram(string $name, string $unit = null, string $description = null): HistogramInterface
+    public function createHistogram(string $name, string $unit = null, string $description = null, array $advisory = []): HistogramInterface
     {
         return new HistogramAdapter($name, $description ?: '', $this->collectorRegistry);
     }
 
-    public function createObservableGauge(string $name, string $unit = null, string $description = null, callable ...$callbacks): ObservableGaugeInterface
+    public function createObservableGauge(string $name, string $unit = null, string $description = null, $advisory = [], callable ...$callbacks): ObservableGaugeInterface
     {
         throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
     }
 
-    public function createUpDownCounter(string $name, string $unit = null, string $description = null): UpDownCounterInterface
+    public function createUpDownCounter(string $name, string $unit = null, string $description = null, array $advisory = []): UpDownCounterInterface
     {
         return new UpDownCounterAdapter($name, $description ?: '', $this->collectorRegistry);
     }
 
-    public function createObservableUpDownCounter(string $name, string $unit = null, string $description = null, callable ...$callbacks): ObservableUpDownCounterInterface
+    public function createObservableUpDownCounter(string $name, string $unit = null, string $description = null, $advisory = [], callable ...$callbacks): ObservableUpDownCounterInterface
     {
         throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
     }
