@@ -26,10 +26,11 @@ class Meter implements MeterInterface
     /**
      * Creates a `Counter`.
      *
-     * @param string $name name of the instrument
-     * @param string|null $unit unit of measure
-     * @param string|null $description description of the instrument
-     * @param array<string> $advisory an optional set of recommendations
+     * @param string        $name        name of the instrument
+     * @param string|null   $unit        unit of measure
+     * @param string|null   $description description of the instrument
+     * @param array<string> $advisory    an optional set of recommendations
+     *
      * @return CounterInterface created instrument
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#counter-creation
@@ -42,12 +43,13 @@ class Meter implements MeterInterface
     /**
      * Creates an `ObservableCounter`.
      *
-     * @param string $name name of the instrument
-     * @param string|null $unit unit of measure
-     * @param string|null $description description of the instrument
-     * @param array<string>|callable $advisory an optional set of recommendations, or
-     *        deprecated: the first callback to report measurements
-     * @param callable ...$callbacks responsible for reporting measurements
+     * @param string                 $name         name of the instrument
+     * @param string|null            $unit         unit of measure
+     * @param string|null            $description  description of the instrument
+     * @param array<string>|callable $advisory     an optional set of recommendations, or
+     *                                             deprecated: the first callback to report measurements
+     * @param callable               ...$callbacks responsible for reporting measurements
+     *
      * @return ObservableCounterInterface created instrument
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-counter-creation
@@ -60,11 +62,12 @@ class Meter implements MeterInterface
     /**
      * Creates a `Histogram`.
      *
-     * @param string $name name of the instrument
-     * @param string|null $unit unit of measure
-     * @param string|null $description description of the instrument
-     * @param array<string> $advisory an optional set of recommendations, e.g.
-     *        <code>['ExplicitBucketBoundaries' => [0.25, 0.5, 1, 5]]</code>
+     * @param string        $name        name of the instrument
+     * @param string|null   $unit        unit of measure
+     * @param string|null   $description description of the instrument
+     * @param array<string> $advisory    an optional set of recommendations, e.g.
+     *                                   <code>['ExplicitBucketBoundaries' => [0.25, 0.5, 1, 5]]</code>
+     *
      * @return HistogramInterface created instrument
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#histogram-creation
@@ -77,12 +80,13 @@ class Meter implements MeterInterface
     /**
      * Creates an `ObservableGauge`.
      *
-     * @param string $name name of the instrument
-     * @param string|null $unit unit of measure
-     * @param string|null $description description of the instrument
-     * @param array<string>|callable $advisory an optional set of recommendations, or
-     *        deprecated: the first callback to report measurements
-     * @param callable ...$callbacks responsible for reporting measurements
+     * @param string                 $name         name of the instrument
+     * @param string|null            $unit         unit of measure
+     * @param string|null            $description  description of the instrument
+     * @param array<string>|callable $advisory     an optional set of recommendations, or
+     *                                             deprecated: the first callback to report measurements
+     * @param callable               ...$callbacks responsible for reporting measurements
+     *
      * @return ObservableGaugeInterface created instrument
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-gauge-creation
@@ -95,10 +99,11 @@ class Meter implements MeterInterface
     /**
      * Creates an `UpDownCounter`.
      *
-     * @param string $name name of the instrument
-     * @param string|null $unit unit of measure
-     * @param string|null $description description of the instrument
-     * @param array<string> $advisory an optional set of recommendations
+     * @param string        $name        name of the instrument
+     * @param string|null   $unit        unit of measure
+     * @param string|null   $description description of the instrument
+     * @param array<string> $advisory    an optional set of recommendations
+     *
      * @return UpDownCounterInterface created instrument
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#updowncounter-creation
@@ -111,12 +116,13 @@ class Meter implements MeterInterface
     /**
      * Creates an `ObservableUpDownCounter`.
      *
-     * @param string $name name of the instrument
-     * @param string|null $unit unit of measure
-     * @param string|null $description description of the instrument
-     * @param array<string>|callable $advisory an optional set of recommendations, or
-     *        deprecated: the first callback to report measurements
-     * @param callable ...$callbacks responsible for reporting measurements
+     * @param string                 $name         name of the instrument
+     * @param string|null            $unit         unit of measure
+     * @param string|null            $description  description of the instrument
+     * @param array<string>|callable $advisory     an optional set of recommendations, or
+     *                                             deprecated: the first callback to report measurements
+     * @param callable               ...$callbacks responsible for reporting measurements
+     *
      * @return ObservableUpDownCounterInterface created instrument
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-updowncounter-creation
