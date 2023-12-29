@@ -119,6 +119,7 @@ final class TracingHttpClient implements HttpClientInterface
 
                     $span->setAttribute(TraceAttributes::HTTP_STATUS_CODE, $info['http_code']);
                     $span->setAttribute(TraceAttributes::HTTP_URL, $info['url']);
+                    $span->addEvent('HTTP headers received');
 
                     if ($info['http_code'] >= 400) {
                         $span->setStatus(StatusCode::STATUS_ERROR);
