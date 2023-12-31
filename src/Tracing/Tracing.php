@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing;
 
+use OpenTelemetry\API\Trace\NoopTracer;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
@@ -19,6 +20,7 @@ final class Tracing
     public const NAME = 'io.opentelemetry.contrib.php';
 
     private static ?TracerProviderInterface $tracerProvider = null;
+    private static ?TracerInterface $tracer = null;
 
     /**
      * @param non-empty-string     $operation
@@ -36,7 +38,15 @@ final class Tracing
 
     public static function getTracer(): TracerInterface
     {
-        return new Tracer(self::getProvider()->getTracer(self::NAME));
+        if (null === self::$tracer) {
+            if(null === $tracer = self::getProvider()?->getTracer(self::NAME)) {
+                $tracer = NoopTracer::getInstance();
+            }
+
+            self::$tracer = new Tracer($tracer);
+        }
+
+        return self::$tracer;
     }
 
     public static function setProvider(TracerProviderInterface $tracerProvider): void
@@ -44,12 +54,8 @@ final class Tracing
         self::$tracerProvider = $tracerProvider;
     }
 
-    private static function getProvider(): TracerProviderInterface
+    private static function getProvider(): ?TracerProviderInterface
     {
-        if (!self::$tracerProvider) {
-            throw new \RuntimeException('No trace provider was set.');
-        }
-
         return self::$tracerProvider;
     }
 }
