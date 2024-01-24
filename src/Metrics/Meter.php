@@ -7,9 +7,11 @@
 
 namespace Instrumentation\Metrics;
 
+use OpenTelemetry\API\Metrics\AsynchronousInstrument;
 use OpenTelemetry\API\Metrics\CounterInterface;
 use OpenTelemetry\API\Metrics\HistogramInterface;
 use OpenTelemetry\API\Metrics\MeterInterface;
+use OpenTelemetry\API\Metrics\ObservableCallbackInterface;
 use OpenTelemetry\API\Metrics\ObservableCounterInterface;
 use OpenTelemetry\API\Metrics\ObservableGaugeInterface;
 use OpenTelemetry\API\Metrics\ObservableUpDownCounterInterface;
@@ -129,6 +131,14 @@ class Meter implements MeterInterface
      */
     public function createObservableUpDownCounter(string $name, string $unit = null, string $description = null, $advisory = [], callable ...$callbacks): ObservableUpDownCounterInterface
     {
+        throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
+    }
+
+    public function batchObserve(
+        callable $callback,
+        AsynchronousInstrument $instrument,
+        AsynchronousInstrument ...$instruments
+    ): ObservableCallbackInterface {
         throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
     }
 }
