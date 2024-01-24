@@ -16,6 +16,7 @@ use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverIn
 use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
+use OpenTelemetry\SDK\Common\Time\ClockInterface;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\HttpClient\DecoratorTrait;
 use Symfony\Component\HttpClient\HttpClient;
@@ -119,6 +120,11 @@ final class TracingHttpClient implements HttpClientInterface
 
                     $span->setAttribute(TraceAttributes::HTTP_STATUS_CODE, $info['http_code']);
                     $span->setAttribute(TraceAttributes::HTTP_URL, $info['url']);
+
+                    if (\array_key_exists('total_time', $info)) {
+                        $timestamp = (int) (($info['start_time'] + $info['total_time']) * ClockInterface::NANOS_PER_SECOND);
+                    }
+                    $span->addEvent('http.response.headers', [], $timestamp ?? null);
 
                     if ($info['http_code'] >= 400) {
                         $span->setStatus(StatusCode::STATUS_ERROR);

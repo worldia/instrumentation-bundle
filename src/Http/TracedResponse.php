@@ -15,6 +15,7 @@ use Symfony\Component\HttpClient\Exception\RedirectionException;
 use Symfony\Component\HttpClient\Exception\ServerException;
 use Symfony\Component\HttpClient\Response\StreamableInterface;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
@@ -93,20 +94,16 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
     public function toStream(bool $throw = true)
     {
-        try {
-            if ($throw) {
-                // Ensure headers arrived
-                $this->response->getHeaders();
-            }
-
-            if ($this->response instanceof StreamableInterface) {
-                return $this->stream = $this->response->toStream(false);
-            }
-
-            return $this->stream = StreamWrapper::createResource($this->response);
-        } finally {
-            $this->endTracing();
+        if ($throw) {
+            // Ensure headers arrived
+            $this->response->getHeaders();
         }
+
+        if ($this->response instanceof StreamableInterface) {
+            return $this->stream = $this->response->toStream(false);
+        }
+
+        return $this->stream = StreamWrapper::createResource($this->response);
     }
 
     /**
@@ -129,6 +126,14 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
 
         foreach ($client->stream($wrappedResponses, $timeout) as $r => $chunk) {
+            try {
+                if ($chunk->isLast() || $chunk->isTimeout()) {
+                    $traceableMap[$r]->endTracing();
+                }
+            } catch (TransportExceptionInterface) {
+                $traceableMap[$r]->endTracing();
+            }
+
             yield $traceableMap[$r] => $chunk;
         }
     }
@@ -150,6 +155,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
             if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
                 if (empty($this->content) && \is_resource($this->stream)) {
                     $this->content = stream_get_contents($this->stream) ?: null;
+                    rewind($this->stream);
                 }
                 $this->span->setAttribute('response.body', $this->content);
             }

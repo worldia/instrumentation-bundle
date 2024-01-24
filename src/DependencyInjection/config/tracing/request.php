@@ -22,14 +22,14 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
-        ->set(Tracing\Propagation\EventSubscriber\RequestEventSubscriber::class)
+        ->set(Propagation\EventSubscriber\RequestEventSubscriber::class)
         ->args([
             service(Propagation\ForcableIdGenerator::class),
             service(Propagation\IncomingTraceHeaderResolverInterface::class)->nullOnInvalid(),
         ])
         ->autoconfigure()
 
-        ->set(Tracing\Instrumentation\EventSubscriber\RequestEventSubscriber::class)
+        ->set(Instrumentation\EventSubscriber\RequestEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
             service(Instrumentation\MainSpanContextInterface::class),
@@ -52,7 +52,7 @@ return static function (ContainerConfigurator $container) {
         ])
         ->autoconfigure()
 
-        ->set(Tracing\Instrumentation\EventSubscriber\AddUserEventSubscriber::class)
+        ->set(Instrumentation\EventSubscriber\AddUserEventSubscriber::class)
         ->args([
             service(Instrumentation\MainSpanContextInterface::class),
             service(TokenStorageInterface::class)->nullOnInvalid(),
