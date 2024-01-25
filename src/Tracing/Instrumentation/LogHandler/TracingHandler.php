@@ -11,7 +11,8 @@ namespace Instrumentation\Tracing\Instrumentation\LogHandler;
 
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use Monolog\Handler\AbstractProcessingHandler;
-use Monolog\Logger;
+use Monolog\Level;
+use Monolog\LogRecord;
 use Monolog\Processor\PsrLogMessageProcessor;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\Span;
@@ -29,7 +30,7 @@ class TracingHandler extends AbstractProcessingHandler
     /**
      * @param array<string> $channels
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContextInterface $mainSpanContext, $level = Logger::INFO, private array $channels = [], private string $strategy = self::STRATEGY_MAIN_SPAN, bool $bubble = true)
+    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContextInterface $mainSpanContext, $level = Level::Info, private array $channels = [], private string $strategy = self::STRATEGY_MAIN_SPAN, bool $bubble = true)
     {
         parent::__construct($level, $bubble);
 
@@ -43,13 +44,13 @@ class TracingHandler extends AbstractProcessingHandler
         $this->channels = array_filter($this->channels, fn (string $channel) => !str_starts_with($channel, '!'));
     }
 
-    protected function write(array $record): void
+    protected function write(LogRecord $record): void
     {
-        if ($this->channels && !\in_array($record['channel'], $this->channels)) {
+        if ($this->channels && !\in_array($record->channel, $this->channels)) {
             return;
         }
 
-        if ($this->excludedChannels && \in_array($record['channel'], $this->excludedChannels)) {
+        if ($this->excludedChannels && \in_array($record->channel, $this->excludedChannels)) {
             return;
         }
 
@@ -59,10 +60,10 @@ class TracingHandler extends AbstractProcessingHandler
             default => throw new \InvalidArgumentException(sprintf('Unkown strategy "%s".', $this->strategy))
         };
 
-        if (isset($record['context']['exception']) && $record['context']['exception'] instanceof \Throwable) {
-            $span->recordException($record['context']['exception'], ['raw_stacktrace' => $record['context']['exception']->getTraceAsString()]);
+        if (isset($record->context['exception']) && $record->context['exception'] instanceof \Throwable) {
+            $span->recordException($record->context['exception'], ['raw_stacktrace' => $record->context['exception']->getTraceAsString()]);
         } else {
-            $span->addEvent($record['message']);
+            $span->addEvent($record->message);
         }
     }
 }

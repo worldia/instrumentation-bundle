@@ -7,9 +7,11 @@
 
 namespace Instrumentation\Logging\Processor;
 
+use Monolog\LogRecord;
+use Monolog\Processor\ProcessorInterface;
 use OpenTelemetry\SDK\Trace\Span;
 
-class TraceContextProcessor
+class TraceContextProcessor implements ProcessorInterface
 {
     /**
      * @param array{trace:array<string>,span:array<string>,sampled:array<string>,operation:array<string>} $map
@@ -18,12 +20,7 @@ class TraceContextProcessor
     {
     }
 
-    /**
-     * @param array<mixed> $record
-     *
-     * @return array<mixed>
-     */
-    public function __invoke(array $record): array
+    public function __invoke(LogRecord $record): LogRecord
     {
         $span = Span::getCurrent();
         $spanContext = $span->getContext();
@@ -32,28 +29,35 @@ class TraceContextProcessor
             return $record;
         }
 
-        $this->setRecordKey($record, $this->map['trace'], $spanContext->getTraceId());
-        $this->setRecordKey($record, $this->map['span'], $spanContext->getSpanId());
-        $this->setRecordKey($record, $this->map['sampled'], $spanContext->isSampled());
+        $record = $this->withRecordKey($record, $this->map['trace'], $spanContext->getTraceId());
+        $record = $this->withRecordKey($record, $this->map['span'], $spanContext->getSpanId());
+        $record = $this->withRecordKey($record, $this->map['sampled'], $spanContext->isSampled());
 
         if ($span instanceof Span) {
-            $this->setRecordKey($record, $this->map['operation'], $span->getName());
+            $record = $this->withRecordKey($record, $this->map['operation'], $span->getName());
         }
 
         return $record;
     }
 
     /**
-     * @param array<string,mixed> $record
-     * @param array<string>       $keys
-     * @param string|bool|int     $value
+     * @param array<string>   $keys
+     * @param string|bool|int $value
      */
-    private function setRecordKey(array &$record, array $keys, $value): void
+    private function withRecordKey(LogRecord $record, array $keys, $value): LogRecord
     {
-        $temp = &$record;
+        if ([] === $keys) {
+            return $record;
+        }
+        $first = array_shift($keys);
+
+        $array = $record[$first];
+        $temp = &$array;
         foreach ($keys as $key) {
             $temp = &$temp[$key];
         }
         $temp = $value;
+
+        return $record->with(...[$first => $array]);
     }
 }

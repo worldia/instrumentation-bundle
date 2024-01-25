@@ -10,15 +10,16 @@ declare(strict_types=1);
 namespace Instrumentation\Logging\Formatter;
 
 use Monolog\Formatter\JsonFormatter as BaseJsonFormatter;
+use Monolog\LogRecord;
 use Monolog\Utils;
 
 class JsonFormatter extends BaseJsonFormatter
 {
     private int|null $lengthLimit = null;
 
-    public function format(array $record): string
+    public function format(LogRecord $record): string
     {
-        $normalized = $this->normalize($record);
+        $normalized = $this->normalizeRecord($record);
 
         $json = $this->toJson($normalized, true);
         $length = \strlen($json);
