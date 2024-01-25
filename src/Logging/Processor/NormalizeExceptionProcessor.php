@@ -8,18 +8,16 @@
 namespace Instrumentation\Logging\Processor;
 
 use Instrumentation\Semantics\Normalizer\ExceptionNormalizer;
+use Monolog\LogRecord;
+use Monolog\Processor\ProcessorInterface;
 
-class NormalizeExceptionProcessor
+class NormalizeExceptionProcessor implements ProcessorInterface
 {
-    /**
-     * @param array<mixed> $record
-     *
-     * @return array<mixed>
-     */
-    public function __invoke(array $record): array
+    public function __invoke(LogRecord $record): LogRecord
     {
-        if (isset($record['context']['exception']) && $record['context']['exception'] instanceof \Throwable) {
-            $record['context']['exception'] = ExceptionNormalizer::normalizeException($record['context']['exception']);
+        if (isset($record->context['exception']) && $record->context['exception'] instanceof \Throwable) {
+            // @phpstan-ignore-next-line
+            $record->context['exception'] = ExceptionNormalizer::normalizeException($record->context['exception']);
         }
 
         return $record;

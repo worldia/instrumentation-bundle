@@ -8,7 +8,9 @@
 namespace spec\Instrumentation\Tracing\Instrumentation\LogHandler;
 
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
-use Monolog\Logger;
+use Monolog\DateTimeImmutable;
+use Monolog\Level;
+use Monolog\LogRecord;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use PhpSpec\ObjectBehavior;
@@ -21,13 +23,13 @@ class TracingHandlerSpec extends ObjectBehavior
         MainSpanContextInterface $mainSpanContext,
         SpanInterface $span
     ): void {
-        $this->beConstructedWith($tracerProvider, $mainSpanContext, Logger::INFO, []);
+        $this->beConstructedWith($tracerProvider, $mainSpanContext, Level::Info, []);
 
         $mainSpanContext->getMainSpan()->willReturn($span);
         $span->addEvent(Argument::any())->willReturn($span);
 
-        $this->handle(['message' => 'Error from channel "foo"', 'channel' => 'foo', 'level' => Logger::ERROR, 'extra' => [], 'context' => []]);
-        $this->handle(['message' => 'Error from channel "bar"', 'channel' => 'bar', 'level' => Logger::ERROR, 'extra' => [], 'context' => []]);
+        $this->handle($this->createLogRecord('foo'));
+        $this->handle($this->createLogRecord('bar'));
 
         $span->addEvent('Error from channel "foo"')->shouldHaveBeenCalled();
         $span->addEvent('Error from channel "bar"')->shouldHaveBeenCalled();
@@ -38,13 +40,13 @@ class TracingHandlerSpec extends ObjectBehavior
         MainSpanContextInterface $mainSpanContext,
         SpanInterface $span
     ): void {
-        $this->beConstructedWith($tracerProvider, $mainSpanContext, Logger::INFO, ['foo']);
+        $this->beConstructedWith($tracerProvider, $mainSpanContext, Level::Info, ['foo']);
 
         $mainSpanContext->getMainSpan()->willReturn($span);
         $span->addEvent(Argument::any())->willReturn($span);
 
-        $this->handle(['message' => 'Error from channel "foo"', 'channel' => 'foo', 'level' => Logger::ERROR, 'extra' => [], 'context' => []]);
-        $this->handle(['message' => 'Error from channel "bar"', 'channel' => 'bar', 'level' => Logger::ERROR, 'extra' => [], 'context' => []]);
+        $this->handle($this->createLogRecord('foo'));
+        $this->handle($this->createLogRecord('bar'));
 
         $span->addEvent('Error from channel "foo"')->shouldHaveBeenCalled();
         $span->addEvent('Error from channel "bar"')->shouldNotHaveBeenCalled();
@@ -55,15 +57,25 @@ class TracingHandlerSpec extends ObjectBehavior
         MainSpanContextInterface $mainSpanContext,
         SpanInterface $span
     ): void {
-        $this->beConstructedWith($tracerProvider, $mainSpanContext, Logger::INFO, ['!foo']);
+        $this->beConstructedWith($tracerProvider, $mainSpanContext, Level::Info, ['!foo']);
 
         $mainSpanContext->getMainSpan()->willReturn($span);
         $span->addEvent(Argument::any())->willReturn($span);
 
-        $this->handle(['message' => 'Error from channel "foo"', 'channel' => 'foo', 'level' => Logger::ERROR, 'extra' => [], 'context' => []]);
-        $this->handle(['message' => 'Error from channel "bar"', 'channel' => 'bar', 'level' => Logger::ERROR, 'extra' => [], 'context' => []]);
+        $this->handle($this->createLogRecord('foo'));
+        $this->handle($this->createLogRecord('bar'));
 
         $span->addEvent('Error from channel "foo"')->shouldNotHaveBeenCalled();
         $span->addEvent('Error from channel "bar"')->shouldHaveBeenCalled();
+    }
+
+    private function createLogRecord(string $chanel): LogRecord
+    {
+        return new LogRecord(
+            new DateTimeImmutable(true),
+            $chanel,
+            Level::Error,
+            'Error from channel "'.$chanel.'"',
+        );
     }
 }
