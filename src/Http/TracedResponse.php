@@ -48,7 +48,37 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
     public function getHeaders(bool $throw = true): array
     {
-        return $this->response->getHeaders($throw);
+        $headers = [];
+        $raw = $this->response->getHeaders($throw);
+        foreach ($raw as $header => $value) {
+            $headers[$header] = $this->toReadableHeaderValue($value);
+        }
+
+        /* @phpstan-ignore-next-line */
+        return $headers;
+    }
+
+    private function toReadableHeaderValue(mixed $value): string
+    {
+        if (null === $value) {
+            return 'null';
+        } elseif (\is_array($value)) {
+            return implode(', ', array_map([$this, __FUNCTION__], $value));
+        } elseif (\is_scalar($value)) {
+            if (\is_bool($value)) {
+                return true === $value ? 'true' : 'false';
+            }
+
+            return (string) $value;
+        } elseif (\is_object($value)) {
+            if (method_exists($value, '__toString')) {
+                return (string) $value;
+            }
+
+            return '(object)#'.$value::class;
+        }
+
+        return \gettype($value);
     }
 
     public function getContent(bool $throw = true): string
