@@ -28,7 +28,9 @@
 ### Installation and configuration
 
 ```sh
-composer require worldia/instrumentation-bundle
+composer require worldia/instrumentation-bundle <your-exporter>
+```
+You will aso need to install an [exporter implementation](https://packagist.org/packages/open-telemetry/exporter-otlp?query=open-telemetry%2Fexporter-) and `APCu` is required by the prometheus exporter.
 ```
 
 Add to ```bundles.php```:
