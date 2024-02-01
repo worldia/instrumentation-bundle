@@ -48,14 +48,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
     public function getHeaders(bool $throw = true): array
     {
-        $headers = [];
-        $raw = $this->response->getHeaders($throw);
-        foreach ($raw as $header => $value) {
-            $headers[$header] = $this->toReadableHeaderValue($value);
-        }
-
-        /* @phpstan-ignore-next-line */
-        return $headers;
+        return $this->response->getHeaders($throw);
     }
 
     private function toReadableHeaderValue(mixed $value): string
@@ -180,8 +173,15 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
         try {
             if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
-                $this->span->setAttribute('response.headers', $this->getHeaders(false));
+                $headers = [];
+                $raw = $this->getHeaders(false);
+                foreach ($raw as $header => $value) {
+                    $headers[$header] = $this->toReadableHeaderValue($value);
+                }
+
+                $this->span->setAttribute('response.headers', $headers);
             }
+
             if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
                 if (empty($this->content) && \is_resource($this->stream)) {
                     $this->content = stream_get_contents($this->stream) ?: null;
