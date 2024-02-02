@@ -50,7 +50,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
     {
         // cache:clear is not traceable because it doesn't dispatch the console.terminate event.
         // @see https://github.com/symfony/symfony/issues/28701
-        if ('cache:clear' === $event->getCommand()->getDefaultName()) {
+        if ('cache:clear' === $event->getCommand()?->getDefaultName()) {
             return;
         }
         
