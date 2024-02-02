@@ -68,7 +68,6 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
      */
     public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
-        // @phpstan-ignore-next-line
         return $this->decorated->supportsNormalization($data, $format, $context);
     }
 }

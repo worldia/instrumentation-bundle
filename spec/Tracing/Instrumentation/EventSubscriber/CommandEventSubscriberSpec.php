@@ -141,12 +141,12 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         $span->end()->shouldNotHaveBeenCalled();
     }
 
-    private function createConsoleCommandEvent(?Command $command = null): ConsoleCommandEvent
+    private function createConsoleCommandEvent(Command|null $command = null): ConsoleCommandEvent
     {
         return new ConsoleCommandEvent($command, new ArrayInput([]), new NullOutput());
     }
 
-    private function createConsoleErrorEvent(?Command $command = null): ConsoleErrorEvent
+    private function createConsoleErrorEvent(Command|null $command = null): ConsoleErrorEvent
     {
         return new ConsoleErrorEvent(new ArrayInput([]), new NullOutput(), new \Exception());
     }
