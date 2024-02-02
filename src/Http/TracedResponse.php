@@ -117,16 +117,21 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
     public function toStream(bool $throw = true)
     {
-        if ($throw) {
-            // Ensure headers arrived
-            $this->response->getHeaders();
+        if (\is_resource($this->stream)) {
+            return $this->stream;
         }
 
         if ($this->response instanceof StreamableInterface) {
-            return $this->stream = $this->response->toStream(false);
+            $this->stream = $stream = $this->response->toStream(false);
+        } else {
+            $this->stream = $stream = StreamWrapper::createResource($this->response);
         }
 
-        return $this->stream = StreamWrapper::createResource($this->response);
+        if ($throw) {
+            $this->checkStatusCode();
+        }
+
+        return $stream;
     }
 
     /**
@@ -163,6 +168,10 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
     protected function endTracing(): void
     {
+        if (!$this->span->isRecording()) {
+            return;
+        }
+
         $endEpochNanos = null;
 
         /** @var array<string,mixed> $info */
@@ -183,9 +192,10 @@ class TracedResponse implements ResponseInterface, StreamableInterface
             }
 
             if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
-                if (empty($this->content) && \is_resource($this->stream)) {
-                    $this->content = stream_get_contents($this->stream) ?: null;
-                    rewind($this->stream);
+                if (empty($this->content)) {
+                    $stream = $this->toStream(false);
+                    $this->content = stream_get_contents($stream) ?: null;
+                    rewind($stream);
                 }
                 $this->span->setAttribute('response.body', $this->content);
             }
