@@ -48,6 +48,12 @@ class CommandEventSubscriber implements EventSubscriberInterface
 
     public function onCommand(ConsoleCommandEvent $event): void
     {
+        // cache:clear is not traceable because it doesn't dispatch the console.terminate event.
+        // @see https://github.com/symfony/symfony/issues/28701
+        if ('cache:clear' === $event->getCommand()->getDefaultName()) {
+            return;
+        }
+        
         $operationName = $this->operationNameResolver->getOperationName($event->getCommand());
 
         $this->span = $this->startSpan($operationName);
