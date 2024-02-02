@@ -53,7 +53,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
         if ('cache:clear' === $event->getCommand()?->getDefaultName()) {
             return;
         }
-        
+
         $operationName = $this->operationNameResolver->getOperationName($event->getCommand());
 
         $this->span = $this->startSpan($operationName);

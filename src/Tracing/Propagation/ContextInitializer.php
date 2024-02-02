@@ -45,7 +45,7 @@ final class ContextInitializer
         return static::activateContext($header);
     }
 
-    public static function activateContext(string $parent, string $state = null): ScopeInterface
+    public static function activateContext(string $parent, ?string $state = null): ScopeInterface
     {
         $context = TraceContextPropagator::getInstance()->extract(array_filter([
             TraceContextPropagator::TRACEPARENT => $parent,
