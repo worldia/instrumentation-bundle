@@ -38,9 +38,9 @@ final class TracingHttpClient implements HttpClientInterface
      * @param HttpClientInterface|array<mixed>|null $client
      */
     public function __construct(
-        HttpClientInterface|array $client = null,
-        ClientRequestOperationNameResolverInterface $operationNameResolver = null,
-        ClientRequestAttributeProviderInterface $attributeProvider = null,
+        HttpClientInterface|array|null $client = null,
+        ?ClientRequestOperationNameResolverInterface $operationNameResolver = null,
+        ?ClientRequestAttributeProviderInterface $attributeProvider = null,
         int $maxHostConnections = 6,
         int $maxPendingPushes = 50
     ) {
@@ -140,7 +140,7 @@ final class TracingHttpClient implements HttpClientInterface
         return new TracedResponse($this->client->request($method, $url, $options), $span);
     }
 
-    public function stream(ResponseInterface|iterable $responses, float $timeout = null): ResponseStreamInterface
+    public function stream(ResponseInterface|iterable $responses, ?float $timeout = null): ResponseStreamInterface
     {
         if ($responses instanceof ResponseInterface) {
             $responses = [$responses];

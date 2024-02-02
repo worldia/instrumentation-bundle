@@ -25,7 +25,7 @@ final class Tracing
      * @param array<string,string> $attributes
      * @param SpanKind::KIND_*     $kind
      */
-    public static function trace(string $operation, array $attributes = null, int $kind = null, Context $parentContext = null): SpanInterface
+    public static function trace(string $operation, ?array $attributes = null, ?int $kind = null, ?Context $parentContext = null): SpanInterface
     {
         return static::getTracer()->spanBuilder($operation)
             ->setAttributes($attributes ?: [])

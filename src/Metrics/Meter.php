@@ -37,7 +37,7 @@ class Meter implements MeterInterface
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#counter-creation
      */
-    public function createCounter(string $name, string $unit = null, string $description = null, array $advisory = []): CounterInterface
+    public function createCounter(string $name, ?string $unit = null, ?string $description = null, array $advisory = []): CounterInterface
     {
         return new CounterAdapter($name, $description ?: '', $this->collectorRegistry);
     }
@@ -56,7 +56,7 @@ class Meter implements MeterInterface
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-counter-creation
      */
-    public function createObservableCounter(string $name, string $unit = null, string $description = null, $advisory = [], callable ...$callbacks): ObservableCounterInterface
+    public function createObservableCounter(string $name, ?string $unit = null, ?string $description = null, $advisory = [], callable ...$callbacks): ObservableCounterInterface
     {
         throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
     }
@@ -74,7 +74,7 @@ class Meter implements MeterInterface
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#histogram-creation
      */
-    public function createHistogram(string $name, string $unit = null, string $description = null, array $advisory = []): HistogramInterface
+    public function createHistogram(string $name, ?string $unit = null, ?string $description = null, array $advisory = []): HistogramInterface
     {
         return new HistogramAdapter($name, $description ?: '', $this->collectorRegistry);
     }
@@ -93,7 +93,7 @@ class Meter implements MeterInterface
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-gauge-creation
      */
-    public function createObservableGauge(string $name, string $unit = null, string $description = null, $advisory = [], callable ...$callbacks): ObservableGaugeInterface
+    public function createObservableGauge(string $name, ?string $unit = null, ?string $description = null, $advisory = [], callable ...$callbacks): ObservableGaugeInterface
     {
         throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
     }
@@ -110,7 +110,7 @@ class Meter implements MeterInterface
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#updowncounter-creation
      */
-    public function createUpDownCounter(string $name, string $unit = null, string $description = null, array $advisory = []): UpDownCounterInterface
+    public function createUpDownCounter(string $name, ?string $unit = null, ?string $description = null, array $advisory = []): UpDownCounterInterface
     {
         return new UpDownCounterAdapter($name, $description ?: '', $this->collectorRegistry);
     }
@@ -129,7 +129,7 @@ class Meter implements MeterInterface
      *
      * @see https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-updowncounter-creation
      */
-    public function createObservableUpDownCounter(string $name, string $unit = null, string $description = null, $advisory = [], callable ...$callbacks): ObservableUpDownCounterInterface
+    public function createObservableUpDownCounter(string $name, ?string $unit = null, ?string $description = null, $advisory = [], callable ...$callbacks): ObservableUpDownCounterInterface
     {
         throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
     }

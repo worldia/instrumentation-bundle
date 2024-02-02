@@ -44,7 +44,7 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
      *
      * @return array<mixed>|\ArrayObject<int|string,mixed>
      */
-    public function normalize($exception, string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
+    public function normalize($exception, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         $data = $this->decorated->normalize($exception, $format, $context);
 
@@ -66,9 +66,8 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
     /**
      * @param array<mixed> $context
      */
-    public function supportsNormalization($data, string $format = null, array $context = []): bool
+    public function supportsNormalization($data, ?string $format = null, array $context = []): bool
     {
-        // @phpstan-ignore-next-line
         return $this->decorated->supportsNormalization($data, $format, $context);
     }
 }
