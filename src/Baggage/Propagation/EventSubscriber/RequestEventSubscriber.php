@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 class RequestEventSubscriber implements EventSubscriberInterface
 {
-    private ?ScopeInterface $scope = null;
+    private ScopeInterface|null $scope = null;
 
     public static function getSubscribedEvents(): array
     {

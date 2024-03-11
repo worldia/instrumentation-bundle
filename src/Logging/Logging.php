@@ -15,9 +15,9 @@ use Psr\Log\NullLogger;
 
 class Logging
 {
-    private static ?LoggerInterface $logger = null;
+    private static LoggerInterface|null $logger = null;
 
-    public function __construct(?LoggerInterface $logger)
+    public function __construct(LoggerInterface|null $logger)
     {
         if (self::$logger) {
             return;

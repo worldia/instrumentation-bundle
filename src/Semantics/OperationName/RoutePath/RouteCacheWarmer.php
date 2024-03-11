@@ -23,7 +23,7 @@ class RouteCacheWarmer implements CacheWarmerInterface
         return true;
     }
 
-    public function warmUp(string $cacheDir, ?string $buildDir = null): array
+    public function warmUp(string $cacheDir, string|null $buildDir = null): array
     {
         $routes = [];
         foreach ($this->router->getRouteCollection() as $name => $route) {

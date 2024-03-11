@@ -9,5 +9,5 @@ namespace Instrumentation\Semantics\OperationName\RoutePath;
 
 interface RoutePathResolverInterface
 {
-    public function resolve(string $routeName): ?string;
+    public function resolve(string $routeName): string|null;
 }

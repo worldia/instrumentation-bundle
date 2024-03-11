@@ -16,5 +16,5 @@ interface CommandOperationNameResolverInterface
     /**
      * @return string&non-empty-string
      */
-    public function getOperationName(?Command $command): string;
+    public function getOperationName(Command|null $command): string;
 }

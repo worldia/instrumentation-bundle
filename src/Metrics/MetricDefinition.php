@@ -24,7 +24,7 @@ final class MetricDefinition
         private string $type,
         private string $help,
         private array $labels = [],
-        private ?array $buckets = null
+        private array|null $buckets = null
     ) {
     }
 
@@ -59,7 +59,7 @@ final class MetricDefinition
     /**
      * @return array<int|float>
      */
-    public function getBuckets(): ?array
+    public function getBuckets(): array|null
     {
         return $this->buckets;
     }

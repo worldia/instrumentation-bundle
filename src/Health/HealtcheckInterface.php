@@ -17,14 +17,14 @@ interface HealtcheckInterface
 
     public function getName(): string;
 
-    public function getDescription(): ?string;
+    public function getDescription(): string|null;
 
     /**
      * Contextual information about the status.
      * Should be returned when the check is failing to give additional
      * information about the reason for the current status.
      */
-    public function getStatusMessage(): ?string;
+    public function getStatusMessage(): string|null;
 
     /**
      * @return string One of the HealtcheckInterface constants

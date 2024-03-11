@@ -49,7 +49,7 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
     /**
      * @param array<string> $blacklist
      */
-    public function __construct(private RegistryInterface $registry, private array $blacklist, private ?MainSpanContextInterface $mainSpanContext = null)
+    public function __construct(private RegistryInterface $registry, private array $blacklist, private MainSpanContextInterface|null $mainSpanContext = null)
     {
     }
 

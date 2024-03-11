@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\Profiler\Profiler;
 
 final class Endpoint
 {
-    public function __construct(private CollectorRegistry $registry, private ?Profiler $profiler = null)
+    public function __construct(private CollectorRegistry $registry, private Profiler|null $profiler = null)
     {
     }
 

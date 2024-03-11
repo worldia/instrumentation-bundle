@@ -22,9 +22,9 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
     /**
      * @var array<string,string>
      */
-    private ?array $info = null;
+    private array|null $info = null;
 
-    public function __construct(private ResourceInfo $resourceInfo, private ?MainSpanContextInterface $mainSpanContext = null, private ?RequestStack $requestStack = null)
+    public function __construct(private ResourceInfo $resourceInfo, private MainSpanContextInterface|null $mainSpanContext = null, private RequestStack|null $requestStack = null)
     {
     }
 

@@ -13,7 +13,7 @@ class RoutePathResolver implements RoutePathResolverInterface
     {
     }
 
-    public function resolve(string $routeName): ?string
+    public function resolve(string $routeName): string|null
     {
         $routePathCacheFilename = $this->routeCacheWarmer->getCacheFile($this->cacheDir);
 

@@ -18,7 +18,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 
 class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
 {
-    public function __construct(private NormalizerInterface $decorated, private bool $addUrl = false, private ?TraceUrlGeneratorInterface $traceUrlGenerator = null)
+    public function __construct(private NormalizerInterface $decorated, private bool $addUrl = false, private TraceUrlGeneratorInterface|null $traceUrlGenerator = null)
     {
     }
 
@@ -32,7 +32,7 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
     /**
      * @return array<class-string, bool>
      */
-    public function getSupportedTypes(?string $format): array
+    public function getSupportedTypes(string|null $format): array
     {
         return [
             FlattenException::class => __CLASS__ === self::class,
@@ -44,7 +44,7 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
      *
      * @return array<mixed>|\ArrayObject<int|string,mixed>
      */
-    public function normalize($exception, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
+    public function normalize($exception, string|null $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         $data = $this->decorated->normalize($exception, $format, $context);
 
@@ -66,7 +66,7 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
     /**
      * @param array<mixed> $context
      */
-    public function supportsNormalization($data, ?string $format = null, array $context = []): bool
+    public function supportsNormalization($data, string|null $format = null, array $context = []): bool
     {
         return $this->decorated->supportsNormalization($data, $format, $context);
     }

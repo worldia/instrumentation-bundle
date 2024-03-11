@@ -9,7 +9,7 @@ namespace Instrumentation\Metrics\Storage;
 
 class RedisPrefixProvider
 {
-    protected static ?RedisPrefixProvider $instance = null;
+    protected static RedisPrefixProvider|null $instance = null;
     protected string $prefix;
 
     protected function __construct()

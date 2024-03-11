@@ -101,7 +101,7 @@ final class StdOutFormatter extends BaseJsonFormatter
      *
      * @param array<mixed> $trace The stack trace returned from Exception::getTrace()
      */
-    private static function getFunctionNameForReport(?array $trace = null): string
+    private static function getFunctionNameForReport(array|null $trace = null): string
     {
         if (null === $trace) {
             return '<unknown function>';

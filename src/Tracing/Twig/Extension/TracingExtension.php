@@ -16,7 +16,7 @@ use Twig\TwigFunction;
 
 class TracingExtension extends AbstractExtension
 {
-    public function __construct(private ?TraceUrlGeneratorInterface $traceUrlGenerator = null)
+    public function __construct(private TraceUrlGeneratorInterface|null $traceUrlGenerator = null)
     {
     }
 
@@ -33,7 +33,7 @@ class TracingExtension extends AbstractExtension
         return Span::getCurrent()->getContext()->getTraceId();
     }
 
-    public function getTraceUrl(?string $traceId = null): ?string
+    public function getTraceUrl(string|null $traceId = null): string|null
     {
         if ($traceId && $this->traceUrlGenerator) {
             return $this->traceUrlGenerator->getTraceUrl($traceId);

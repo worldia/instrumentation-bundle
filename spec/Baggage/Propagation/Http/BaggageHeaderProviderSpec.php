@@ -14,7 +14,7 @@ use PhpSpec\ObjectBehavior;
 
 class BaggageHeaderProviderSpec extends ObjectBehavior
 {
-    private ?ScopeInterface $scope = null;
+    private ScopeInterface|null $scope = null;
 
     public function let()
     {

@@ -21,7 +21,7 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class TracedResponse implements ResponseInterface, StreamableInterface
 {
-    private ?string $content = null;
+    private string|null $content = null;
     /** @var resource|null */
     private $stream;
 
@@ -110,7 +110,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
     }
 
-    public function getInfo(?string $type = null): mixed
+    public function getInfo(string|null $type = null): mixed
     {
         return $this->response->getInfo($type);
     }
@@ -139,7 +139,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
      *
      * @internal
      */
-    public static function stream(HttpClientInterface $client, iterable $responses, ?float $timeout): \Generator
+    public static function stream(HttpClientInterface $client, iterable $responses, float|null $timeout): \Generator
     {
         $wrappedResponses = [];
         $traceableMap = new \SplObjectStorage();

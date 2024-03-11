@@ -26,8 +26,8 @@ class CommandEventSubscriber implements EventSubscriberInterface
 {
     use TracerAwareTrait;
 
-    private ?SpanInterface $span = null;
-    private ?ScopeInterface $scope = null;
+    private SpanInterface|null $span = null;
+    private ScopeInterface|null $scope = null;
 
     public static function getSubscribedEvents(): array
     {

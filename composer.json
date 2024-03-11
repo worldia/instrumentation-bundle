@@ -2,11 +2,19 @@
   "name": "worldia/instrumentation-bundle",
   "type": "symfony-bundle",
   "license": "MIT",
-  "keywords": ["instrumentation", "tracing", "metrics", "open-telemetry", "prometheus"],
-  "authors": [{
-    "name": "Worldia developers",
-    "email": "developers@worldia.com"
-  }],
+  "keywords": [
+    "instrumentation",
+    "tracing",
+    "metrics",
+    "open-telemetry",
+    "prometheus"
+  ],
+  "authors": [
+    {
+      "name": "Worldia developers",
+      "email": "developers@worldia.com"
+    }
+  ],
   "require": {
     "monolog/monolog": "^2.0",
     "nyholm/dsn": "^2.0",
@@ -20,11 +28,10 @@
   "require-dev": {
     "doctrine/dbal": "^3.0",
     "friends-of-phpspec/phpspec-expect": "^4.0",
-    "open-telemetry/sdk-contrib": "^1.0@dev",
     "open-telemetry/transport-grpc": "^1.0",
     "open-telemetry/gen-otlp-protobuf": "^1.0",
     "php-http/httplug": "^2.3",
-    "phpspec/phpspec": "^7.2",
+    "phpspec/phpspec": "^7.5",
     "phpstan/phpstan": "^1.4",
     "symfony/framework-bundle": "*",
     "symfony/http-client": "*",

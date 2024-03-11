@@ -12,7 +12,7 @@ use Redis as RedisConnection;
 
 final class HostnamePrefixedRedisFactory
 {
-    public function __construct(private ?RedisPrefixProvider $redisPrefixProvider)
+    public function __construct(private RedisPrefixProvider|null $redisPrefixProvider)
     {
     }
 

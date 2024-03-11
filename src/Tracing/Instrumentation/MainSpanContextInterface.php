@@ -19,7 +19,7 @@ interface MainSpanContextInterface
 
     public function setMainSpan(SpanInterface $span): void;
 
-    public function getOperationName(): ?string;
+    public function getOperationName(): string|null;
 
-    public function setOperationName(?string $name): void;
+    public function setOperationName(string|null $name): void;
 }

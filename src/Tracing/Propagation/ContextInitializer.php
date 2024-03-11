@@ -17,7 +17,7 @@ use Symfony\Component\Messenger\Envelope;
 
 final class ContextInitializer
 {
-    public static function fromRequest(Request $request): ?ScopeInterface
+    public static function fromRequest(Request $request): ScopeInterface|null
     {
         if (!$traceparent = $request->headers->get(TraceContextPropagator::TRACEPARENT)) {
             return null;
@@ -28,7 +28,7 @@ final class ContextInitializer
         return static::activateContext($traceparent, $tracestate);
     }
 
-    public static function fromMessage(Envelope $envelope): ?ScopeInterface
+    public static function fromMessage(Envelope $envelope): ScopeInterface|null
     {
         /** @var TraceContextStamp|null $stamp */
         $stamp = $envelope->last(TraceContextStamp::class);
@@ -45,7 +45,7 @@ final class ContextInitializer
         return static::activateContext($header);
     }
 
-    public static function activateContext(string $parent, ?string $state = null): ScopeInterface
+    public static function activateContext(string $parent, string|null $state = null): ScopeInterface
     {
         $context = TraceContextPropagator::getInstance()->extract(array_filter([
             TraceContextPropagator::TRACEPARENT => $parent,

@@ -14,8 +14,8 @@ use Symfony\Contracts\Service\ResetInterface;
 
 final class ForcableIdGenerator implements IdGeneratorInterface, ResetInterface
 {
-    private ?string $traceId = null;
-    private ?string $spanId = null;
+    private string|null $traceId = null;
+    private string|null $spanId = null;
 
     public function __construct(private IdGeneratorInterface $decorated)
     {

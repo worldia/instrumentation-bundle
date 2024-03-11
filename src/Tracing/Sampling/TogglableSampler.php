@@ -20,7 +20,7 @@ final class TogglableSampler implements SamplerInterface, ResetInterface
     /**
      * @var int&SamplingResult::*
      */
-    private ?int $nextDecision = null;
+    private int|null $nextDecision = null;
 
     public function __construct(private SamplerInterface $decorated)
     {

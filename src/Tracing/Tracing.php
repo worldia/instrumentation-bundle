@@ -18,14 +18,14 @@ final class Tracing
 {
     public const NAME = 'io.opentelemetry.contrib.php';
 
-    private static ?TracerProviderInterface $tracerProvider = null;
+    private static TracerProviderInterface|null $tracerProvider = null;
 
     /**
      * @param non-empty-string     $operation
      * @param array<string,string> $attributes
      * @param SpanKind::KIND_*     $kind
      */
-    public static function trace(string $operation, ?array $attributes = null, ?int $kind = null, ?Context $parentContext = null): SpanInterface
+    public static function trace(string $operation, array|null $attributes = null, int|null $kind = null, Context|null $parentContext = null): SpanInterface
     {
         return static::getTracer()->spanBuilder($operation)
             ->setAttributes($attributes ?: [])

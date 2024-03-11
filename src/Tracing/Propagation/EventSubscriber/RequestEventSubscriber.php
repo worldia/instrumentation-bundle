@@ -26,7 +26,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(private ForcableIdGenerator $forcableIdGenerator, private ?IncomingTraceHeaderResolverInterface $incomingTraceResolver = null)
+    public function __construct(private ForcableIdGenerator $forcableIdGenerator, private IncomingTraceHeaderResolverInterface|null $incomingTraceResolver = null)
     {
     }
 
