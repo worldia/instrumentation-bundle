@@ -26,8 +26,8 @@ class CommandEventSubscriber implements EventSubscriberInterface
 {
     use TracerAwareTrait;
 
-    private ?SpanInterface $span = null;
-    private ?ScopeInterface $scope = null;
+    private SpanInterface|null $span = null;
+    private ScopeInterface|null $scope = null;
 
     public static function getSubscribedEvents(): array
     {
@@ -48,6 +48,12 @@ class CommandEventSubscriber implements EventSubscriberInterface
 
     public function onCommand(ConsoleCommandEvent $event): void
     {
+        // cache:clear is not traceable because it doesn't dispatch the console.terminate event.
+        // @see https://github.com/symfony/symfony/issues/28701
+        if ('cache:clear' === $event->getCommand()?->getDefaultName()) {
+            return;
+        }
+
         $operationName = $this->operationNameResolver->getOperationName($event->getCommand());
 
         $this->span = $this->startSpan($operationName);

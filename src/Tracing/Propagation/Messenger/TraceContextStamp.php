@@ -16,7 +16,7 @@ use Symfony\Component\Messenger\Stamp\StampInterface;
 final class TraceContextStamp implements StampInterface
 {
     private string $traceParent;
-    private ?string $traceState;
+    private string|null $traceState;
 
     public function __construct()
     {
@@ -36,7 +36,7 @@ final class TraceContextStamp implements StampInterface
         return $this->traceParent;
     }
 
-    public function getTraceState(): ?string
+    public function getTraceState(): string|null
     {
         return $this->traceState;
     }

@@ -17,7 +17,7 @@ use Symfony\Component\Messenger\Envelope;
 
 final class ContextInitializer
 {
-    public static function fromRequest(Request $request): ?ScopeInterface
+    public static function fromRequest(Request $request): ScopeInterface|null
     {
         if (!$baggage = $request->headers->get(BaggagePropagator::BAGGAGE)) {
             return null;
@@ -26,7 +26,7 @@ final class ContextInitializer
         return static::activateContext($baggage);
     }
 
-    public static function fromMessage(Envelope $envelope): ?ScopeInterface
+    public static function fromMessage(Envelope $envelope): ScopeInterface|null
     {
         /** @var BaggageStamp|null $stamp */
         $stamp = $envelope->last(BaggageStamp::class);
@@ -38,7 +38,7 @@ final class ContextInitializer
         return static::activateContext($stamp->getBaggage());
     }
 
-    public static function fromW3CHeader(string $header): ?ScopeInterface
+    public static function fromW3CHeader(string $header): ScopeInterface|null
     {
         return static::activateContext($header);
     }

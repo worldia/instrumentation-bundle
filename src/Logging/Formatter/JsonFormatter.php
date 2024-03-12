@@ -14,7 +14,7 @@ use Monolog\Utils;
 
 class JsonFormatter extends BaseJsonFormatter
 {
-    private ?int $lengthLimit = null;
+    private int|null $lengthLimit = null;
 
     public function format(array $record): string
     {

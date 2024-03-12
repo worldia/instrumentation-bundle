@@ -22,6 +22,11 @@ class TracingHandler extends AbstractProcessingHandler
     public const STRATEGY_CURRENT_SPAN = 'current_span'; /* Experimental */
 
     /**
+     * @var array<string>
+     */
+    private array $excludedChannels = [];
+
+    /**
      * @param array<string> $channels
      */
     public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContextInterface $mainSpanContext, $level = Logger::INFO, private array $channels = [], private string $strategy = self::STRATEGY_MAIN_SPAN, bool $bubble = true)
@@ -29,11 +34,22 @@ class TracingHandler extends AbstractProcessingHandler
         parent::__construct($level, $bubble);
 
         $this->pushProcessor(new PsrLogMessageProcessor());
+
+        /*
+         * Filtering channels starting with a "!" as excluded channels and remove them from the main channel list
+         * @see https://symfony.com/doc/current/logging/channels_handlers.html
+         */
+        $this->excludedChannels = array_map(fn (string $channel) => substr($channel, 1), array_filter($this->channels, fn (string $channel) => str_starts_with($channel, '!')));
+        $this->channels = array_filter($this->channels, fn (string $channel) => !str_starts_with($channel, '!'));
     }
 
     protected function write(array $record): void
     {
         if ($this->channels && !\in_array($record['channel'], $this->channels)) {
+            return;
+        }
+
+        if ($this->excludedChannels && \in_array($record['channel'], $this->excludedChannels)) {
             return;
         }
 

@@ -15,12 +15,15 @@ use Symfony\Component\HttpClient\Exception\RedirectionException;
 use Symfony\Component\HttpClient\Exception\ServerException;
 use Symfony\Component\HttpClient\Response\StreamableInterface;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class TracedResponse implements ResponseInterface, StreamableInterface
 {
-    private ?string $content = null;
+    private string|null $content = null;
+    /** @var resource|null */
+    private $stream;
 
     public function __construct(
         private ResponseInterface $response,
@@ -46,6 +49,29 @@ class TracedResponse implements ResponseInterface, StreamableInterface
     public function getHeaders(bool $throw = true): array
     {
         return $this->response->getHeaders($throw);
+    }
+
+    private function toReadableHeaderValue(mixed $value): string
+    {
+        if (null === $value) {
+            return 'null';
+        } elseif (\is_array($value)) {
+            return implode(', ', array_map([$this, __FUNCTION__], $value));
+        } elseif (\is_scalar($value)) {
+            if (\is_bool($value)) {
+                return true === $value ? 'true' : 'false';
+            }
+
+            return (string) $value;
+        } elseif (\is_object($value)) {
+            if (method_exists($value, '__toString')) {
+                return (string) $value;
+            }
+
+            return '(object)#'.$value::class;
+        }
+
+        return \gettype($value);
     }
 
     public function getContent(bool $throw = true): string
@@ -84,23 +110,28 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
     }
 
-    public function getInfo(string $type = null): mixed
+    public function getInfo(string|null $type = null): mixed
     {
         return $this->response->getInfo($type);
     }
 
     public function toStream(bool $throw = true)
     {
-        if ($throw) {
-            // Ensure headers arrived
-            $this->response->getHeaders();
+        if (\is_resource($this->stream)) {
+            return $this->stream;
         }
 
         if ($this->response instanceof StreamableInterface) {
-            return $this->response->toStream(false);
+            $this->stream = $stream = $this->response->toStream(false);
+        } else {
+            $this->stream = $stream = StreamWrapper::createResource($this->response);
         }
 
-        return StreamWrapper::createResource($this->response);
+        if ($throw) {
+            $this->checkStatusCode();
+        }
+
+        return $stream;
     }
 
     /**
@@ -108,7 +139,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
      *
      * @internal
      */
-    public static function stream(HttpClientInterface $client, iterable $responses, ?float $timeout): \Generator
+    public static function stream(HttpClientInterface $client, iterable $responses, float|null $timeout): \Generator
     {
         $wrappedResponses = [];
         $traceableMap = new \SplObjectStorage();
@@ -123,12 +154,24 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
 
         foreach ($client->stream($wrappedResponses, $timeout) as $r => $chunk) {
+            try {
+                if ($chunk->isLast() || $chunk->isTimeout()) {
+                    $traceableMap[$r]->endTracing();
+                }
+            } catch (TransportExceptionInterface) {
+                $traceableMap[$r]->endTracing();
+            }
+
             yield $traceableMap[$r] => $chunk;
         }
     }
 
     protected function endTracing(): void
     {
+        if (!$this->span->isRecording()) {
+            return;
+        }
+
         $endEpochNanos = null;
 
         /** @var array<string,mixed> $info */
@@ -141,7 +184,13 @@ class TracedResponse implements ResponseInterface, StreamableInterface
             if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
                 $this->span->setAttribute('response.headers', HttpMessageHelper::formatHeadersForSpanAttribute($this->getHeaders(false)));
             }
+
             if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
+                if (empty($this->content)) {
+                    $stream = $this->toStream(false);
+                    $this->content = stream_get_contents($stream) ?: null;
+                    rewind($stream);
+                }
                 $this->span->setAttribute('response.body', $this->content);
             }
         } catch (\Throwable) {

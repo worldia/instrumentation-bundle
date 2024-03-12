@@ -9,15 +9,15 @@ declare(strict_types=1);
 
 namespace Instrumentation\Logging;
 
-use OpenTelemetry\API\Common\Log\LoggerHolder;
+use OpenTelemetry\API\LoggerHolder;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 class Logging
 {
-    private static ?LoggerInterface $logger = null;
+    private static LoggerInterface|null $logger = null;
 
-    public function __construct(?LoggerInterface $logger)
+    public function __construct(LoggerInterface|null $logger)
     {
         if (self::$logger) {
             return;

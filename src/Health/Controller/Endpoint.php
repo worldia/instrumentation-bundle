@@ -31,7 +31,7 @@ class Endpoint implements MetricProviderInterface
     /**
      * @param iterable<HealtcheckInterface> $checks
      */
-    public function __construct(private ResourceInfo $resourceInfo, private iterable $checks, private ?RegistryInterface $registry = null, private ?Profiler $profiler = null)
+    public function __construct(private ResourceInfo $resourceInfo, private iterable $checks, private RegistryInterface|null $registry = null, private Profiler|null $profiler = null)
     {
     }
 

@@ -18,7 +18,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 
 class MessengerEventSubscriber implements EventSubscriberInterface
 {
-    private ?ScopeInterface $scope = null;
+    private ScopeInterface|null $scope = null;
 
     public static function getSubscribedEvents(): array
     {

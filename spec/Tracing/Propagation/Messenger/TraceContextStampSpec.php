@@ -10,6 +10,7 @@ namespace spec\Instrumentation\Tracing\Propagation\Messenger;
 use Instrumentation\Tracing\Propagation\Exception\ContextPropagationException;
 use OpenTelemetry\API\Trace\NonRecordingSpan;
 use OpenTelemetry\API\Trace\SpanContext;
+use OpenTelemetry\API\Trace\TraceFlags;
 use OpenTelemetry\API\Trace\TraceState;
 use PhpSpec\ObjectBehavior;
 use Symfony\Component\Messenger\Stamp\StampInterface;
@@ -48,7 +49,7 @@ class TraceContextStampSpec extends ObjectBehavior
         $span = new NonRecordingSpan(SpanContext::create(
             'b23f37322b169de7bcaf63b9f84b1427',
             '3c17130d40834256',
-            SpanContext::TRACE_FLAG_DEFAULT,
+            TraceFlags::DEFAULT,
             (new TraceState())->with('key', 'value'),
         ));
         $scope = $span->activate();

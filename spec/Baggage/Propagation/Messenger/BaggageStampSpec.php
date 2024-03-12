@@ -15,7 +15,7 @@ use Symfony\Component\Messenger\Stamp\StampInterface;
 
 class BaggageStampSpec extends ObjectBehavior
 {
-    private ?ScopeInterface $scope = null;
+    private ScopeInterface|null $scope = null;
 
     public function let()
     {

@@ -17,7 +17,7 @@ class ServerRequestAttributeProvider implements ServerRequestAttributeProviderIn
     /**
      * @param array<string> $capturedHeaders
      */
-    public function __construct(private ?string $serverName = null, private array $capturedHeaders = [])
+    public function __construct(private string|null $serverName = null, private array $capturedHeaders = [])
     {
     }
 

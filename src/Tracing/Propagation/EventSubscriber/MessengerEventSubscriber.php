@@ -21,7 +21,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 class MessengerEventSubscriber implements EventSubscriberInterface
 {
     private LoggerInterface $logger;
-    private ?ScopeInterface $scope = null;
+    private ScopeInterface|null $scope = null;
 
     public function __construct(LoggerInterface|null $logger = null)
     {

@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace Instrumentation\Semantics\Attribute;
 
 use OpenTelemetry\SemConv\TraceAttributes;
-use OpenTelemetry\SemConv\TraceAttributeValues;
 use Symfony\Component\Messenger\Bridge\Amqp\Transport\AmqpReceivedStamp;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisReceivedStamp;
 use Symfony\Component\Messenger\Envelope;
@@ -22,7 +21,7 @@ class MessageAttributeProvider implements MessageAttributeProviderInterface
     public function getAttributes(Envelope $envelope): array
     {
         $attributes = [
-            TraceAttributes::MESSAGING_DESTINATION_KIND => TraceAttributeValues::MESSAGING_DESTINATION_KIND_QUEUE,
+            TraceAttributes::MESSAGING_DESTINATION_KIND => 'queue',
             'messenger.message' => \get_class($envelope->getMessage()),
         ];
 

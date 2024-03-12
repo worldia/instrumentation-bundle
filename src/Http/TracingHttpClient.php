@@ -16,6 +16,7 @@ use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverIn
 use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
+use OpenTelemetry\SDK\Common\Time\ClockInterface;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\HttpClient\DecoratorTrait;
 use Symfony\Component\HttpClient\HttpClient;
@@ -38,8 +39,8 @@ final class TracingHttpClient implements HttpClientInterface
      */
     public function __construct(
         HttpClientInterface|array|null $client = null,
-        ClientRequestOperationNameResolverInterface $operationNameResolver = null,
-        ClientRequestAttributeProviderInterface $attributeProvider = null,
+        ClientRequestOperationNameResolverInterface|null $operationNameResolver = null,
+        ClientRequestAttributeProviderInterface|null $attributeProvider = null,
         int $maxHostConnections = 6,
         int $maxPendingPushes = 50
     ) {
@@ -60,7 +61,7 @@ final class TracingHttpClient implements HttpClientInterface
      *
      * @return array<string>
      */
-    protected function getExtraSpanAttributes(?array $attributes): array
+    protected function getExtraSpanAttributes(array|null $attributes): array
     {
         $attributes = $attributes ?: $_SERVER['OTEL_PHP_HTTP_SPAN_ATTRIBUTES'] ?? [];
 
@@ -123,6 +124,11 @@ final class TracingHttpClient implements HttpClientInterface
                     $span->setAttribute(TraceAttributes::HTTP_STATUS_CODE, $info['http_code']);
                     $span->setAttribute(TraceAttributes::HTTP_URL, $info['url']);
 
+                    if (\array_key_exists('total_time', $info)) {
+                        $timestamp = (int) (($info['start_time'] + $info['total_time']) * ClockInterface::NANOS_PER_SECOND);
+                    }
+                    $span->addEvent('http.response.headers', [], $timestamp ?? null);
+
                     if ($info['http_code'] >= 400) {
                         $span->setStatus(StatusCode::STATUS_ERROR);
                     }
@@ -137,7 +143,7 @@ final class TracingHttpClient implements HttpClientInterface
         return new TracedResponse($this->client->request($method, $url, $options), $span);
     }
 
-    public function stream(ResponseInterface|iterable $responses, float $timeout = null): ResponseStreamInterface
+    public function stream(ResponseInterface|iterable $responses, float|null $timeout = null): ResponseStreamInterface
     {
         if ($responses instanceof ResponseInterface) {
             $responses = [$responses];

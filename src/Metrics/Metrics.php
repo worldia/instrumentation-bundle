@@ -11,7 +11,7 @@ namespace Instrumentation\Metrics;
 
 final class Metrics
 {
-    private static ?RegistryInterface $registry = null;
+    private static RegistryInterface|null $registry = null;
 
     public static function getRegistry(): RegistryInterface
     {

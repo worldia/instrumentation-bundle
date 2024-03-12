@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 interface ServerRequestAttributeProviderInterface
 {
     /**
-     * @return array<string|TraceAttributes::*,string|array<string>>
+     * @return array<non-empty-string|TraceAttributes::*,string|array<string>>
      */
     public function getAttributes(Request $request): array;
 }

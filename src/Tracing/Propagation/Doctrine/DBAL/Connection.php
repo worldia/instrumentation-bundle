@@ -24,7 +24,7 @@ final class Connection implements ServerInfoAwareConnection
 
     public function prepare(string $sql): Statement
     {
-        $sql = $sql.self::formatComments($this->infoProvider->getTraceContext());
+        $sql .= self::formatComments($this->infoProvider->getTraceContext());
 
         return $this->decorated->prepare($sql);
     }

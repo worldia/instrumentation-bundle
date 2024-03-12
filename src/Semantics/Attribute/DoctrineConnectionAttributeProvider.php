@@ -11,7 +11,6 @@ namespace Instrumentation\Semantics\Attribute;
 
 use Doctrine\DBAL\Platforms;
 use OpenTelemetry\SemConv\TraceAttributes;
-use OpenTelemetry\SemConv\TraceAttributeValues;
 
 class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttributeProviderInterface
 {
@@ -40,9 +39,9 @@ class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttribute
         }
 
         if (isset($params['unix_socket'])) {
-            $attributes[TraceAttributes::NET_TRANSPORT] = TraceAttributeValues::NET_TRANSPORT_UNIX;
+            $attributes[TraceAttributes::NET_TRANSPORT] = 'unix';
         } elseif (isset($params['memory'])) {
-            $attributes[TraceAttributes::NET_TRANSPORT] = TraceAttributeValues::NET_TRANSPORT_INPROC;
+            $attributes[TraceAttributes::NET_TRANSPORT] = 'inproc';
         }
 
         return $attributes;
@@ -51,27 +50,27 @@ class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttribute
     private function getSystemAttribute(Platforms\AbstractPlatform $platform): string
     {
         if ($platform instanceof Platforms\MariaDBPlatform) {
-            return TraceAttributeValues::DB_SYSTEM_MARIADB;
+            return 'mariadb';
         }
         if ($platform instanceof Platforms\PostgreSQLPlatform) {
-            return TraceAttributeValues::DB_SYSTEM_POSTGRESQL;
+            return 'postgresql';
         }
         if ($platform instanceof Platforms\AbstractMySQLPlatform) {
-            return TraceAttributeValues::DB_SYSTEM_MYSQL;
+            return 'mysql';
         }
         if ($platform instanceof Platforms\SQLServerPlatform) {
-            return TraceAttributeValues::DB_SYSTEM_MSSQL;
+            return 'mssql';
         }
         if ($platform instanceof Platforms\SqlitePlatform) {
-            return TraceAttributeValues::DB_SYSTEM_SQLITE;
+            return 'sqlite';
         }
         if ($platform instanceof Platforms\OraclePlatform) {
-            return TraceAttributeValues::DB_SYSTEM_ORACLE;
+            return 'oracle';
         }
         if ($platform instanceof Platforms\DB2Platform) {
-            return TraceAttributeValues::DB_SYSTEM_DB2;
+            return 'db2';
         }
 
-        return TraceAttributeValues::DB_SYSTEM_OTHER_SQL;
+        return 'other_sql';
     }
 }

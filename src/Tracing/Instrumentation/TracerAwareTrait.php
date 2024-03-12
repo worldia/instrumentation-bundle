@@ -38,7 +38,7 @@ trait TracerAwareTrait
      * @param array<string,string>    $attributes
      * @param SpanKind::KIND_*        $kind
      */
-    protected function traceFunction(string $name, array $attributes, callable $callback, ?Context $parentContext = null, ?int $kind = null): mixed
+    protected function traceFunction(string $name, array $attributes, callable $callback, Context|null $parentContext = null, int|null $kind = null): mixed
     {
         $span = $this->getTracer()
             ->spanBuilder($name) // @phpstan-ignore-line

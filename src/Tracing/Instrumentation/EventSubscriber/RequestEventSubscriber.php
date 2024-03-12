@@ -29,8 +29,8 @@ class RequestEventSubscriber implements EventSubscriberInterface
 {
     use TracerAwareTrait;
 
-    private ?SpanInterface $serverSpan = null;
-    private ?ScopeInterface $serverScope = null;
+    private SpanInterface|null $serverSpan = null;
+    private ScopeInterface|null $serverScope = null;
 
     /**
      * @var \SplObjectStorage<Request,SpanInterface>

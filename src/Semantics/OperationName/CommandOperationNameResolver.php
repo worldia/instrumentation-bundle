@@ -13,7 +13,7 @@ use Symfony\Component\Console\Command\Command;
 
 class CommandOperationNameResolver implements CommandOperationNameResolverInterface
 {
-    public function getOperationName(?Command $command): string
+    public function getOperationName(Command|null $command): string
     {
         $name = 'unknown-command';
 

@@ -18,7 +18,7 @@ class Baggage
     /**
      * @param string $value
      */
-    public static function set(string $key, $value, MetadataInterface|string $metadata = null): void
+    public static function set(string $key, $value, MetadataInterface|string|null $metadata = null): void
     {
         if (\is_string($metadata)) {
             $metadata = new Metadata($metadata);

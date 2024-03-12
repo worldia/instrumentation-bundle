@@ -23,8 +23,6 @@ final class StdOutFormatter extends BaseJsonFormatter
      *
      * @see https://cloud.google.com/logging/docs/agent/configuration#process-payload
      * @see https://github.com/GoogleCloudPlatform/fluent-plugin-google-cloud/blob/master/lib/fluent/plugin/out_google_cloud.rb
-     *
-     * @return mixed
      */
     protected function normalize($data, int $depth = 0)
     {
@@ -103,7 +101,7 @@ final class StdOutFormatter extends BaseJsonFormatter
      *
      * @param array<mixed> $trace The stack trace returned from Exception::getTrace()
      */
-    private static function getFunctionNameForReport(array $trace = null): string
+    private static function getFunctionNameForReport(array|null $trace = null): string
     {
         if (null === $trace) {
             return '<unknown function>';

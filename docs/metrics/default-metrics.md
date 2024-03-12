@@ -3,12 +3,12 @@
 ### Requests
 Ref. [RequestEventSubscriber](../../src/Metrics/EventSubscriber/RequestEventSubscriber.php).
 
-| Name                     | Type        | Description                                            | Labels |
-|--------------------------|-------------|--------------------------------------------------------|--------|
-| `requests_handled_total` | `counter`   | Total requests handled by this instance                |        |
-| `requests_handling`      | `gauge`     | Number of requests this instance is currently handling |        |
-| `response_codes_total`   | `counter`   | Number of requests per status code                     | `code` |
-| `response_times_seconds` | `histogram` | Distribution of response times in seconds              |        |
+| Name                     | Type        | Description                                            | Labels              |
+|--------------------------|-------------|--------------------------------------------------------|---------------------|
+| `requests_handled_total` | `counter`   | Total requests handled by this instance                |                     |
+| `requests_handling`      | `gauge`     | Number of requests this instance is currently handling |                     |
+| `response_codes_total`   | `counter`   | Number of requests per status code and operation       | `code`, `operation` |
+| `response_times_seconds` | `histogram` | Distribution of response times in seconds              |                     |
 
 ### Messages
 Ref. [MessageEventSubscriber](../../src/Metrics/EventSubscriber/MessageEventSubscriber.php).

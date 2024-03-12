@@ -13,25 +13,25 @@ use Symfony\Component\HttpFoundation\Request;
 
 class RegexIncomingTraceHeaderResolver implements IncomingTraceHeaderResolverInterface
 {
-    public function __construct(private ?string $headerName = null, private ?string $regex = null)
+    public function __construct(private string|null $headerName = null, private string|null $regex = null)
     {
     }
 
-    public function getTraceId(Request $request): ?string
+    public function getTraceId(Request $request): string|null
     {
         $matches = $this->resolve($request);
 
         return $matches['trace'] ?? null;
     }
 
-    public function getSpanId(Request $request): ?string
+    public function getSpanId(Request $request): string|null
     {
         $matches = $this->resolve($request);
 
         return $matches['spanId'] ?? null;
     }
 
-    public function isSampled(Request $request): ?bool
+    public function isSampled(Request $request): bool|null
     {
         $matches = $this->resolve($request);
 

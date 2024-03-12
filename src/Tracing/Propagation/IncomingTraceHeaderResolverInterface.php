@@ -13,9 +13,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 interface IncomingTraceHeaderResolverInterface
 {
-    public function getTraceId(Request $request): ?string;
+    public function getTraceId(Request $request): string|null;
 
-    public function getSpanId(Request $request): ?string;
+    public function getSpanId(Request $request): string|null;
 
-    public function isSampled(Request $request): ?bool;
+    public function isSampled(Request $request): bool|null;
 }

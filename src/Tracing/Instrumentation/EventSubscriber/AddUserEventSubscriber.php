@@ -30,7 +30,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(private MainSpanContextInterface $mainSpanContext, private ?TokenStorageInterface $tokenStorage = null)
+    public function __construct(private MainSpanContextInterface $mainSpanContext, private TokenStorageInterface|null $tokenStorage = null)
     {
     }
 
@@ -68,7 +68,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         return [];
     }
 
-    private function getUsername(UserInterface|\Stringable|string $user): ?string
+    private function getUsername(UserInterface|\Stringable|string $user): string|null
     {
         if ($user instanceof UserInterface) {
             if (method_exists($user, 'getUserIdentifier')) {

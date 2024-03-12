@@ -146,7 +146,7 @@ class CommandEventSubscriberSpec extends ObjectBehavior
         return new ConsoleCommandEvent($command, new ArrayInput([]), new NullOutput());
     }
 
-    private function createConsoleErrorEvent(Command|null $command = null): ConsoleErrorEvent
+    private function createConsoleErrorEvent(): ConsoleErrorEvent
     {
         return new ConsoleErrorEvent(new ArrayInput([]), new NullOutput(), new \Exception());
     }
