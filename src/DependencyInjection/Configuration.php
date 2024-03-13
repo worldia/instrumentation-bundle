@@ -8,7 +8,6 @@
 namespace Instrumentation\DependencyInjection;
 
 use Monolog\Level;
-use Monolog\Logger;
 use OpenTelemetry\SemConv\ResourceAttributes;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -90,9 +89,9 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->enumNode('level')
-                                    ->defaultValue(Logger::INFO)
-                                    ->values(method_exists(Logger::class, 'getLevels') ? Logger::getLevels() : Level::cases()) // @phpstan-ignore-line
-                                    ->info(sprintf('One of the %s levels.', Logger::class))
+                                    ->defaultValue(Level::Info)
+                                    ->values(Level::cases())
+                                    ->info(sprintf('One of the %s levels.', Level::class))
                                 ->end()
                                 ->arrayNode('channels')
                                     ->defaultValue([])

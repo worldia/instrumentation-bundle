@@ -24,12 +24,16 @@ final class StdOutFormatter extends BaseJsonFormatter
      * @see https://cloud.google.com/logging/docs/agent/configuration#process-payload
      * @see https://github.com/GoogleCloudPlatform/fluent-plugin-google-cloud/blob/master/lib/fluent/plugin/out_google_cloud.rb
      */
-    protected function normalize($data, int $depth = 0)
+    protected function normalize(mixed $data, int $depth = 0): mixed
     {
         $data = parent::normalize($data, $depth);
+        if (!\is_array($data)) {
+            return $data;
+        }
 
         if ($depth < 1) {
             // Map timestamp
+            // @phpstan-ignore-next-line
             $date = new \DateTime($data['datetime']);
             $data['timestamp'] = [
                 'seconds' => $date->getTimestamp(),
