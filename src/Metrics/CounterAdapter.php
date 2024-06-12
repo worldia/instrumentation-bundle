@@ -12,6 +12,8 @@ use Prometheus\CollectorRegistry;
 
 class CounterAdapter implements CounterInterface
 {
+    use IterableAttributesTrait;
+
     public function __construct(
         private string $name,
         private string $description,
@@ -20,11 +22,12 @@ class CounterAdapter implements CounterInterface
     }
 
     /**
-     * @param int                                $amount
-     * @param array{labels: array<string,mixed>} $attributes
+     * @param int                                  $amount
+     * @param iterable<string,array<string,mixed>> $attributes
      */
     public function add($amount, iterable $attributes = [], $context = null): void
     {
+        $attributes = $this->normalizeAttributes($attributes);
         /** @var array<string> $labelNames */
         $labelNames = array_keys($attributes['labels'] ?? []);
         $labelValues = array_values($attributes['labels'] ?? []);

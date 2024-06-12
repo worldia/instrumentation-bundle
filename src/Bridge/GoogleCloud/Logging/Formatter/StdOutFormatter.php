@@ -45,30 +45,32 @@ final class StdOutFormatter extends BaseJsonFormatter
             $data['severity'] = $data['level_name'];
             unset($data['level_name']);
 
-            // Map tracing
-            if (isset($data['context']['trace'])) {
-                $data['logging.googleapis.com/trace'] = 'projects/'.$this->project.'/traces/'.$data['context']['trace'];
+            if (\is_array($data['context'])) {
+                // Map tracing
+                if (isset($data['context']['trace'])) {
+                    $data['logging.googleapis.com/trace'] = 'projects/'.$this->project.'/traces/'.$data['context']['trace'];
+                }
+                if (isset($data['context']['span'])) {
+                    $data['logging.googleapis.com/spanId'] = $data['context']['span'];
+                }
+                if (isset($data['context']['sampled'])) {
+                    $data['logging.googleapis.com/trace_sampled'] = $data['context']['sampled'];
+                }
+                if (isset($data['context']['operation'])) {
+                    $data['logging.googleapis.com/operation'] = $data['context']['operation'];
+                }
+                unset($data['context']['trace'], $data['context']['span'], $data['context']['sampled'], $data['context']['operation']);
+
+                if ($exception = $data['context']['exception'] ?? false) {
+                    $data['message'] = $exception['message'];
+                    $data['context'] = array_merge($data['context'], $exception['context']);
+                    unset($data['context']['exception']);
+                }
             }
-            if (isset($data['context']['span'])) {
-                $data['logging.googleapis.com/spanId'] = $data['context']['span'];
-            }
-            if (isset($data['context']['sampled'])) {
-                $data['logging.googleapis.com/trace_sampled'] = $data['context']['sampled'];
-            }
-            if (isset($data['context']['operation'])) {
-                $data['logging.googleapis.com/operation'] = $data['context']['operation'];
-            }
-            unset($data['context']['trace'], $data['context']['span'], $data['context']['sampled'], $data['context']['operation']);
 
             // Map channel
             $data['logging.googleapis.com/labels'] = ['channel' => $data['channel']];
             unset($data['channel']);
-
-            if ($exception = $data['context']['exception'] ?? false) {
-                $data['message'] = $exception['message'];
-                $data['context'] = array_merge($data['context'], $exception['context']);
-                unset($data['context']['exception']);
-            }
         }
 
         return $data;

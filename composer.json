@@ -28,11 +28,10 @@
   "require-dev": {
     "doctrine/dbal": "^3.0",
     "friends-of-phpspec/phpspec-expect": "^4.0",
-    "open-telemetry/transport-grpc": "^1.0",
     "open-telemetry/gen-otlp-protobuf": "^1.0",
     "php-http/httplug": "^2.3",
     "phpspec/phpspec": "^7.5",
-    "phpstan/phpstan": "<1.11",
+    "phpstan/phpstan": "^1.4",
     "symfony/framework-bundle": "*",
     "symfony/http-client": "*",
     "symfony/messenger": "*",
