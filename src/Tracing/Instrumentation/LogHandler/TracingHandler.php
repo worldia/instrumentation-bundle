@@ -14,7 +14,6 @@ use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Monolog\Processor\PsrLogMessageProcessor;
-use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Trace\Span;
 
 class TracingHandler extends AbstractProcessingHandler
@@ -30,7 +29,7 @@ class TracingHandler extends AbstractProcessingHandler
     /**
      * @param array<string> $channels
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, protected MainSpanContextInterface $mainSpanContext, $level = Level::Info, private array $channels = [], private string $strategy = self::STRATEGY_MAIN_SPAN, bool $bubble = true)
+    public function __construct(protected MainSpanContextInterface $mainSpanContext, $level = Level::Info, private array $channels = [], private string $strategy = self::STRATEGY_MAIN_SPAN, bool $bubble = true)
     {
         parent::__construct($level, $bubble);
 

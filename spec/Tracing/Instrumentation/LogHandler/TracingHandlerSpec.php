@@ -12,18 +12,16 @@ use Monolog\DateTimeImmutable;
 use Monolog\Level;
 use Monolog\LogRecord;
 use OpenTelemetry\API\Trace\SpanInterface;
-use OpenTelemetry\API\Trace\TracerProviderInterface;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
 
 class TracingHandlerSpec extends ObjectBehavior
 {
     public function it_adds_event_from_all_channels(
-        TracerProviderInterface $tracerProvider,
         MainSpanContextInterface $mainSpanContext,
         SpanInterface $span
     ): void {
-        $this->beConstructedWith($tracerProvider, $mainSpanContext, Level::Info, []);
+        $this->beConstructedWith($mainSpanContext, Level::Info, []);
 
         $mainSpanContext->getMainSpan()->willReturn($span);
         $span->addEvent(Argument::any())->willReturn($span);
@@ -36,11 +34,10 @@ class TracingHandlerSpec extends ObjectBehavior
     }
 
     public function it_adds_event_from_specific_channel_only(
-        TracerProviderInterface $tracerProvider,
         MainSpanContextInterface $mainSpanContext,
         SpanInterface $span
     ): void {
-        $this->beConstructedWith($tracerProvider, $mainSpanContext, Level::Info, ['foo']);
+        $this->beConstructedWith($mainSpanContext, Level::Info, ['foo']);
 
         $mainSpanContext->getMainSpan()->willReturn($span);
         $span->addEvent(Argument::any())->willReturn($span);
@@ -53,11 +50,10 @@ class TracingHandlerSpec extends ObjectBehavior
     }
 
     public function it_ignores_event_from_specific_channel(
-        TracerProviderInterface $tracerProvider,
         MainSpanContextInterface $mainSpanContext,
         SpanInterface $span
     ): void {
-        $this->beConstructedWith($tracerProvider, $mainSpanContext, Level::Info, ['!foo']);
+        $this->beConstructedWith($mainSpanContext, Level::Info, ['!foo']);
 
         $mainSpanContext->getMainSpan()->willReturn($span);
         $span->addEvent(Argument::any())->willReturn($span);

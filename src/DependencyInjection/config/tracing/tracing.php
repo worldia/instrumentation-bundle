@@ -94,7 +94,6 @@ return static function (ContainerConfigurator $container) {
 
         ->set(TracingHandler::class)
         ->args([
-            service(TracerProviderInterface::class),
             service(MainSpanContextInterface::class),
             param('tracing.logs.level'),
             param('tracing.logs.channels'),
