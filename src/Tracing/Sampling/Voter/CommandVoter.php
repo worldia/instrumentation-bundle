@@ -18,6 +18,10 @@ class CommandVoter extends AbstractVoter implements CommandVoterInterface
      */
     protected function getOperationNameFromEvent(object $event): string
     {
-        return $event->getCommand()?->getDefaultName() ?: 'unknown-command';
+        if (!$command = $event->getCommand()) {
+            return 'unknown-command';
+        }
+
+        return $command->getDefaultName() ?: ($command->getName() ?: 'unknown-command');
     }
 }
