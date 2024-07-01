@@ -13,6 +13,8 @@ use Prometheus\Histogram;
 
 class HistogramAdapter implements HistogramInterface
 {
+    use IterableAttributesTrait;
+
     public function __construct(
         private string $name,
         private string $description,
@@ -25,6 +27,7 @@ class HistogramAdapter implements HistogramInterface
      */
     public function record($amount, iterable $attributes = [], $context = null): void
     {
+        $attributes = $this->normalizeAttributes($attributes);
         /** @var array<string> $labelNames */
         $labelNames = array_keys($attributes['labels'] ?? []);
         $labelValues = array_values($attributes['labels'] ?? []);
