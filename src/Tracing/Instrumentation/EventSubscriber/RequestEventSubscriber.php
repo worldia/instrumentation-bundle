@@ -96,7 +96,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
         $span = $this->getSpanForRequest($request);
 
-        $span->updateName(sprintf('sf.controller.%s', $event->isMainRequest() ? 'main' : 'sub'));
+        $span->updateName(\sprintf('sf.controller.%s', $event->isMainRequest() ? 'main' : 'sub'));
         $span->setAttribute('sf.controller', $controller);
 
         if ($event->isMainRequest()) {
