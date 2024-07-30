@@ -112,7 +112,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
                 foreach ($providedMetrics as $name => $metric) {
                     if (isset($metrics[$name])) {
-                        throw new \RuntimeException(sprintf('A metric named %s is already registered.', $name));
+                        throw new \RuntimeException(\sprintf('A metric named %s is already registered.', $name));
                     }
                     $metrics[$name] = $metric;
                 }
@@ -133,13 +133,13 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             }
 
             foreach ($connectionsToTrace as $connection) {
-                $serviceId = sprintf('doctrine.dbal.%s_connection', $connection);
+                $serviceId = \sprintf('doctrine.dbal.%s_connection', $connection);
 
                 if (!\in_array($serviceId, $connections, true)) {
-                    throw new \InvalidArgumentException(sprintf('No such connection: "%s".', $connection));
+                    throw new \InvalidArgumentException(\sprintf('No such connection: "%s".', $connection));
                 }
 
-                $configDef = $container->getDefinition(sprintf('%s.configuration', $serviceId));
+                $configDef = $container->getDefinition(\sprintf('%s.configuration', $serviceId));
 
                 $middlewares = [];
                 foreach ($configDef->getMethodCalls() as $call) {
@@ -252,7 +252,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
             foreach (['blacklist', 'methods'] as $property) {
                 if (isset($config[$feature][$property])) {
-                    $container->setParameter(sprintf('tracing.%s.%s', $feature, $property), $config[$feature][$property]);
+                    $container->setParameter(\sprintf('tracing.%s.%s', $feature, $property), $config[$feature][$property]);
                 }
             }
         }
@@ -281,7 +281,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         }
 
         foreach ($config['handlers'] as $handler) {
-            if ($container->hasDefinition(sprintf('monolog.handler.%s', $handler))) {
+            if ($container->hasDefinition(\sprintf('monolog.handler.%s', $handler))) {
                 $container->getDefinition(\Instrumentation\Logging\Processor\TraceContextProcessor::class)
                     ->addTag('monolog.processor', ['handler' => $handler]);
             }

@@ -15,6 +15,6 @@ class ClientRequestOperationNameResolver implements ClientRequestOperationNameRe
     {
         $url = parse_url($url);
 
-        return sprintf('http.%s %s://%s', strtolower($method), $url['scheme'] ?? 'http', $url['host'] ?? 'unknown');
+        return \sprintf('http.%s %s://%s', strtolower($method), $url['scheme'] ?? 'http', $url['host'] ?? 'unknown');
     }
 }

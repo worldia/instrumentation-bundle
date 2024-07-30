@@ -78,7 +78,7 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
         }
 
         $time = microtime(true) - $event->getRequest()->server->get('REQUEST_TIME_FLOAT');
-        $code = sprintf('%sxx', substr((string) $event->getResponse()->getStatusCode(), 0, 1));
+        $code = \sprintf('%sxx', substr((string) $event->getResponse()->getStatusCode(), 0, 1));
         $operation = $this->mainSpanContext?->getOperationName() ?: 'unknown';
 
         $this->registry->getGauge('requests_handling')->dec();

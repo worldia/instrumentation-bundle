@@ -44,7 +44,7 @@ class ServerRequestAttributeProvider implements ServerRequestAttributeProviderIn
         }
 
         foreach ($this->capturedHeaders as $header) {
-            $attributes[sprintf('http.response.header.%s', str_replace('-', '_', $header))] = [(string) $request->headers->get($header, '')];
+            $attributes[\sprintf('http.response.header.%s', str_replace('-', '_', $header))] = [(string) $request->headers->get($header, '')];
         }
 
         return array_filter($attributes);

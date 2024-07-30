@@ -58,7 +58,7 @@ class Meter implements MeterInterface
      */
     public function createObservableCounter(string $name, string|null $unit = null, string|null $description = null, $advisory = [], callable ...$callbacks): ObservableCounterInterface
     {
-        throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
+        throw new \LogicException(\sprintf('Method %s is not implemented', __METHOD__));
     }
 
     /**
@@ -95,7 +95,7 @@ class Meter implements MeterInterface
      */
     public function createObservableGauge(string $name, string|null $unit = null, string|null $description = null, $advisory = [], callable ...$callbacks): ObservableGaugeInterface
     {
-        throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
+        throw new \LogicException(\sprintf('Method %s is not implemented', __METHOD__));
     }
 
     /**
@@ -131,7 +131,7 @@ class Meter implements MeterInterface
      */
     public function createObservableUpDownCounter(string $name, string|null $unit = null, string|null $description = null, $advisory = [], callable ...$callbacks): ObservableUpDownCounterInterface
     {
-        throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
+        throw new \LogicException(\sprintf('Method %s is not implemented', __METHOD__));
     }
 
     public function batchObserve(
@@ -139,6 +139,6 @@ class Meter implements MeterInterface
         AsynchronousInstrument $instrument,
         AsynchronousInstrument ...$instruments
     ): ObservableCallbackInterface {
-        throw new \LogicException(sprintf('Method %s is not implemented', __METHOD__));
+        throw new \LogicException(\sprintf('Method %s is not implemented', __METHOD__));
     }
 }

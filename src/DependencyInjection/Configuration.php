@@ -34,7 +34,7 @@ class Configuration implements ConfigurationInterface
                     ->scalarPrototype()->end()
                     ->beforeNormalization()
                         ->ifTrue(fn ($v) => !isset($v[ResourceAttributes::SERVICE_NAME]))
-                        ->thenInvalid(sprintf('You must provide the "%s" attribute in resource info.', ResourceAttributes::SERVICE_NAME))
+                        ->thenInvalid(\sprintf('You must provide the "%s" attribute in resource info.', ResourceAttributes::SERVICE_NAME))
                     ->end()
                 ->end()
 
@@ -91,7 +91,7 @@ class Configuration implements ConfigurationInterface
                                 ->enumNode('level')
                                     ->defaultValue(Level::Info)
                                     ->values(Level::cases())
-                                    ->info(sprintf('One of the %s levels.', Level::class))
+                                    ->info(\sprintf('One of the %s levels.', Level::class))
                                 ->end()
                                 ->arrayNode('channels')
                                     ->defaultValue([])

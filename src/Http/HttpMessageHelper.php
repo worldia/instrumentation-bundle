@@ -21,7 +21,7 @@ class HttpMessageHelper
         $lines = [];
         foreach ($headers as $name => $values) {
             foreach ($values as $value) {
-                $lines[] = sprintf('%s: %s', mb_strtolower($name), $value);
+                $lines[] = \sprintf('%s: %s', mb_strtolower($name), $value);
             }
         }
 

@@ -70,7 +70,7 @@ final class TracingHttpClient implements HttpClientInterface
         }
 
         if (!\is_array($attributes)) {
-            throw new \RuntimeException(sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
+            throw new \RuntimeException(\sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
         }
 
         return $attributes;

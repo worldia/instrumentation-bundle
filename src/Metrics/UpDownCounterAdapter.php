@@ -12,6 +12,8 @@ use Prometheus\CollectorRegistry;
 
 class UpDownCounterAdapter implements UpDownCounterInterface
 {
+    use IterableAttributesTrait;
+
     public function __construct(
         private string $name,
         private string $description,
@@ -25,6 +27,7 @@ class UpDownCounterAdapter implements UpDownCounterInterface
      */
     public function add($amount, iterable $attributes = [], $context = null): void
     {
+        $attributes = $this->normalizeAttributes($attributes);
         /** @var array<string> $labelNames */
         $labelNames = array_keys($attributes['labels'] ?? []);
         $labelValues = array_values($attributes['labels'] ?? []);

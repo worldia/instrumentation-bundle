@@ -71,8 +71,8 @@ class TraceContextInfoProviderSpec extends ObjectBehavior
     private function getMinimalInfo(): array
     {
         return [
-            'db_driver' => sprintf('doctrine/dbal-%s', InstalledVersions::getVersion('doctrine/dbal')),
-            'framework' => sprintf('symfony-%s', Kernel::VERSION),
+            'db_driver' => \sprintf('doctrine/dbal-%s', InstalledVersions::getVersion('doctrine/dbal')),
+            'framework' => \sprintf('symfony-%s', Kernel::VERSION),
         ];
     }
 }

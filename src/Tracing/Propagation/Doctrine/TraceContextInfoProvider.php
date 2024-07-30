@@ -40,7 +40,7 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
             $info['framework'] = 'symfony-'.Kernel::VERSION;
 
             try {
-                $info['db_driver'] = sprintf('doctrine/dbal-%s', InstalledVersions::getVersion('doctrine/dbal'));
+                $info['db_driver'] = \sprintf('doctrine/dbal-%s', InstalledVersions::getVersion('doctrine/dbal'));
             } catch (\Exception) {
                 // Ignore
             }
