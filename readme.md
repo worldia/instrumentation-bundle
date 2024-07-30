@@ -9,7 +9,6 @@
 - Trace context propagation from incoming **requests** to **consumers**, **outgoing http calls** and **databases** (using [`sqlcommenter`](https://google.github.io/sqlcommenter/))
 - Configurable blacklisting of requests by path to avoid useless traces, eg. `/metrics` or `/_healthz`
 - Automatic log inclusion with configurable log level and channels
-- Disabling tracing with the `NoopTracerProvider` thanks to OTEL_SDK_DISABLED=true
 
 #### Metrics
 
@@ -39,7 +38,7 @@ composer require worldia/instrumentation-bundle <your-exporter>
 
 You will aso need to install an [exporter implementation](https://packagist.org/packages/open-telemetry/exporter-otlp?query=open-telemetry%2Fexporter-) and `APCu` is required by the prometheus exporter.
 
-````
+```
 
 Add to ```bundles.php```:
 ```php
@@ -47,7 +46,7 @@ return [
     // Other bundles
     Instrumentation\InstrumentationBundle::class => ['all' => true],
 ];
-````
+```
 
 **Minimal configuration**
 See the complete [configuration reference here](./docs/config-reference.md) or run `bin/console config:dump-reference instrumentation`.

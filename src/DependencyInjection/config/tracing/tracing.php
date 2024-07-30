@@ -18,6 +18,7 @@ use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
 use Instrumentation\Tracing\Propagation\RegexIncomingTraceHeaderResolver;
 use Instrumentation\Tracing\Sampling\TogglableSampler;
 use Instrumentation\Tracing\Serializer\Normalizer\ErrorNormalizer;
+use Instrumentation\Tracing\TogglableTracerProvider;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Twig\Extension\TracingExtension;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
@@ -89,6 +90,12 @@ return static function (ContainerConfigurator $container) {
             service(IdGeneratorInterface::class),
         ])
         ->public()
+
+        ->set(TogglableTracerProvider::class)
+        ->decorate(TracerProviderInterface::class)
+        ->args([
+            service('.inner'),
+        ])
 
         ->set(MainSpanContextInterface::class, MainSpanContext::class)
 
