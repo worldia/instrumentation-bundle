@@ -77,7 +77,15 @@ final class TracingHttpClient implements HttpClientInterface
     }
 
     /**
-     * @param array<mixed> $options
+     * @param array{
+     *     on_progress?: ?callable,
+     *     headers?: array<string,array<string>>,
+     *     extra?: array{
+     *         operation_name: non-empty-string,
+     *         span_attributes: array<non-empty-string>,
+     *         extra_attributes: array<non-empty-string, string>
+     *     }
+     * } $options
      */
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
@@ -86,8 +94,9 @@ final class TracingHttpClient implements HttpClientInterface
         $operationName = $options['extra']['operation_name'] ?? $this->operationNameResolver->getOperationName($method, $url);
 
         $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
+        $attributes += $options['extra']['extra_attributes'] ?? [];
 
-        $options['user_data']['span_attributes'] = $this->getExtraSpanAttributes($options['extra']['operation_name'] ?? null);
+        $options['user_data']['span_attributes'] = $this->getExtraSpanAttributes($options['extra']['span_attributes'] ?? null);
 
         try {
             if (\in_array('request.body', $options['user_data']['span_attributes'])) {
