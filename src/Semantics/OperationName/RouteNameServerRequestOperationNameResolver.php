@@ -21,6 +21,6 @@ class RouteNameServerRequestOperationNameResolver implements ServerRequestOperat
             $routeName = $request->getPathInfo();
         }
 
-        return sprintf('http.%s %s', strtolower($request->getMethod()), $routeName);
+        return \sprintf('http.%s %s', strtolower($request->getMethod()), $routeName);
     }
 }

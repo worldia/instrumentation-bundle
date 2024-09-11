@@ -50,7 +50,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
             $sampled = $this->incomingTraceResolver->isSampled($request);
 
             if (null !== $traceId && null !== $spanId && null !== $sampled) {
-                $w3cHeader = sprintf('00-%s-%s-%s', $traceId, $spanId, $sampled ? '01' : '00');
+                $w3cHeader = \sprintf('00-%s-%s-%s', $traceId, $spanId, $sampled ? '01' : '00');
                 ContextInitializer::fromW3CHeader($w3cHeader);
 
                 return;

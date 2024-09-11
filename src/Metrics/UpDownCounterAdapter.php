@@ -25,6 +25,9 @@ class UpDownCounterAdapter implements UpDownCounterInterface
      */
     public function add($amount, iterable $attributes = [], $context = null): void
     {
+        if (!\is_array($attributes)) {
+            return;
+        }
         /** @var array<string> $labelNames */
         $labelNames = array_keys($attributes['labels'] ?? []);
         $labelValues = array_values($attributes['labels'] ?? []);

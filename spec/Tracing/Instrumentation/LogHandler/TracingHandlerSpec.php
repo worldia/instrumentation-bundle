@@ -19,7 +19,7 @@ class TracingHandlerSpec extends ObjectBehavior
 {
     public function it_adds_event_from_all_channels(
         MainSpanContextInterface $mainSpanContext,
-        SpanInterface $span
+        SpanInterface $span,
     ): void {
         $this->beConstructedWith($mainSpanContext, Level::Info, []);
 
@@ -35,7 +35,7 @@ class TracingHandlerSpec extends ObjectBehavior
 
     public function it_adds_event_from_specific_channel_only(
         MainSpanContextInterface $mainSpanContext,
-        SpanInterface $span
+        SpanInterface $span,
     ): void {
         $this->beConstructedWith($mainSpanContext, Level::Info, ['foo']);
 
@@ -51,7 +51,7 @@ class TracingHandlerSpec extends ObjectBehavior
 
     public function it_ignores_event_from_specific_channel(
         MainSpanContextInterface $mainSpanContext,
-        SpanInterface $span
+        SpanInterface $span,
     ): void {
         $this->beConstructedWith($mainSpanContext, Level::Info, ['!foo']);
 

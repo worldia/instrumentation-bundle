@@ -25,7 +25,7 @@ class AddUserEventSubscriberSpec extends ObjectBehavior
     private HttpKernelInterface|Collaborator $kernel;
 
     public function let(
-        HttpKernelInterface $kernel
+        HttpKernelInterface $kernel,
     ): void {
         $this->kernel = $kernel;
     }
@@ -35,7 +35,7 @@ class AddUserEventSubscriberSpec extends ObjectBehavior
         TokenStorageInterface $tokenStorage,
         UsernamePasswordToken $usernamePasswordToken,
         MainSpanContextInterface $mainSpanContext,
-        UserInterface $user
+        UserInterface $user,
     ): void {
         $user->getRoles()->willReturn(['ADMIN']);
         $user->getUserIdentifier()->willReturn('David');

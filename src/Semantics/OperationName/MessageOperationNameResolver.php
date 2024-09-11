@@ -25,6 +25,6 @@ class MessageOperationNameResolver implements MessageOperationNameResolverInterf
             $name = $stamp->getOperationName();
         }
 
-        return sprintf('message.%s %s', $name, $operation);
+        return \sprintf('message.%s %s', $name, $operation);
     }
 }

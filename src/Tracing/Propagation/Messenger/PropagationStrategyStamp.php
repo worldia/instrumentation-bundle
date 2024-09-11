@@ -19,7 +19,7 @@ final class PropagationStrategyStamp implements StampInterface
     public function __construct(private string $strategy)
     {
         if (!\in_array($strategy, [self::STRATEGY_LINK, self::STRATEGY_PARENT])) {
-            throw new \InvalidArgumentException(sprintf('"%s" is not a valid value for strategy', $strategy));
+            throw new \InvalidArgumentException(\sprintf('"%s" is not a valid value for strategy', $strategy));
         }
     }
 

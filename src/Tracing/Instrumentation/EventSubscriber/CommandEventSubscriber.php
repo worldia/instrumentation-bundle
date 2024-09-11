@@ -42,7 +42,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
     public function __construct(
         protected TracerProviderInterface $tracerProvider,
         protected MainSpanContextInterface $mainSpanContext,
-        protected CommandOperationNameResolverInterface $operationNameResolver
+        protected CommandOperationNameResolverInterface $operationNameResolver,
     ) {
     }
 

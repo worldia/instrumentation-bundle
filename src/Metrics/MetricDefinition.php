@@ -24,7 +24,7 @@ final class MetricDefinition
         private string $type,
         private string $help,
         private array $labels = [],
-        private array|null $buckets = null
+        private array|null $buckets = null,
     ) {
     }
 

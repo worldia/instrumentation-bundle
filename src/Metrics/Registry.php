@@ -63,7 +63,7 @@ class Registry implements RegistryInterface
     {
         if (!isset($this->instantiated[$name])) {
             if (!isset($this->metrics[$name])) {
-                throw new \InvalidArgumentException(sprintf('No metric registered with that name: "%s".', $name));
+                throw new \InvalidArgumentException(\sprintf('No metric registered with that name: "%s".', $name));
             }
 
             /**
