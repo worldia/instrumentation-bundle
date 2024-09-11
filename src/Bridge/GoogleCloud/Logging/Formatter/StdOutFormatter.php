@@ -45,7 +45,14 @@ final class StdOutFormatter extends BaseJsonFormatter
             $data['severity'] = $data['level_name'];
             unset($data['level_name']);
 
+            // Map channel
+            $data['logging.googleapis.com/labels'] = ['channel' => $data['channel']];
+            unset($data['channel']);
+
             // Map tracing
+            if (!isset($data['context']) || !\is_array($data['context'])) {
+                return $data;
+            }
             if (isset($data['context']['trace'])) {
                 $data['logging.googleapis.com/trace'] = 'projects/'.$this->project.'/traces/'.$data['context']['trace'];
             }
@@ -59,10 +66,6 @@ final class StdOutFormatter extends BaseJsonFormatter
                 $data['logging.googleapis.com/operation'] = $data['context']['operation'];
             }
             unset($data['context']['trace'], $data['context']['span'], $data['context']['sampled'], $data['context']['operation']);
-
-            // Map channel
-            $data['logging.googleapis.com/labels'] = ['channel' => $data['channel']];
-            unset($data['channel']);
 
             if ($exception = $data['context']['exception'] ?? false) {
                 $data['message'] = $exception['message'];

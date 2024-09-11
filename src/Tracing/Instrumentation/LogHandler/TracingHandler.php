@@ -56,7 +56,7 @@ class TracingHandler extends AbstractProcessingHandler
         $span = match ($this->strategy) {
             self::STRATEGY_MAIN_SPAN => $this->mainSpanContext->getMainSpan(),
             self::STRATEGY_CURRENT_SPAN => Span::getCurrent(),
-            default => throw new \InvalidArgumentException(sprintf('Unkown strategy "%s".', $this->strategy))
+            default => throw new \InvalidArgumentException(\sprintf('Unkown strategy "%s".', $this->strategy)),
         };
 
         if (isset($record->context['exception']) && $record->context['exception'] instanceof \Throwable) {

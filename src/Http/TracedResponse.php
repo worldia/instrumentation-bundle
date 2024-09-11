@@ -27,7 +27,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
     public function __construct(
         private ResponseInterface $response,
-        private SpanInterface $span
+        private SpanInterface $span,
     ) {
     }
 
@@ -123,7 +123,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
         foreach ($responses as $r) {
             if (!$r instanceof self) {
-                throw new \TypeError(sprintf('"%s::stream()" expects parameter 1 to be an iterable of TracedResponse objects, "%s" given.', TracingHttpClient::class, get_debug_type($r)));
+                throw new \TypeError(\sprintf('"%s::stream()" expects parameter 1 to be an iterable of TracedResponse objects, "%s" given.', TracingHttpClient::class, get_debug_type($r)));
             }
 
             $traceableMap[$r->response] = $r;

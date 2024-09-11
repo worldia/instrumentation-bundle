@@ -36,7 +36,7 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
                 $headers[$header] = implode(',', $headers[$header]);
             }
 
-            $attributes[sprintf('http.request.header.%s', str_replace('-', '_', $header))] = $headers[$header];
+            $attributes[\sprintf('http.request.header.%s', str_replace('-', '_', $header))] = $headers[$header];
         }
 
         $components = parse_url($url);
