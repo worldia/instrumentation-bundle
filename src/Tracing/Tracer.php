@@ -37,4 +37,9 @@ class Tracer implements TracerInterface
     {
         return $this->decorated->spanBuilder($spanName);
     }
+
+    public function isEnabled(): bool
+    {
+        return $this->decorated->isEnabled();
+    }
 }
