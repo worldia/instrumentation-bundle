@@ -61,7 +61,8 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "allow-plugins": {
-      "php-http/discovery": false
+      "php-http/discovery": false,
+      "tbachert/spi": false
     }
   },
   "extra": {

@@ -42,4 +42,9 @@ class CounterAdapter implements CounterInterface
 
         $counter->incBy($amount, $labelValues);
     }
+
+    public function isEnabled(): bool
+    {
+        return true;
+    }
 }

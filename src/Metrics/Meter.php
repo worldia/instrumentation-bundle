@@ -9,6 +9,7 @@ namespace Instrumentation\Metrics;
 
 use OpenTelemetry\API\Metrics\AsynchronousInstrument;
 use OpenTelemetry\API\Metrics\CounterInterface;
+use OpenTelemetry\API\Metrics\GaugeInterface;
 use OpenTelemetry\API\Metrics\HistogramInterface;
 use OpenTelemetry\API\Metrics\MeterInterface;
 use OpenTelemetry\API\Metrics\ObservableCallbackInterface;
@@ -77,6 +78,11 @@ class Meter implements MeterInterface
     public function createHistogram(string $name, string|null $unit = null, string|null $description = null, array $advisory = []): HistogramInterface
     {
         return new HistogramAdapter($name, $description ?: '', $this->collectorRegistry);
+    }
+
+    public function createGauge(string $name, string|null $unit = null, string|null $description = null, array $advisory = []): GaugeInterface
+    {
+        throw new \LogicException(\sprintf('Method %s is not implemented', __METHOD__));
     }
 
     /**

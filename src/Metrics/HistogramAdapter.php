@@ -41,4 +41,9 @@ class HistogramAdapter implements HistogramInterface
         );
         $histogram->observe($amount, $labelValues);
     }
+
+    public function isEnabled(): bool
+    {
+        return true;
+    }
 }
