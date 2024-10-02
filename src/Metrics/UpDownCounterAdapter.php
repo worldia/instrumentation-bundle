@@ -45,4 +45,9 @@ class UpDownCounterAdapter implements UpDownCounterInterface
             $gauge->decBy(abs($amount), $labelValues);
         }
     }
+
+    public function isEnabled(): bool
+    {
+        return true;
+    }
 }
