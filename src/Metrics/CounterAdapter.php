@@ -8,6 +8,7 @@
 namespace Instrumentation\Metrics;
 
 use OpenTelemetry\API\Metrics\CounterInterface;
+use OpenTelemetry\Context\ContextInterface;
 use Prometheus\CollectorRegistry;
 
 class CounterAdapter implements CounterInterface
@@ -23,7 +24,7 @@ class CounterAdapter implements CounterInterface
      * @param int                                $amount
      * @param array{labels: array<string,mixed>} $attributes
      */
-    public function add($amount, iterable $attributes = [], $context = null): void
+    public function add(float|int $amount, iterable $attributes = [], ContextInterface|false|null $context = null): void
     {
         if (!\is_array($attributes)) {
             return;
