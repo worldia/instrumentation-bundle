@@ -19,8 +19,7 @@
     "monolog/monolog": "^3.0",
     "nyholm/dsn": "^2.0",
     "nyholm/psr7": "^1.5",
-    "open-telemetry/api": ">=1.0.2",
-    "open-telemetry/sdk": "^1.0",
+    "open-telemetry/sdk": "^1.1",
     "promphp/prometheus_client_php": "^2.4",
     "psr/http-client": "^1.0",
     "symfony/dependency-injection": "*"
