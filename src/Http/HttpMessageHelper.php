@@ -20,6 +20,9 @@ class HttpMessageHelper
 
         $lines = [];
         foreach ($headers as $name => $values) {
+            if (\is_string($values)) {
+                $values = [$values];
+            }
             foreach ($values as $value) {
                 $lines[] = \sprintf('%s: %s', mb_strtolower($name), $value);
             }
