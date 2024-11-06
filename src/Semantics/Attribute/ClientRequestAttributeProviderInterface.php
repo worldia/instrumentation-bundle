@@ -9,14 +9,12 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\Attribute;
 
-use OpenTelemetry\SemConv\TraceAttributes;
-
 interface ClientRequestAttributeProviderInterface
 {
     /**
      * @param array<string|array<string>> $headers
      *
-     * @return array<string|TraceAttributes::*,string|array<string>>
+     * @return array<non-empty-string,string|array<string>>
      */
     public function getAttributes(string $method, string $url, array $headers = []): array;
 }

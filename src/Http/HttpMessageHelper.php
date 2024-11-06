@@ -12,7 +12,7 @@ namespace Instrumentation\Http;
 class HttpMessageHelper
 {
     /**
-     * @param array<string,string[]> $headers
+     * @param array<string,string[]|string> $headers
      */
     public static function formatHeadersForSpanAttribute(array $headers): string
     {

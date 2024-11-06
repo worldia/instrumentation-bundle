@@ -29,9 +29,9 @@ class HttpSensitiveDataHelper
     }
 
     /**
-     * @param array<string,string[]> $headers
+     * @param array<string,string[]|string> $headers
      *
-     * @return array<string,string[]>
+     * @return array<string,string[]|string>
      */
     public static function filterHeaders(array $headers): array
     {

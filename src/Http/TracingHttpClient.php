@@ -90,8 +90,19 @@ final class TracingHttpClient implements HttpClientInterface
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         $onProgress = $options['on_progress'] ?? null;
-        $headers = $options['headers'] ?? [];
         $operationName = $options['extra']['operation_name'] ?? $this->operationNameResolver->getOperationName($method, $url);
+
+        $span = Tracing::getTracer()
+            ->spanBuilder($operationName)
+            ->setSpanKind(SpanKind::KIND_CLIENT)
+            ->startSpan();
+
+        $span->activate();
+
+        $headers = array_merge(
+            PropagationHeadersProvider::getPropagationHeaders(),
+            $options['headers'] ?? []
+        );
 
         $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
         $attributes += $options['extra']['extra_attributes'] ?? [];
@@ -99,8 +110,8 @@ final class TracingHttpClient implements HttpClientInterface
         $options['user_data']['span_attributes'] = $this->getExtraSpanAttributes($options['extra']['span_attributes'] ?? null);
 
         try {
-            if (\in_array('request.body', $options['user_data']['span_attributes'])) {
-                $attributes['request.body'] = self::getRequestBody($options);
+            if (\in_array('request.body', $options['user_data']['span_attributes']) && $body = self::getRequestBody($options)) {
+                $attributes['request.body'] = $body;
             }
             if (\in_array('request.headers', $options['user_data']['span_attributes'])) {
                 $attributes['request.headers'] = HttpMessageHelper::formatHeadersForSpanAttribute($headers);
@@ -108,11 +119,7 @@ final class TracingHttpClient implements HttpClientInterface
         } catch (\Throwable) {
         }
 
-        $span = Tracing::getTracer()
-            ->spanBuilder($operationName)
-            ->setSpanKind(SpanKind::KIND_CLIENT)
-            ->setAttributes($attributes)
-            ->startSpan();
+        $span->setAttributes($attributes);
 
         $options = array_merge($options, [
             'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span, $options) {
@@ -130,8 +137,8 @@ final class TracingHttpClient implements HttpClientInterface
                         $span->updateName($operationName);
                     }
 
-                    $span->setAttribute(TraceAttributes::HTTP_STATUS_CODE, $info['http_code']);
-                    $span->setAttribute(TraceAttributes::HTTP_URL, $info['url']);
+                    $span->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $info['http_code']);
+                    $span->setAttribute(TraceAttributes::URL_FULL, $info['url']);
 
                     if (\array_key_exists('total_time', $info)) {
                         $timestamp = (int) (($info['start_time'] + $info['total_time']) * ClockInterface::NANOS_PER_SECOND);
@@ -143,10 +150,7 @@ final class TracingHttpClient implements HttpClientInterface
                     }
                 }
             },
-            'headers' => array_merge(
-                PropagationHeadersProvider::getPropagationHeaders(),
-                $headers
-            ),
+            'headers' => $headers,
         ]);
 
         return new TracedResponse($this->client->request($method, $url, $options), $span);
@@ -175,10 +179,8 @@ final class TracingHttpClient implements HttpClientInterface
      * @see HttpClientTrait::prepareRequest()
      *
      * @param array{json?:array<mixed>,body?:array<mixed>|string|resource|\Traversable<mixed>|\Closure,normalized_headers?:array<mixed>} $options
-     *
-     * @return string|resource|\Closure
      */
-    private static function getRequestBody(array $options)
+    private static function getRequestBody(array $options): string|null
     {
         $body = '';
 
@@ -197,8 +199,10 @@ final class TracingHttpClient implements HttpClientInterface
             if ('chunked' === substr($options['normalized_headers']['transfer-encoding'][0] ?? '', \strlen('Transfer-Encoding: '))) {
                 $body = self::dechunk($body);
             }
+
+            return $body;
         }
 
-        return $body;
+        return null;
     }
 }
