@@ -28,6 +28,5 @@ return static function (ContainerConfigurator $container) {
 
         ->set(Logging\Processor\TraceContextProcessor::class)
         ->args([param('logging.trace_context_keys')])
-        ->tag('monolog.processor')
     ;
 };
