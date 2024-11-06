@@ -26,7 +26,7 @@ class Statement implements DoctrineStatement
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, private ContextInterface $parentContext, private DoctrineStatement $decoratedStatement, private string $sqlQuery, private array $attributes)
+    public function __construct(protected TracerProviderInterface $tracerProvider, private ContextInterface $parentContext, private DoctrineStatement $decoratedStatement, private string $sqlQuery, private array $attributes, private bool $logSql)
     {
     }
 
@@ -47,8 +47,11 @@ class Statement implements DoctrineStatement
             ->setSpanKind(SpanKind::KIND_CLIENT)
             ->setParent($this->parentContext)
             ->setAttributes($this->attributes)
-            ->startSpan()
-            ->addEvent($this->sqlQuery);
+            ->startSpan();
+
+        if ($this->logSql) {
+            $span->addEvent($this->sqlQuery);
+        }
 
         try {
             return $this->decoratedStatement->execute($params);

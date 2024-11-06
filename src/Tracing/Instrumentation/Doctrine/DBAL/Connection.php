@@ -47,7 +47,7 @@ final class Connection implements ServerInfoAwareConnection
     {
         $statement = $this->trace(self::OP_CONN_PREPARE, $sql, fn (): StatementInterface => $this->decorated->prepare($sql));
 
-        return new Statement($this->tracerProvider, $this->doctrineSpanContext, $statement, $sql, $this->attributes);
+        return new Statement($this->tracerProvider, $this->doctrineSpanContext, $statement, $sql, $this->attributes, $this->logQueries);
     }
 
     public function query(string $sql): Result

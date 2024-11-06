@@ -97,7 +97,7 @@ final class TracingHttpClient implements HttpClientInterface
             ->setSpanKind(SpanKind::KIND_CLIENT)
             ->startSpan();
 
-        $span->activate();
+        $scope = $span->activate();
 
         $headers = array_merge(
             PropagationHeadersProvider::getPropagationHeaders(),
@@ -106,6 +106,8 @@ final class TracingHttpClient implements HttpClientInterface
 
         $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
         $attributes += $options['extra']['extra_attributes'] ?? [];
+
+        $scope->detach();
 
         $options['user_data']['span_attributes'] = $this->getExtraSpanAttributes($options['extra']['span_attributes'] ?? null);
 
