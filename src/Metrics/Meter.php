@@ -80,6 +80,11 @@ class Meter implements MeterInterface
         return new HistogramAdapter($name, $description ?: '', $this->collectorRegistry);
     }
 
+    public function createGauge(string $name, string|null $unit = null, string|null $description = null, array $advisory = []): GaugeInterface
+    {
+        throw new \LogicException(\sprintf('Method %s is not implemented', __METHOD__));
+    }
+
     /**
      * @param array<string> $advisory an optional set of recommendations, e.g.
      *                                <code>['ExplicitBucketBoundaries' => [0.25, 0.5, 1, 5]]</code>
