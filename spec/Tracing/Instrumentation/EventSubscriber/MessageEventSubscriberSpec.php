@@ -142,12 +142,17 @@ class MessageEventSubscriberSpec extends ObjectBehavior
         SpanInterface $span,
         SpanProcessorInterface $spanProcessor,
     ): void {
+        $span->setAttribute('messenger.sent_at', Argument::any())->willReturn($span);
+        $span->setAttribute('messenger.handled_at', Argument::any())->willReturn($span);
+        $span->setAttribute('messenger.consumed_at', Argument::any())->willReturn($span);
+
         $envelope = new Envelope(new \stdClass());
         $this->onConsume(new WorkerMessageReceivedEvent($envelope, 'receiver name'));
 
         $this->onHandled(new WorkerMessageHandledEvent($envelope, 'receiver name'));
 
         $scope->detach()->shouldHaveBeenCalled();
+
         $span->end()->shouldHaveBeenCalled();
         expect($this->mainSpanContext->getMainSpan())->shouldBe(Span::getCurrent());
         $spanProcessor->forceFlush()->shouldHaveBeenCalled();
@@ -158,6 +163,10 @@ class MessageEventSubscriberSpec extends ObjectBehavior
         SpanInterface $span,
         SpanProcessorInterface $spanProcessor,
     ): void {
+        $span->setAttribute('messenger.sent_at', Argument::any())->willReturn($span);
+        $span->setAttribute('messenger.handled_at', Argument::any())->willReturn($span);
+        $span->setAttribute('messenger.consumed_at', Argument::any())->willReturn($span);
+
         $envelope = new Envelope(new \stdClass());
         $this->onConsume(new WorkerMessageReceivedEvent($envelope, 'receiver name'));
         $failedEvent = new WorkerMessageFailedEvent($envelope, 'receiver name', new \Exception());
