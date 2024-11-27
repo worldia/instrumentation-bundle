@@ -13,11 +13,13 @@ Ref. [RequestEventSubscriber](../../src/Metrics/EventSubscriber/RequestEventSubs
 ### Messages
 Ref. [MessageEventSubscriber](../../src/Metrics/EventSubscriber/MessageEventSubscriber.php).
 
-| Name                     | Type      | Description                                            | Labels         |
-|--------------------------|-----------|--------------------------------------------------------|----------------|
-| `messages_handling`      | `gauge`   | Number of messages this instance is currently handling | `bus`, `class` |
-| `messages_handled_total` | `counter` | Number of messages handled successfully                | `bus`, `class` |
-| `messages_failed_total`  | `counter` | Number of messages handled with failure                | `bus`, `class` |
+| Name                               | Type        | Description                                            | Labels         |
+|------------------------------------|-------------|--------------------------------------------------------|----------------|
+| `messages_handling`                | `gauge`     | Number of messages this instance is currently handling | `bus`, `class` |
+| `messages_handled_total`           | `counter`   | Number of messages handled successfully                | `bus`, `class` |
+| `messages_failed_total`            | `counter`   | Number of messages handled with failure                | `bus`, `class` |
+| `messages_time_to_consume_seconds` | `histogram` | Time between a message is sent and consumed            | `bus`, `class` |
+| `messages_time_to_handle_seconds`  | `histogram` | Time between a message is consumed and handled         | `bus`, `class` |
 
 ### Consumers
 Ref. [ConsumerEventSubscriber](../../src/Metrics/EventSubscriber/ConsumerEventSubscriber.php).

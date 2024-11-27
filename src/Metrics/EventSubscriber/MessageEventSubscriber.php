@@ -9,10 +9,16 @@ namespace Instrumentation\Metrics\EventSubscriber;
 
 use Instrumentation\Metrics\MetricProviderInterface;
 use Instrumentation\Metrics\RegistryInterface;
+use Instrumentation\Tracing\Instrumentation\Messenger\AbstractDateTimeStamp;
+use Instrumentation\Tracing\Instrumentation\Messenger\ConsumedAtStamp;
+use Instrumentation\Tracing\Instrumentation\Messenger\HandledAtStamp;
+use Instrumentation\Tracing\Instrumentation\Messenger\SentAtStamp;
 use Prometheus\Counter;
 use Prometheus\Gauge;
+use Prometheus\Histogram;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Event\AbstractWorkerMessageEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
@@ -38,6 +44,16 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
                 'help' => 'Number of messages handled with failure',
                 'labels' => ['bus', 'class'],
             ],
+            'messages_time_to_consume_seconds' => [
+                'type' => Histogram::TYPE,
+                'help' => 'Time between a message is sent and consumed',
+                'labels' => ['bus', 'class'],
+            ],
+            'messages_time_to_handle_seconds' => [
+                'type' => Histogram::TYPE,
+                'help' => 'Time between a message is consumed and handled',
+                'labels' => ['bus', 'class'],
+            ],
         ];
     }
 
@@ -45,8 +61,8 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
     {
         return [
             WorkerMessageReceivedEvent::class => [['onConsume', 100]],
-            WorkerMessageHandledEvent::class => [['onHandled', -100]],
-            WorkerMessageFailedEvent::class => [['onFailed', -100]],
+            WorkerMessageHandledEvent::class => [['onHandled', -512]],
+            WorkerMessageFailedEvent::class => [['onFailed', -512]],
         ];
     }
 
@@ -58,20 +74,39 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
     {
         $labels = $this->getLabels($event->getEnvelope());
         $this->registry->getGauge('messages_handling')->inc($labels);
+
+        if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), SentAtStamp::class, ConsumedAtStamp::class)) {
+            return;
+        }
+
+        $histogram = $this->registry->getHistogram('messages_time_to_consume_seconds');
+        $histogram->observe($time, $labels);
     }
 
     public function onHandled(WorkerMessageHandledEvent $event): void
     {
-        $labels = $this->getLabels($event->getEnvelope());
-        $this->registry->getCounter('messages_handled_total')->inc($labels);
-        $this->registry->getGauge('messages_handling')->dec($labels);
+        $this->afterHandling($event, false);
     }
 
     public function onFailed(WorkerMessageFailedEvent $event): void
     {
+        $this->afterHandling($event, true);
+    }
+
+    private function afterHandling(AbstractWorkerMessageEvent $event, bool $failed): void
+    {
+        $counter = $failed ? 'failed' : 'handled';
+
         $labels = $this->getLabels($event->getEnvelope());
-        $this->registry->getCounter('messages_failed_total')->inc($labels);
+        $this->registry->getCounter('messages_'.$counter.'_total')->inc($labels);
         $this->registry->getGauge('messages_handling')->dec($labels);
+
+        if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), ConsumedAtStamp::class, HandledAtStamp::class)) {
+            return;
+        }
+
+        $histogram = $this->registry->getHistogram('messages_time_to_handle_seconds');
+        $histogram->observe($time, $labels);
     }
 
     /**
@@ -88,5 +123,28 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
         }
 
         return [$busName, \get_class($envelope->getMessage())];
+    }
+
+    /**
+     * @param class-string<\Symfony\Component\Messenger\Stamp\StampInterface> $startStampFqdn
+     * @param class-string<\Symfony\Component\Messenger\Stamp\StampInterface> $endStampFqdn
+     */
+    private function getTimeInSecondsBetweenStamps(Envelope $envelope, string $startStampFqdn, string $endStampFqdn): float|null
+    {
+        /** @var AbstractDateTimeStamp|null $startStamp */
+        $startStamp = $envelope->last($startStampFqdn);
+        /** @var AbstractDateTimeStamp|null $endStamp */
+        $endStamp = $envelope->last($endStampFqdn);
+
+        if (!$startStamp || !$endStamp) {
+            return null;
+        }
+
+        return $this->getTimeDifferenceInSeconds($startStamp->getDate(), $endStamp->getDate());
+    }
+
+    private function getTimeDifferenceInSeconds(\DateTimeInterface $start, \DateTimeInterface $end): float
+    {
+        return (float) ((float) $end->format('U.u') - (float) $start->format('U.u'));
     }
 }

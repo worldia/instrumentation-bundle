@@ -10,7 +10,11 @@ namespace Instrumentation\Tracing\Instrumentation\EventSubscriber;
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\MessageOperationNameResolverInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
+use Instrumentation\Tracing\Instrumentation\Messenger\AbstractDateTimeStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\AttributesStamp;
+use Instrumentation\Tracing\Instrumentation\Messenger\ConsumedAtStamp;
+use Instrumentation\Tracing\Instrumentation\Messenger\HandledAtStamp;
+use Instrumentation\Tracing\Instrumentation\Messenger\SentAtStamp;
 use Instrumentation\Tracing\Instrumentation\TracerAwareTrait;
 use Instrumentation\Tracing\Propagation\Messenger\PropagationStrategyStamp;
 use OpenTelemetry\API\Trace\SpanInterface;
@@ -24,6 +28,7 @@ use OpenTelemetry\SDK\Trace\TracerProvider;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\AbstractWorkerMessageEvent;
+use Symfony\Component\Messenger\Event\SendMessageToTransportsEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
@@ -43,6 +48,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
+            SendMessageToTransportsEvent::class => [['onSend', 512]],
             WorkerMessageReceivedEvent::class => [['onConsume', 512]], // before all SF listeners
             WorkerMessageHandledEvent::class => [['onHandled', -512]],
             WorkerMessageFailedEvent::class => [['onHandled', -512]],
@@ -59,8 +65,18 @@ class MessageEventSubscriber implements EventSubscriberInterface
         $this->scopes = new \SplObjectStorage();
     }
 
+    public function onSend(SendMessageToTransportsEvent $event): void
+    {
+        $envelope = $event->getEnvelope();
+        $envelope = $envelope->with(new SentAtStamp());
+
+        $event->setEnvelope($envelope);
+    }
+
     public function onConsume(WorkerMessageReceivedEvent $event): void
     {
+        $event->addStamps(new ConsumedAtStamp());
+
         $attributes = array_merge($this->getAttributes($event->getEnvelope()), [
             'messaging.operation' => 'process',
             'messaging.consumer_id' => gethostname(),
@@ -108,6 +124,21 @@ class MessageEventSubscriber implements EventSubscriberInterface
         if ($event instanceof WorkerMessageFailedEvent) {
             $span->recordException($event->getThrowable());
             $span->setStatus(StatusCode::STATUS_ERROR);
+        }
+
+        $event->addStamps(new HandledAtStamp());
+
+        foreach ([
+            'sent_at' => SentAtStamp::class,
+            'consumed_at' => ConsumedAtStamp::class,
+            'handled_at' => HandledAtStamp::class,
+        ] as $attribute => $stampFqdn) {
+            /** @var AbstractDateTimeStamp $stamp */
+            if (!$stamp = $event->getEnvelope()->last($stampFqdn)) {
+                continue;
+            }
+
+            $span->setAttribute('messenger.'.$attribute, $stamp->getDate()->format('Y-m-d H:i:s.u'));
         }
 
         if ($this->createSubSpan) {

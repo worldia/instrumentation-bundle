@@ -82,6 +82,8 @@ final class StdOutFormatter extends BaseJsonFormatter
      *
      * @see https://cloud.google.com/error-reporting/reference/rest/v1beta1/projects.events/report#reportederrorevent
      * @see https://cloud.google.com/error-reporting/reference/rest/v1beta1/ErrorContext#sourcelocation
+     *
+     * @return array{message:string,context:array{reportLocation:array{filePath:string,lineNumber:int,functionName:string}}}
      */
     protected function normalizeException(\Throwable $e, int $depth = 0): array
     {
