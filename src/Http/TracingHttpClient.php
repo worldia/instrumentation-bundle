@@ -80,9 +80,13 @@ final class TracingHttpClient implements HttpClientInterface
      * @param array{
      *     on_progress?: ?callable,
      *     headers?: array<string,array<string>>,
+     *     user_data?: array{
+     *         on_request_body_callback?: callable,
+     *         on_response_body_callback?: callable,
+     *     },
      *     extra?: array{
      *         operation_name: non-empty-string,
-     *         span_attributes: array<non-empty-string>,
+     *         span_attributes?: array<non-empty-string>,
      *         extra_attributes: array<non-empty-string, string>
      *     }
      * } $options
@@ -113,7 +117,10 @@ final class TracingHttpClient implements HttpClientInterface
 
         try {
             if (\in_array('request.body', $options['user_data']['span_attributes']) && $body = self::getRequestBody($options)) {
-                $attributes['request.body'] = $body;
+                $onRequestBodyCallback = $options['user_data']['on_request_body_callback'] ?? null;
+                if (\is_callable($onRequestBodyCallback)) {
+                    \call_user_func($onRequestBodyCallback, $body);
+                }
             }
             if (\in_array('request.headers', $options['user_data']['span_attributes'])) {
                 $attributes['request.headers'] = HttpMessageHelper::formatHeadersForSpanAttribute($headers);

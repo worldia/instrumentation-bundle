@@ -168,7 +168,11 @@ class TracedResponse implements ResponseInterface, StreamableInterface
                     $this->content = stream_get_contents($stream) ?: null;
                     rewind($stream);
                 }
-                $this->span->setAttribute('response.body', $this->content);
+
+                $onResponseBodyCallback = $info['user_data']['on_response_body_callback'] ?? null;
+                if (\is_callable($onResponseBodyCallback)) {
+                    \call_user_func($onResponseBodyCallback, $this->content);
+                }
             }
         } catch (\Throwable) {
         }
