@@ -39,9 +39,7 @@ class TracingHttpClient implements HttpClientInterface
      * @param HttpClientInterface|array<mixed>|null $client
      */
     final public function __construct(
-        HttpClientInterface|array $client = null,
-        ClientRequestOperationNameResolverInterface $operationNameResolver = null,
-        ClientRequestAttributeProviderInterface $attributeProvider = null,
+        HttpClientInterface|array|null $client = null, ClientRequestOperationNameResolverInterface|null $operationNameResolver = null, ClientRequestAttributeProviderInterface|null $attributeProvider = null,
         int $maxHostConnections = 6,
         int $maxPendingPushes = 50,
     ) {
@@ -71,7 +69,7 @@ class TracingHttpClient implements HttpClientInterface
         }
 
         if (!\is_array($attributes)) {
-            throw new \RuntimeException(sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
+            throw new \RuntimeException(\sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
         }
 
         return $attributes;
@@ -91,6 +89,7 @@ class TracingHttpClient implements HttpClientInterface
      *         on_response_body_callback?: callable|array<string|object, string>
      *     }
      * } $options
+     *
      * @throws TransportExceptionInterface
      */
     public function request(string $method, string $url, array $options = []): ResponseInterface
@@ -166,7 +165,7 @@ class TracingHttpClient implements HttpClientInterface
         return new TracedResponse($this->client->request($method, $url, $options), $span);
     }
 
-    public function stream(ResponseInterface|iterable $responses, float $timeout = null): ResponseStreamInterface
+    public function stream(ResponseInterface|iterable $responses, float|null $timeout = null): ResponseStreamInterface
     {
         if ($responses instanceof ResponseInterface) {
             $responses = [$responses];
