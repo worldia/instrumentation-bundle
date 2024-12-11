@@ -38,9 +38,9 @@ class TracingHttpClient implements HttpClientInterface
      * @param HttpClientInterface|array<mixed>|null $client
      */
     public function __construct(
-        HttpClientInterface|array|null $client = null,
-        ClientRequestOperationNameResolverInterface|null $operationNameResolver = null,
-        ClientRequestAttributeProviderInterface|null $attributeProvider = null,
+        HttpClientInterface|array $client = null,
+        ClientRequestOperationNameResolverInterface $operationNameResolver = null,
+        ClientRequestAttributeProviderInterface $attributeProvider = null,
         int $maxHostConnections = 6,
         int $maxPendingPushes = 50,
     ) {
@@ -70,7 +70,7 @@ class TracingHttpClient implements HttpClientInterface
         }
 
         if (!\is_array($attributes)) {
-            throw new \RuntimeException(\sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
+            throw new \RuntimeException(sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
         }
 
         return $attributes;
@@ -113,8 +113,8 @@ class TracingHttpClient implements HttpClientInterface
 
         try {
             if (\in_array('request.body', $options['user_data']['span_attributes']) && $body = self::getRequestBody($options)) {
-                if (isset($options['user_data']['on_request_body_callback']) && is_callable($options['user_data']['on_request_body_callback'])) {
-                    call_user_func($options['user_data']['on_request_body_callback'], $body, $span, HttpMessageHelper::getContentType($headers));
+                if (isset($options['user_data']['on_request_body_callback']) && \is_callable($options['user_data']['on_request_body_callback'])) {
+                    \call_user_func($options['user_data']['on_request_body_callback'], $body, $span, HttpMessageHelper::getContentType($headers));
                 }
             }
             if (\in_array('request.headers', $options['user_data']['span_attributes'])) {
@@ -160,7 +160,7 @@ class TracingHttpClient implements HttpClientInterface
         return new TracedResponse($this->client->request($method, $url, $options), $span);
     }
 
-    public function stream(ResponseInterface|iterable $responses, float|null $timeout = null): ResponseStreamInterface
+    public function stream(ResponseInterface|iterable $responses, float $timeout = null): ResponseStreamInterface
     {
         if ($responses instanceof ResponseInterface) {
             $responses = [$responses];

@@ -61,6 +61,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
             }
 
             $this->endTracing();
+
             return $content;
         } finally {
             $this->endTracing();
@@ -73,6 +74,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
     public function toArray(bool $throw = true): array
     {
         $this->endTracing();
+
         return $this->response->toArray($throw);
     }
 
@@ -85,7 +87,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
     }
 
-    public function getInfo(string|null $type = null): mixed
+    public function getInfo(string $type = null): mixed
     {
         return $this->response->getInfo($type);
     }
@@ -121,7 +123,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
         foreach ($responses as $r) {
             if (!$r instanceof self) {
-                throw new \TypeError(\sprintf('"%s::stream()" expects parameter 1 to be an iterable of TracedResponse objects, "%s" given.', TracingHttpClient::class, get_debug_type($r)));
+                throw new \TypeError(sprintf('"%s::stream()" expects parameter 1 to be an iterable of TracedResponse objects, "%s" given.', TracingHttpClient::class, get_debug_type($r)));
             }
 
             $traceableMap[$r->response] = $r;
@@ -167,8 +169,8 @@ class TracedResponse implements ResponseInterface, StreamableInterface
                     rewind($stream);
                 }
 
-                if (isset($info['user_data']['on_response_body_callback']) && is_callable($info['user_data']['on_response_body_callback'])) {
-                    call_user_func($info['user_data']['on_response_body_callback'], $this->content, $this->span, HttpMessageHelper::getContentType($this->getHeaders(false)));
+                if (isset($info['user_data']['on_response_body_callback']) && \is_callable($info['user_data']['on_response_body_callback'])) {
+                    \call_user_func($info['user_data']['on_response_body_callback'], $this->content, $this->span, HttpMessageHelper::getContentType($this->getHeaders(false)));
                 }
             }
         } catch (\Throwable) {

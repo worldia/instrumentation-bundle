@@ -24,7 +24,7 @@ class HttpMessageHelper
                 $values = [$values];
             }
             foreach ($values as $value) {
-                $lines[] = \sprintf('%s: %s', mb_strtolower($name), $value);
+                $lines[] = sprintf('%s: %s', mb_strtolower($name), $value);
             }
         }
 
@@ -36,8 +36,8 @@ class HttpMessageHelper
         $headers = HttpSensitiveDataHelper::filterHeaders($headers);
 
         foreach ($headers as $name => $values) {
-            if ($name === 'Content-Type') {
-                if (is_array($values)) {
+            if ('Content-Type' === $name) {
+                if (\is_array($values)) {
                     return array_shift($values);
                 }
 
