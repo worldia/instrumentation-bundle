@@ -22,6 +22,7 @@ use Symfony\Component\HttpClient\DecoratorTrait;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\HttpClientTrait;
 use Symfony\Component\HttpClient\Response\ResponseStream;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Contracts\HttpClient\ResponseStreamInterface;
@@ -37,7 +38,7 @@ class TracingHttpClient implements HttpClientInterface
     /**
      * @param HttpClientInterface|array<mixed>|null $client
      */
-    public function __construct(
+    final public function __construct(
         HttpClientInterface|array $client = null,
         ClientRequestOperationNameResolverInterface $operationNameResolver = null,
         ClientRequestAttributeProviderInterface $attributeProvider = null,
@@ -84,8 +85,13 @@ class TracingHttpClient implements HttpClientInterface
      *         operation_name: non-empty-string,
      *         span_attributes: array<non-empty-string>,
      *         extra_attributes: array<non-empty-string, string>
+     *     },
+     *     user_data?: array{
+     *         on_request_body_callback?: callable|array<string|object, string>,
+     *         on_response_body_callback?: callable|array<string|object, string>
      *     }
      * } $options
+     * @throws TransportExceptionInterface
      */
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {

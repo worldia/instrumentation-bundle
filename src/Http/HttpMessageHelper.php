@@ -31,6 +31,9 @@ class HttpMessageHelper
         return implode(\PHP_EOL, $lines);
     }
 
+    /**
+     * @param array<string,string|string[]> $headers
+     */
     public static function getContentType(array $headers): ?string
     {
         $headers = HttpSensitiveDataHelper::filterHeaders($headers);
