@@ -60,6 +60,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
                 $this->checkStatusCode();
             }
 
+            $this->endTracing();
             return $content;
         } finally {
             $this->endTracing();
@@ -71,11 +72,8 @@ class TracedResponse implements ResponseInterface, StreamableInterface
      */
     public function toArray(bool $throw = true): array
     {
-        try {
-            return $this->response->toArray($throw);
-        } finally {
-            $this->endTracing();
-        }
+        $this->endTracing();
+        return $this->response->toArray($throw);
     }
 
     public function cancel(): void
@@ -169,9 +167,8 @@ class TracedResponse implements ResponseInterface, StreamableInterface
                     rewind($stream);
                 }
 
-                $onResponseBodyCallback = $info['user_data']['on_response_body_callback'] ?? null;
-                if (\is_callable($onResponseBodyCallback)) {
-                    \call_user_func($onResponseBodyCallback, $this->content);
+                if (isset($info['user_data']['on_response_body_callback']) && is_callable($info['user_data']['on_response_body_callback'])) {
+                    call_user_func($info['user_data']['on_response_body_callback'], $this->content, $this->span, HttpMessageHelper::getContentType($this->getHeaders(false)));
                 }
             }
         } catch (\Throwable) {

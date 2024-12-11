@@ -30,4 +30,21 @@ class HttpMessageHelper
 
         return implode(\PHP_EOL, $lines);
     }
+
+    public static function getContentType(array $headers): ?string
+    {
+        $headers = HttpSensitiveDataHelper::filterHeaders($headers);
+
+        foreach ($headers as $name => $values) {
+            if ($name === 'Content-Type') {
+                if (is_array($values)) {
+                    return array_shift($values);
+                }
+
+                return $values;
+            }
+        }
+
+        return null;
+    }
 }

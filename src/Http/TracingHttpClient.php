@@ -26,13 +26,13 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
-final class TracingHttpClient implements HttpClientInterface
+class TracingHttpClient implements HttpClientInterface
 {
     use DecoratorTrait;
     use HttpClientTrait;
 
-    private ClientRequestOperationNameResolverInterface $operationNameResolver;
-    private ClientRequestAttributeProviderInterface $attributeProvider;
+    protected ClientRequestOperationNameResolverInterface $operationNameResolver;
+    protected ClientRequestAttributeProviderInterface $attributeProvider;
 
     /**
      * @param HttpClientInterface|array<mixed>|null $client
@@ -80,13 +80,9 @@ final class TracingHttpClient implements HttpClientInterface
      * @param array{
      *     on_progress?: ?callable,
      *     headers?: array<string,array<string>>,
-     *     user_data?: array{
-     *         on_request_body_callback?: callable,
-     *         on_response_body_callback?: callable,
-     *     },
      *     extra?: array{
      *         operation_name: non-empty-string,
-     *         span_attributes?: array<non-empty-string>,
+     *         span_attributes: array<non-empty-string>,
      *         extra_attributes: array<non-empty-string, string>
      *     }
      * } $options
@@ -117,9 +113,8 @@ final class TracingHttpClient implements HttpClientInterface
 
         try {
             if (\in_array('request.body', $options['user_data']['span_attributes']) && $body = self::getRequestBody($options)) {
-                $onRequestBodyCallback = $options['user_data']['on_request_body_callback'] ?? null;
-                if (\is_callable($onRequestBodyCallback)) {
-                    \call_user_func($onRequestBodyCallback, $body);
+                if (isset($options['user_data']['on_request_body_callback']) && is_callable($options['user_data']['on_request_body_callback'])) {
+                    call_user_func($options['user_data']['on_request_body_callback'], $body, $span, HttpMessageHelper::getContentType($headers));
                 }
             }
             if (\in_array('request.headers', $options['user_data']['span_attributes'])) {
