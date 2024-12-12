@@ -22,25 +22,24 @@ use Symfony\Component\HttpClient\DecoratorTrait;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\HttpClientTrait;
 use Symfony\Component\HttpClient\Response\ResponseStream;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
-final class TracingHttpClient implements HttpClientInterface
+class TracingHttpClient implements HttpClientInterface
 {
     use DecoratorTrait;
     use HttpClientTrait;
 
-    private ClientRequestOperationNameResolverInterface $operationNameResolver;
-    private ClientRequestAttributeProviderInterface $attributeProvider;
+    protected ClientRequestOperationNameResolverInterface $operationNameResolver;
+    protected ClientRequestAttributeProviderInterface $attributeProvider;
 
     /**
      * @param HttpClientInterface|array<mixed>|null $client
      */
-    public function __construct(
-        HttpClientInterface|array|null $client = null,
-        ClientRequestOperationNameResolverInterface|null $operationNameResolver = null,
-        ClientRequestAttributeProviderInterface|null $attributeProvider = null,
+    final public function __construct(
+        HttpClientInterface|array|null $client = null, ClientRequestOperationNameResolverInterface|null $operationNameResolver = null, ClientRequestAttributeProviderInterface|null $attributeProvider = null,
         int $maxHostConnections = 6,
         int $maxPendingPushes = 50,
     ) {
@@ -84,8 +83,14 @@ final class TracingHttpClient implements HttpClientInterface
      *         operation_name: non-empty-string,
      *         span_attributes: array<non-empty-string>,
      *         extra_attributes: array<non-empty-string, string>
+     *     },
+     *     user_data?: array{
+     *         on_request_body_callback?: callable|array<string|object, string>,
+     *         on_response_body_callback?: callable|array<string|object, string>
      *     }
      * } $options
+     *
+     * @throws TransportExceptionInterface
      */
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
@@ -113,7 +118,9 @@ final class TracingHttpClient implements HttpClientInterface
 
         try {
             if (\in_array('request.body', $options['user_data']['span_attributes']) && $body = self::getRequestBody($options)) {
-                $attributes['request.body'] = $body;
+                if (isset($options['user_data']['on_request_body_callback']) && \is_callable($options['user_data']['on_request_body_callback'])) {
+                    \call_user_func($options['user_data']['on_request_body_callback'], $body, $span, HttpMessageHelper::getContentType($headers));
+                }
             }
             if (\in_array('request.headers', $options['user_data']['span_attributes'])) {
                 $attributes['request.headers'] = HttpMessageHelper::formatHeadersForSpanAttribute($headers);

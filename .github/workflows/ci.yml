@@ -77,7 +77,7 @@ jobs:
         run: composer install --no-interaction --no-progress --no-scripts --ansi
 
       - name: php-cs-fixer
-        run: vendor/bin/php-cs-fixer fix --dry-run --ansi
+        run: vendor/bin/php-cs-fixer fix --dry-run --ansi -v
 
   phpspec:
     name: PHPSpec
