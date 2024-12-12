@@ -17,8 +17,8 @@ class ServerResponseAttributeProvider implements ServerResponseAttributeProvider
     public function getAttributes(Response $response): array
     {
         return array_filter([
-            TraceAttributes::HTTP_STATUS_CODE => (string) $response->getStatusCode(),
-            TraceAttributes::HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED => $response->headers->get('content-length'),
+            TraceAttributes::HTTP_RESPONSE_STATUS_CODE => (string) $response->getStatusCode(),
+            TraceAttributes::HTTP_RESPONSE_BODY_SIZE => $response->headers->get('content-length'),
         ]);
     }
 }

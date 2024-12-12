@@ -17,9 +17,7 @@ interface MessageAttributeProviderInterface
      * @return array{
      *           'messenger.message':class-string,
      *           'messenger.bus'?:string,
-     *           'messaging.destination.kind':'queue'|'topic',
      *           'messaging.system'?:'rabbitmq'|'redis',
-     *           'messaging.protocol'?:'AMQP',
      *           'messaging.message_id'?:string
      *         }
      */

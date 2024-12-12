@@ -24,27 +24,23 @@ class ServerRequestAttributeProvider implements ServerRequestAttributeProviderIn
     public function getAttributes(Request $request): array
     {
         $attributes = [
-            TraceAttributes::HTTP_SERVER_NAME => $this->serverName,
-            TraceAttributes::HTTP_METHOD => $request->getMethod(),
-            TraceAttributes::HTTP_TARGET => $request->getRequestUri(),
-            TraceAttributes::HTTP_HOST => $request->headers->get('host'), // Per spec, only if host header is present
+            TraceAttributes::CLIENT_ADDRESS => $request->getClientIp(),
+            TraceAttributes::SERVER_ADDRESS => $this->serverName ?: $request->getHost(),
+            TraceAttributes::SERVER_PORT => (string) $request->getPort(),
+            TraceAttributes::NETWORK_PROTOCOL_NAME => substr((string) $request->getProtocolVersion(), 5),
+            TraceAttributes::URL_SCHEME => $request->getScheme(),
+            TraceAttributes::URL_DOMAIN => $request->getHost(),
+            TraceAttributes::URL_PATH => $request->getPathInfo(),
+            TraceAttributes::URL_QUERY => $request->getQueryString(),
+            TraceAttributes::HTTP_REQUEST_METHOD => $request->getMethod(),
             TraceAttributes::HTTP_ROUTE => $request->attributes->get('_route'),
-            TraceAttributes::HTTP_SCHEME => $request->getScheme(),
-            TraceAttributes::HTTP_FLAVOR => substr((string) $request->getProtocolVersion(), 5),
-            TraceAttributes::HTTP_USER_AGENT => $request->headers->get('user-agent', null),
-            TraceAttributes::HTTP_REQUEST_CONTENT_LENGTH => $request->headers->get('content-length', null),
-            TraceAttributes::HTTP_CLIENT_IP => $request->getClientIp(),
-            TraceAttributes::NET_HOST_PORT => (string) $request->getPort(),
+            TraceAttributes::USER_AGENT_ORIGINAL => $request->headers->get('user-agent', null),
+            'http.request.header.host' => $request->headers->get('host'), // Per spec, only if host header is present
+            'http.request.header.content-length' => $request->headers->get('content-length', null),
         ];
 
-        if ($this->serverName) {
-            $attributes[TraceAttributes::HTTP_SERVER_NAME] = $this->serverName;
-        } else {
-            $attributes[TraceAttributes::NET_HOST_NAME] = $request->getHost();
-        }
-
         foreach ($this->capturedHeaders as $header) {
-            $attributes[\sprintf('http.response.header.%s', str_replace('-', '_', $header))] = [(string) $request->headers->get($header, '')];
+            $attributes[\sprintf('http.request.header.%s', str_replace('-', '_', $header))] = [(string) $request->headers->get($header, '')];
         }
 
         return array_filter($attributes);

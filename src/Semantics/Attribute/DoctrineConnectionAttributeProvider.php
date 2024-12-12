@@ -19,29 +19,29 @@ class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttribute
         $attributes = [TraceAttributes::DB_SYSTEM => $this->getSystemAttribute($platform)];
 
         if (isset($params['user'])) {
-            $attributes[TraceAttributes::DB_USER] = $params['user'];
+            $attributes['db.user'] = $params['user'];
         }
 
         if (isset($params['dbname'])) {
-            $attributes[TraceAttributes::DB_NAME] = $params['dbname'];
+            $attributes[TraceAttributes::DB_NAMESPACE] = $params['dbname'];
         }
 
         if (isset($params['host']) && !empty($params['host']) && !isset($params['memory'])) {
             if (false === filter_var($params['host'], \FILTER_VALIDATE_IP)) {
-                $attributes[TraceAttributes::NET_PEER_NAME] = $params['host'];
+                $attributes[TraceAttributes::SERVER_ADDRESS] = $params['host'];
             } else {
-                $attributes[TraceAttributes::NET_PEER_IP] = $params['host'];
+                $attributes[TraceAttributes::NETWORK_PEER_ADDRESS] = $params['host'];
             }
         }
 
         if (isset($params['port'])) {
-            $attributes[TraceAttributes::NET_PEER_PORT] = (string) $params['port'];
+            $attributes[TraceAttributes::SERVER_PORT] = (string) $params['port'];
         }
 
         if (isset($params['unix_socket'])) {
-            $attributes[TraceAttributes::NET_TRANSPORT] = 'unix';
+            $attributes[TraceAttributes::NETWORK_TRANSPORT] = 'unix';
         } elseif (isset($params['memory'])) {
-            $attributes[TraceAttributes::NET_TRANSPORT] = 'inproc';
+            $attributes[TraceAttributes::NETWORK_TRANSPORT] = 'inproc';
         }
 
         return $attributes;

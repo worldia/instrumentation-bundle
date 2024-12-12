@@ -21,7 +21,6 @@ class MessageAttributeProvider implements MessageAttributeProviderInterface
     public function getAttributes(Envelope $envelope): array
     {
         $attributes = [
-            TraceAttributes::MESSAGING_DESTINATION_KIND => 'queue',
             'messenger.message' => \get_class($envelope->getMessage()),
         ];
 
@@ -29,7 +28,6 @@ class MessageAttributeProvider implements MessageAttributeProviderInterface
             $attributes[TraceAttributes::MESSAGING_SYSTEM] = 'redis';
         } elseif ($envelope->last(AmqpReceivedStamp::class)) { // @phpstan-ignore-line
             $attributes[TraceAttributes::MESSAGING_SYSTEM] = 'rabbitmq';
-            $attributes[TraceAttributes::MESSAGING_PROTOCOL] = 'AMQP';
         }
 
         /** @var TransportMessageIdStamp|null $stamp */
