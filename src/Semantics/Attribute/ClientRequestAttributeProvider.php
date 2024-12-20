@@ -24,8 +24,8 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
     public function getAttributes(string $method, string $url, array $headers = []): array
     {
         $attributes = [
-            TraceAttributes::HTTP_METHOD => strtoupper($method),
-            TraceAttributes::HTTP_URL => HttpSensitiveDataHelper::filterUrl($url),
+            TraceAttributes::HTTP_REQUEST_METHOD => strtoupper($method),
+            TraceAttributes::URL_FULL => HttpSensitiveDataHelper::filterUrl($url),
         ];
 
         foreach ($this->capturedHeaders as $header) {
@@ -46,15 +46,10 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
         }
 
         $attributes += [
-            TraceAttributes::HTTP_TARGET => $components['path'] ?? null,
-            TraceAttributes::HTTP_HOST => $components['host'] ?? null,
-            TraceAttributes::HTTP_SCHEME => $components['scheme'] ?? null,
-            TraceAttributes::NET_HOST_PORT => isset($components['port']) ? (string) $components['port'] : null,
-
-            TraceAttributes::HTTP_FLAVOR => null,
-            TraceAttributes::HTTP_USER_AGENT => null,
-            TraceAttributes::HTTP_REQUEST_CONTENT_LENGTH => null,
-            TraceAttributes::HTTP_CLIENT_IP => null,
+            TraceAttributes::URL_PATH => $components['path'] ?? null,
+            TraceAttributes::URL_PORT => $components['host'] ?? null,
+            TraceAttributes::URL_SCHEME => $components['scheme'] ?? null,
+            TraceAttributes::SERVER_PORT => isset($components['port']) ? (string) $components['port'] : null,
         ];
 
         return array_filter($attributes);
