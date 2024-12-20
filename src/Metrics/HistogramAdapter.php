@@ -8,6 +8,7 @@
 namespace Instrumentation\Metrics;
 
 use OpenTelemetry\API\Metrics\HistogramInterface;
+use OpenTelemetry\Context\ContextInterface;
 use Prometheus\CollectorRegistry;
 use Prometheus\Histogram;
 
@@ -23,7 +24,7 @@ class HistogramAdapter implements HistogramInterface
     /**
      * @param array{labels: array<string,mixed>, buckets?: array<int>} $attributes
      */
-    public function record($amount, iterable $attributes = [], $context = null): void
+    public function record($amount, iterable $attributes = [], ContextInterface|false|null $context = null): void
     {
         if (!\is_array($attributes)) {
             return;
