@@ -158,17 +158,14 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
 
         try {
-            if (\in_array('response.headers', $info['user_data']['span_attributes'] ?? [])) {
-                $this->span->setAttribute('response.headers', HttpMessageHelper::formatHeadersForSpanAttribute($this->getHeaders(false)));
-            }
-
-            if (\in_array('response.body', $info['user_data']['span_attributes'] ?? [])) {
+            if (\is_callable($info['user_data']['on_response'] ?? null)) {
                 if (empty($this->content)) {
                     $stream = $this->toStream(false);
                     $this->content = stream_get_contents($stream) ?: null;
                     rewind($stream);
                 }
-                $this->span->setAttribute('response.body', $this->content);
+
+                \call_user_func($info['user_data']['on_response'], $this->getHeaders(false), $this->content, $this->span);
             }
         } catch (\Throwable) {
         }
