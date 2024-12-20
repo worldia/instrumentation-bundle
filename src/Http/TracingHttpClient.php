@@ -14,6 +14,7 @@ use Instrumentation\Semantics\Attribute\ClientRequestAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverInterface;
 use Instrumentation\Tracing\Tracing;
+use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\Common\Time\ClockInterface;
@@ -57,33 +58,14 @@ final class TracingHttpClient implements HttpClientInterface
     }
 
     /**
-     * @param array<string> $attributes
-     *
-     * @return array<string>
-     */
-    protected function getExtraSpanAttributes(array|null $attributes): array
-    {
-        $attributes = $attributes ?: $_SERVER['OTEL_PHP_HTTP_SPAN_ATTRIBUTES'] ?? [];
-
-        if (\is_string($attributes)) {
-            $attributes = explode(',', $attributes);
-        }
-
-        if (!\is_array($attributes)) {
-            throw new \RuntimeException(\sprintf('Extra span attributes must be a comma separated list of attributes or an array. %s given.', get_debug_type($attributes)));
-        }
-
-        return $attributes;
-    }
-
-    /**
      * @param array{
      *     on_progress?: ?callable,
      *     headers?: array<string,array<string>>,
      *     extra?: array{
      *         operation_name: non-empty-string,
-     *         span_attributes: array<non-empty-string>,
-     *         extra_attributes: array<non-empty-string, string>
+     *         extra_attributes: array<non-empty-string, string>,
+     *         on_request: callable(array<string,array<string>>, string|null, SpanInterface): void,
+     *         on_response: callable(array<string,array<string>>, string|null, SpanInterface): void,
      *     }
      * } $options
      */
@@ -106,22 +88,17 @@ final class TracingHttpClient implements HttpClientInterface
 
         $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
         $attributes += $options['extra']['extra_attributes'] ?? [];
+        $span->setAttributes($attributes);
 
         $scope->detach();
 
-        $options['user_data']['span_attributes'] = $this->getExtraSpanAttributes($options['extra']['span_attributes'] ?? null);
-
-        try {
-            if (\in_array('request.body', $options['user_data']['span_attributes']) && $body = self::getRequestBody($options)) {
-                $attributes['request.body'] = $body;
-            }
-            if (\in_array('request.headers', $options['user_data']['span_attributes'])) {
-                $attributes['request.headers'] = HttpMessageHelper::formatHeadersForSpanAttribute($headers);
-            }
-        } catch (\Throwable) {
+        if (\is_callable($options['extra']['on_request'] ?? null)) {
+            \call_user_func($options['extra']['on_request'], $headers, self::getRequestBody($options), $span);
         }
 
-        $span->setAttributes($attributes);
+        if (isset($options['extra']['on_response'])) {
+            $options['user_data']['on_response'] = $options['extra']['on_response'];
+        }
 
         $options = array_merge($options, [
             'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span, $options) {
