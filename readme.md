@@ -1,18 +1,16 @@
 # Instrumentation for Symfony
 
+Using the official [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-php)
+
 ### Features
 
 #### Tracing
-- Using the official [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-php)
 - Minimal auto-instrumentation for **requests**, console **commands**, **consumers** and **doctrine**
 - Trace context propagation from incoming **requests** to **consumers**, **outgoing http calls** and **databases** (using [`sqlcommenter`](https://google.github.io/sqlcommenter/))
-- Configurable blacklisting of requests by path to avoid useless traces, eg. `/metrics` or `/_healthz`
-- Automatic log inclusion with configurable log level and channels
+- Configurable blacklisting of requests by path to avoid useless traces
 
 #### Metrics
-- Using the [Prometheus Client](https://github.com/PromPHP/prometheus_client_php)
 - Minimal auto-instrumentation for common **request**, **consumer** and **message** metrics (see list of provided [default metrics](./docs/metrics/default-metrics.md)).
-- Autoconfigurable metric providers, see below.
 
 #### Logging
 - Adds trace context to logs for correlation, with customizable keys.
@@ -21,16 +19,12 @@
 - Using the official [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-php)
 - Baggage propagation from incoming **requests** to **consumers** and **outgoing http calls**
 
-#### Health
-- A simple endpoint to expose application health (default: `/_healthz`)
-- Autoconfigurable healthcheck interface to add healthchecks to be made for global application health
-
 ### Installation and configuration
 
 ```sh
 composer require worldia/instrumentation-bundle <your-exporter>
 ```
-You will aso need to install an [exporter implementation](https://packagist.org/packages/open-telemetry/exporter-otlp?query=open-telemetry%2Fexporter-) and `APCu` is required by the prometheus exporter.
+You will aso need to install an [exporter implementation](https://packagist.org/packages/open-telemetry/exporter-otlp?query=open-telemetry%2Fexporter-).
 ```
 
 Add to ```bundles.php```:
@@ -79,10 +73,6 @@ instrumentation: ~
     - [Link strategy for a message](./docs/tracing/link-strategy-for-message.md)    
     - [Propagating trace/baggage context in HTTP requests](./docs/tracing/propagating-context.md)
     - [Add request / response bodies as span attributes for HTTP requests](./docs/tracing/message-bodies.md)
-- **Metrics**
-    - [Adding a metric](./docs/metrics/adding-a-metric.md)
-    - [Using Redis as storage adapter](./docs/metrics/using-redis-as-storage.md) (Recommended)
 - **Logging**
     - [Customizing trace context log keys](./docs/logging/custom-keys.md)
-- **Health**
-    - [Adding a healthcheck](./docs/health/adding-a-healthcheck.md)   
+

@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Instrumentation;
 
+use OpenTelemetry\API\Logs\LoggerProviderInterface;
+use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Common\Util\ShutdownHandler;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -34,6 +36,23 @@ class InstrumentationBundle extends Bundle
 
         if (method_exists($tracerProvider, 'shutdown')) {
             ShutdownHandler::register([$tracerProvider, 'shutdown']);
+        }
+
+        /** @var LoggerProviderInterface $loggerProvider */
+        $loggerProvider = $this->container->get(LoggerProviderInterface::class);
+
+        if (method_exists($loggerProvider, 'shutdown')) {
+            ShutdownHandler::register([$loggerProvider, 'shutdown']);
+        }
+
+        /** @var MeterProviderInterface $meterProvider */
+        $meterProvider = $this->container->get(MeterProviderInterface::class);
+
+        if (method_exists($meterProvider, 'shutdown')) {
+            ShutdownHandler::register([$meterProvider, 'shutdown']);
+        }
+        if (method_exists($meterProvider, 'forceFlush')) {
+            ShutdownHandler::register([$meterProvider, 'forceFlush']);
         }
     }
 }

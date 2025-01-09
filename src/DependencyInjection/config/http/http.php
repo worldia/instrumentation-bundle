@@ -7,8 +7,6 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Resources;
-
 use Instrumentation\Http\PropagatingHttpClientFactory;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 

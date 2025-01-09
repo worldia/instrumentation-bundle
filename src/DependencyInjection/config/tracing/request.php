@@ -7,8 +7,6 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Resources;
-
 use Instrumentation\Semantics;
 use Instrumentation\Tracing;
 use Instrumentation\Tracing\Instrumentation;
@@ -23,10 +21,6 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return static function (ContainerConfigurator $container) {
     $container->services()
         ->set(Propagation\EventSubscriber\RequestEventSubscriber::class)
-        ->args([
-            service(Propagation\ForcableIdGenerator::class),
-            service(Propagation\IncomingTraceHeaderResolverInterface::class)->nullOnInvalid(),
-        ])
         ->autoconfigure()
 
         ->set(Instrumentation\EventSubscriber\RequestEventSubscriber::class)

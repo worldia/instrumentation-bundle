@@ -7,8 +7,6 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Resources;
-
 use Instrumentation\Tracing\Propagation\Http\TraceParentHeaderProvider;
 use Instrumentation\Tracing\Propagation\Http\TraceStateHeaderProvider;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -16,5 +14,6 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 return static function (ContainerConfigurator $container) {
     $container->services()
         ->set(TraceParentHeaderProvider::class)
-        ->set(TraceStateHeaderProvider::class);
+        ->set(TraceStateHeaderProvider::class)
+    ;
 };

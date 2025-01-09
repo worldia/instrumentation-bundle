@@ -7,15 +7,13 @@
 
 namespace Instrumentation\Metrics\EventSubscriber;
 
-use Instrumentation\Metrics\MetricProviderInterface;
-use Instrumentation\Metrics\RegistryInterface;
 use Instrumentation\Tracing\Instrumentation\Messenger\AbstractDateTimeStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\ConsumedAtStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\HandledAtStamp;
 use Instrumentation\Tracing\Instrumentation\Messenger\SentAtStamp;
-use Prometheus\Counter;
-use Prometheus\Gauge;
-use Prometheus\Histogram;
+use OpenTelemetry\API\Metrics\GaugeInterface;
+use OpenTelemetry\API\Metrics\MeterInterface;
+use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\AbstractWorkerMessageEvent;
@@ -24,38 +22,10 @@ use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 use Symfony\Component\Messenger\Stamp\BusNameStamp;
 
-class MessageEventSubscriber implements EventSubscriberInterface, MetricProviderInterface
+class MessageEventSubscriber implements EventSubscriberInterface
 {
-    public static function getProvidedMetrics(): array
-    {
-        return [
-            'messages_handling' => [
-                'type' => Gauge::TYPE,
-                'help' => 'Number of messages this instance is currently handling',
-                'labels' => ['bus', 'class'],
-            ],
-            'messages_handled_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Number of messages handled successfully',
-                'labels' => ['bus', 'class'],
-            ],
-            'messages_failed_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Number of messages handled with failure',
-                'labels' => ['bus', 'class'],
-            ],
-            'messages_time_to_consume_seconds' => [
-                'type' => Histogram::TYPE,
-                'help' => 'Time between a message is sent and consumed',
-                'labels' => ['bus', 'class'],
-            ],
-            'messages_time_to_handle_seconds' => [
-                'type' => Histogram::TYPE,
-                'help' => 'Time between a message is consumed and handled',
-                'labels' => ['bus', 'class'],
-            ],
-        ];
-    }
+    private MeterInterface $meter;
+    private GaugeInterface|null $handlingGauge = null;
 
     public static function getSubscribedEvents(): array
     {
@@ -66,21 +36,23 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
         ];
     }
 
-    public function __construct(private RegistryInterface $registry)
+    public function __construct(private readonly MeterProviderInterface $meterProvider)
     {
+        $this->meter = $this->meterProvider->getMeter('instrumentation');
     }
 
     public function onConsume(WorkerMessageReceivedEvent $event): void
     {
-        $labels = $this->getLabels($event->getEnvelope());
-        $this->registry->getGauge('messages_handling')->inc($labels);
+        $attributes = $this->getAttributes($event->getEnvelope());
+
+        $this->handlingGauge = $this->meter->createGauge('messages_handling', null, 'Number of messages this instance is currently handling');
+        $this->handlingGauge->record(1, $attributes);
 
         if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), SentAtStamp::class, ConsumedAtStamp::class)) {
             return;
         }
 
-        $histogram = $this->registry->getHistogram('messages_time_to_consume_seconds');
-        $histogram->observe($time, $labels);
+        $this->meter->createHistogram('messages_time_to_consume_seconds', 's', 'Time between a message is sent and consumed')->record($time, $attributes);
     }
 
     public function onHandled(WorkerMessageHandledEvent $event): void
@@ -97,22 +69,22 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
     {
         $counter = $failed ? 'failed' : 'handled';
 
-        $labels = $this->getLabels($event->getEnvelope());
-        $this->registry->getCounter('messages_'.$counter.'_total')->inc($labels);
-        $this->registry->getGauge('messages_handling')->dec($labels);
+        $attributes = $this->getAttributes($event->getEnvelope());
+        $this->meter->createCounter('messages_'.$counter.'_total')->add(1, $attributes);
+
+        $this->handlingGauge?->record(-1, $attributes);
 
         if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), ConsumedAtStamp::class, HandledAtStamp::class)) {
             return;
         }
 
-        $histogram = $this->registry->getHistogram('messages_time_to_handle_seconds');
-        $histogram->observe($time, $labels);
+        $this->meter->createHistogram('messages_time_to_handle_seconds', 's', 'Time between a message is consumed and handled')->record($time, $attributes);
     }
 
     /**
-     * @return array{0:string,1:string}
+     * @return array{bus:string,class:string}
      */
-    private function getLabels(Envelope $envelope): array
+    private function getAttributes(Envelope $envelope): array
     {
         $busName = 'default';
 
@@ -122,7 +94,7 @@ class MessageEventSubscriber implements EventSubscriberInterface, MetricProvider
             $busName = $stamp->getBusName();
         }
 
-        return [$busName, \get_class($envelope->getMessage())];
+        return ['bus' => $busName, 'class' => \get_class($envelope->getMessage())];
     }
 
     /**
