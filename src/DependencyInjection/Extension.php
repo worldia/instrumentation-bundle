@@ -9,19 +9,11 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection;
 
-use Instrumentation\Health\HealthcheckInterface;
-use Instrumentation\Metrics\MetricProviderInterface;
-use Instrumentation\Metrics\RegistryInterface;
-use Instrumentation\Metrics\Storage\HostnamePrefixedRedisFactory;
+use Instrumentation\Logging\OtelHandler;
 use Instrumentation\Tracing\Instrumentation\Doctrine\DBAL\Middleware as InstrumentationMiddleware;
-use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\Propagation\Doctrine\DBAL\Middleware as PropagationMiddleware;
 use Instrumentation\Tracing\TraceUrlGenerator;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
-use Prometheus\Storage\Adapter;
-use Prometheus\Storage\APC;
-use Prometheus\Storage\APCng;
-use Prometheus\Storage\InMemory;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -48,9 +40,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $this->loadSemConv($config['resource'], $container);
         $this->loadHttp($container);
 
-        if ($this->isConfigEnabled($container, $config['health'])) {
-            $this->loadHealth($config['health'], $container);
-        }
         if ($this->isConfigEnabled($container, $config['baggage'])) {
             $this->loadBaggage($config['baggage'], $container);
         }
@@ -70,9 +59,9 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         if ($container->hasExtension('monolog')) {
             $container->prependExtensionConfig('monolog', [
                 'handlers' => [
-                    'tracing' => [
+                    'otel' => [
                         'type' => 'service',
-                        'id' => TracingHandler::class,
+                        'id' => OtelHandler::class,
                     ],
                 ],
             ]);
@@ -89,38 +78,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
     public function process(ContainerBuilder $container): void
     {
-        if ($container->hasParameter('tracing.request.blacklist')) {
-            /** @var array<string> $tracingBlacklist */
-            $tracingBlacklist = $container->getParameter('tracing.request.blacklist');
-            /** @var array<string> $appPathBlacklist */
-            $appPathBlacklist = $container->getParameter('app.path_blacklist');
-
-            $container->setParameter('tracing.request.blacklist', array_merge($tracingBlacklist, $appPathBlacklist));
-        }
-
-        if ($container->hasDefinition(RegistryInterface::class)) {
-            $metricProviders = $container->findTaggedServiceIds('app.metric');
-
-            /** @var array<string,array<mixed>> $metrics */
-            $metrics = $container->getParameter('metrics.metrics');
-
-            foreach (array_keys($metricProviders) as $serviceId) {
-                $serviceDef = $container->getDefinition($serviceId);
-                /** @var class-string<MetricProviderInterface> $class */
-                $class = $serviceDef->getClass();
-                $providedMetrics = $class::getProvidedMetrics();
-
-                foreach ($providedMetrics as $name => $metric) {
-                    if (isset($metrics[$name])) {
-                        throw new \RuntimeException(\sprintf('A metric named %s is already registered.', $name));
-                    }
-                    $metrics[$name] = $metric;
-                }
-            }
-
-            $container->setParameter('metrics.metrics', $metrics);
-        }
-
         if ($container->hasParameter('tracing.doctrine.connections') && $container->hasParameter('doctrine.connections')) {
             /** @var array<string> $connectionsToTrace */
             $connectionsToTrace = $container->getParameter('tracing.doctrine.connections');
@@ -190,26 +147,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
     /**
      * @param array<mixed> $config
      */
-    protected function loadHealth(array $config, ContainerBuilder $container): void
-    {
-        $loader = $this->getLoader('health', $container);
-
-        $loader->load('health.php');
-
-        $this->addPathToBlacklist($config['path'], $container);
-        $container->setParameter('app.path.healthcheck', $config['path']);
-
-        $container->registerForAutoconfiguration(HealthcheckInterface::class)->addTag('app.healthcheck');
-    }
-
-    /**
-     * @param array<mixed> $config
-     */
     protected function loadBaggage(array $config, ContainerBuilder $container): void
     {
         $loader = $this->getLoader('baggage', $container);
 
-        $loader->load('baggage.php');
         $loader->load('http.php');
         $loader->load('request.php');
         $loader->load('message.php');
@@ -224,12 +165,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $container->setParameter('tracing.request.attributes.server_name', $config['request']['attributes']['server_name']);
         $container->setParameter('tracing.request.attributes.headers', array_map(fn (string $value): string => strtolower($value), $config['request']['attributes']['headers']));
-
-        $container->setParameter('tracing.request.incoming_header.name', $config['request']['incoming_header']['name'] ?? null);
-        $container->setParameter('tracing.request.incoming_header.regex', $config['request']['incoming_header']['regex'] ?? null);
-
-        $container->setParameter('tracing.logs.level', $config['logs']['level']);
-        $container->setParameter('tracing.logs.channels', $config['logs']['channels']);
 
         $loader->load('tracing.php');
         $loader->load('http.php');
@@ -299,52 +234,17 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $loader->load('metrics.php');
 
-        $container->registerForAutoconfiguration(MetricProviderInterface::class)->addTag('app.metric');
-
-        $container->setParameter('app.path.metrics', $config['path']);
-        $this->addPathToBlacklist($config['path'], $container);
-
-        $container->setParameter('metrics.namespace', $config['namespace']);
-
-        $metrics = [];
-        foreach ($config['metrics'] as $metric) {
-            $metrics[$metric['name']] = $metric;
+        if ($this->isConfigEnabled($container, $config['message'])) {
+            $loader->load('message.php');
         }
-
-        $container->setParameter('metrics.metrics', $metrics);
-
-        if ('redis' === $config['storage']['adapter']) {
-            $container->getDefinition(Adapter::class)
-                ->setFactory([
-                    new Reference(HostnamePrefixedRedisFactory::class),
-                    'createFromExistingConnection',
-                ])
-                ->setArguments([new Reference($config['storage']['instance'])]);
-        } else {
-            $map = [
-                'apc' => APC::class,
-                'apcu' => APCng::class,
-                'in_memory' => InMemory::class,
-            ];
-            $container->getDefinition(Adapter::class)->setClass($map[$config['storage']['adapter']]);
+        if ($this->isConfigEnabled($container, $config['request'])) {
+            $container->setParameter('metrics.request.blacklist', $config['request']['blacklist']);
+            $loader->load('request.php');
         }
     }
 
     private function getLoader(string $component, ContainerBuilder $container): PhpFileLoader
     {
         return new PhpFileLoader($container, new FileLocator(__DIR__.'/config/'.$component));
-    }
-
-    private function addPathToBlacklist(string $path, ContainerBuilder $container): void
-    {
-        if (!$container->hasParameter('app.path_blacklist')) {
-            $container->setParameter('app.path_blacklist', []);
-        }
-
-        /** @var array<string> $list */
-        $list = $container->getParameter('app.path_blacklist');
-        $list[] = $path;
-
-        $container->setParameter('app.path_blacklist', array_unique($list));
     }
 }

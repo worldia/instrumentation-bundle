@@ -7,15 +7,9 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Resources;
-
 use Instrumentation\Tracing\Exporter\ResetSpanExporter;
-use Instrumentation\Tracing\Instrumentation\LogHandler\TracingHandler;
 use Instrumentation\Tracing\Instrumentation\MainSpanContext;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
-use Instrumentation\Tracing\Propagation\ForcableIdGenerator;
-use Instrumentation\Tracing\Propagation\IncomingTraceHeaderResolverInterface;
-use Instrumentation\Tracing\Propagation\RegexIncomingTraceHeaderResolver;
 use Instrumentation\Tracing\Sampling\TogglableSampler;
 use Instrumentation\Tracing\Serializer\Normalizer\ErrorNormalizer;
 use Instrumentation\Tracing\TraceUrlGeneratorInterface;
@@ -51,12 +45,6 @@ return static function (ContainerConfigurator $container) {
 
         ->set(IdGeneratorInterface::class, RandomIdGenerator::class)
 
-        ->set(ForcableIdGenerator::class)
-        ->decorate(IdGeneratorInterface::class)
-        ->args([
-            service('.inner'),
-        ])
-
         ->set(SamplerInterface::class)
         ->factory([service(SamplerFactory::class), 'create'])
 
@@ -91,19 +79,7 @@ return static function (ContainerConfigurator $container) {
         ->public()
 
         ->set(MainSpanContextInterface::class, MainSpanContext::class)
-
-        ->set(TracingHandler::class)
-        ->args([
-            service(MainSpanContextInterface::class),
-            param('tracing.logs.level'),
-            param('tracing.logs.channels'),
-        ])
-
-        ->set(IncomingTraceHeaderResolverInterface::class, RegexIncomingTraceHeaderResolver::class)
-        ->args([
-            param('tracing.request.incoming_header.name'),
-            param('tracing.request.incoming_header.regex'),
-        ]);
+    ;
 
     if (class_exists(Serializer::class)) {
         $container->services()

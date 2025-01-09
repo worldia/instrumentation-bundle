@@ -11,7 +11,6 @@ namespace Instrumentation\Tracing\Instrumentation\Doctrine\DBAL;
 
 use Doctrine\DBAL\Driver\Connection as ConnectionInterface;
 use Doctrine\DBAL\Driver\Result;
-use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\Driver\Statement as StatementInterface;
 use Doctrine\DBAL\ParameterType;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
@@ -22,7 +21,7 @@ use OpenTelemetry\Context\Context;
 use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\Context\ContextKeys;
 
-final class Connection implements ServerInfoAwareConnection
+final class Connection implements ConnectionInterface
 {
     use TracerAwareTrait;
 
@@ -86,15 +85,6 @@ final class Connection implements ServerInfoAwareConnection
     public function rollBack(): bool
     {
         return $this->trace(self::OP_TRANSACTION_ROLLBACK, 'ROLLBACK', fn (): bool => $this->decorated->rollBack());
-    }
-
-    public function getServerVersion(): string
-    {
-        if ($this->decorated instanceof ServerInfoAwareConnection) {
-            return $this->decorated->getServerVersion();
-        }
-
-        return 'unknown';
     }
 
     /**

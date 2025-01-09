@@ -9,25 +9,17 @@ declare(strict_types=1);
 
 namespace Instrumentation\Metrics\EventSubscriber;
 
-use Instrumentation\Metrics\MetricProviderInterface;
-use Instrumentation\Metrics\RegistryInterface;
-use Prometheus\Gauge;
+use OpenTelemetry\API\Metrics\MeterInterface;
+use OpenTelemetry\API\Metrics\MeterProviderInterface;
+use OpenTelemetry\API\Metrics\UpDownCounterInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Event\WorkerStartedEvent;
 use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 
-class ConsumerEventSubscriber implements EventSubscriberInterface, MetricProviderInterface
+class ConsumerEventSubscriber implements EventSubscriberInterface
 {
-    public static function getProvidedMetrics(): array
-    {
-        return [
-            'consumers_active' => [
-                'type' => Gauge::TYPE,
-                'help' => 'Number of active consumers',
-                'labels' => ['queue'],
-            ],
-        ];
-    }
+    private MeterInterface $meter;
+    private UpDownCounterInterface|null $counter = null;
 
     public static function getSubscribedEvents(): array
     {
@@ -37,26 +29,27 @@ class ConsumerEventSubscriber implements EventSubscriberInterface, MetricProvide
         ];
     }
 
-    public function __construct(private RegistryInterface $registry)
+    public function __construct(private readonly MeterProviderInterface $meterProvider)
     {
+        $this->meter = $this->meterProvider->getMeter('instrumentation');
     }
 
     public function onStart(WorkerStartedEvent $event): void
     {
-        $labels = [$this->getQueueLabel($event)];
-        $this->registry->getGauge('consumers_active')->inc($labels);
+        $this->counter = $this->meter->createUpDownCounter('consumers_active', null, 'Number of active consumers');
+
+        $this->counter->add(-1, ['queue' => $this->getQueueAttribute($event)]);
     }
 
     public function onStop(WorkerStoppedEvent $event): void
     {
-        $labels = [$this->getQueueLabel($event)];
-        $this->registry->getGauge('consumers_active')->dec($labels);
+        $this->counter?->add(-1, ['queue' => $this->getQueueAttribute($event)]);
     }
 
     /**
      * @param WorkerStoppedEvent|WorkerStartedEvent $event
      */
-    private function getQueueLabel($event): string
+    private function getQueueAttribute($event): string
     {
         if ($queues = $event->getWorker()->getMetadata()->getQueueNames()) {
             return implode(',', $queues);

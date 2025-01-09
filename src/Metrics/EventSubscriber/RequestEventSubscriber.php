@@ -9,66 +9,31 @@ declare(strict_types=1);
 
 namespace Instrumentation\Metrics\EventSubscriber;
 
-use Instrumentation\Metrics\MetricProviderInterface;
-use Instrumentation\Metrics\RegistryInterface;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
-use Prometheus\Counter;
-use Prometheus\Gauge;
-use Prometheus\Histogram;
+use OpenTelemetry\API\Metrics\MeterInterface;
+use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-class RequestEventSubscriber implements EventSubscriberInterface, MetricProviderInterface
+class RequestEventSubscriber implements EventSubscriberInterface
 {
-    public static function getProvidedMetrics(): array
-    {
-        return [
-            'requests_handled_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Total requests handled by this instance',
-            ],
-            'requests_handling' => [
-                'type' => Gauge::TYPE,
-                'help' => 'Number of requests this instance is currently handling',
-            ],
-            'response_codes_total' => [
-                'type' => Counter::TYPE,
-                'help' => 'Number of requests per status code',
-                'labels' => ['code', 'operation'],
-            ],
-            'response_times_seconds' => [
-                'type' => Histogram::TYPE,
-                'help' => 'Distribution of response times in seconds',
-                'buckets' => Histogram::getDefaultBuckets(),
-            ],
-        ];
-    }
+    private MeterInterface $meter;
 
     /**
      * @param array<string> $blacklist
      */
-    public function __construct(private RegistryInterface $registry, private array $blacklist, private MainSpanContextInterface|null $mainSpanContext = null)
+    public function __construct(private readonly MeterProviderInterface $meterProvider, private array $blacklist, private MainSpanContextInterface|null $mainSpanContext = null)
     {
+        $this->meter = $this->meterProvider->getMeter('instrumentation');
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => [['onRequest', 9999]],
             KernelEvents::TERMINATE => [['onTerminate', 8092]],
         ];
-    }
-
-    public function onRequest(Event\RequestEvent $event): void
-    {
-        if (!$event->isMainRequest() || $this->isBlacklisted($event->getRequest())) {
-            return;
-        }
-
-        $this->registry->getCounter('requests_handled_total')->inc();
-        $this->registry->getGauge('requests_handling')->inc();
     }
 
     public function onTerminate(Event\TerminateEvent $event): void
@@ -81,9 +46,9 @@ class RequestEventSubscriber implements EventSubscriberInterface, MetricProvider
         $code = \sprintf('%sxx', substr((string) $event->getResponse()->getStatusCode(), 0, 1));
         $operation = $this->mainSpanContext?->getOperationName() ?: 'unknown';
 
-        $this->registry->getGauge('requests_handling')->dec();
-        $this->registry->getHistogram('response_times_seconds')->observe($time);
-        $this->registry->getCounter('response_codes_total')->inc([$code, $operation]);
+        $this->meter->createCounter('requests_handled_total', null, 'Total requests handled by this instance')->add(1);
+        $this->meter->createHistogram('response_times_seconds', 's', 'Distribution of response times in seconds')->record($time);
+        $this->meter->createCounter('response_codes_total', null, 'Number of requests per status code')->add(1, ['code' => $code, 'operation' => $operation]);
     }
 
     private function isBlacklisted(Request $request): bool

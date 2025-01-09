@@ -7,24 +7,22 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
+use Instrumentation\Metrics;
+use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
-use OpenTelemetry\SDK\Metrics\MeterProviderFactory;
-use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
-        ->set(MeterProviderFactory::class)
+        ->set(Metrics\EventSubscriber\RequestEventSubscriber::class)
+        ->autoconfigure()
         ->args([
-            null,
-            service(ResourceInfo::class),
+            service(MeterProviderInterface::class),
+            param('metrics.request.blacklist'),
+            service(MainSpanContextInterface::class)->nullOnInvalid(),
         ])
-        ->set(MeterProviderInterface::class)
-        ->factory([service(MeterProviderFactory::class), 'create'])
-        ->args(['$resource' => service(ResourceInfo::class)])
-        ->lazy(false)
-        ->public()
     ;
 };

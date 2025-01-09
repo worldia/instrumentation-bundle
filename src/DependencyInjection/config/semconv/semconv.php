@@ -7,8 +7,6 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Resources;
-
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProvider;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\MessageAttributeProvider;

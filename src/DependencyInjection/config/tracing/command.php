@@ -7,8 +7,6 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-namespace Instrumentation\Resources;
-
 use Instrumentation\Semantics;
 use Instrumentation\Tracing\Instrumentation;
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;

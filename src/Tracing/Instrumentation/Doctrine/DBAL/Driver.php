@@ -20,7 +20,7 @@ use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInter
 use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 
-final class Driver implements VersionAwarePlatformDriver
+final class Driver implements DriverInterface
 {
     public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private DriverInterface $decorated, private MainSpanContextInterface $mainSpanContext, private bool $logQueries)
     {
@@ -55,7 +55,7 @@ final class Driver implements VersionAwarePlatformDriver
         return $this->decorated->getExceptionConverter();
     }
 
-    public function createDatabasePlatformForVersion($version)
+    public function createDatabasePlatformForVersion(string $version): AbstractPlatform
     {
         if ($this->decorated instanceof VersionAwarePlatformDriver) {
             return $this->decorated->createDatabasePlatformForVersion($version);

@@ -7,24 +7,23 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
+use Instrumentation\Metrics;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
-use OpenTelemetry\SDK\Metrics\MeterProviderFactory;
-use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
-        ->set(MeterProviderFactory::class)
+        ->set(Metrics\EventSubscriber\MessageEventSubscriber::class)
+        ->autoconfigure()
         ->args([
-            null,
-            service(ResourceInfo::class),
+            service(MeterProviderInterface::class),
         ])
-        ->set(MeterProviderInterface::class)
-        ->factory([service(MeterProviderFactory::class), 'create'])
-        ->args(['$resource' => service(ResourceInfo::class)])
-        ->lazy(false)
-        ->public()
+        ->set(Metrics\EventSubscriber\ConsumerEventSubscriber::class)
+        ->autoconfigure()
+        ->args([
+            service(MeterProviderInterface::class),
+        ])
     ;
 };
