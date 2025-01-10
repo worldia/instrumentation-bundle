@@ -1,0 +1,14 @@
+doctrine:
+  dbal:
+    url: "%env(resolve:DATABASE_URL)%"
+    use_savepoints: true
+  orm:
+    identity_generation_preferences:
+      Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
+    mappings:
+      App:
+        type: attribute
+        is_bundle: false
+        dir: "%kernel.project_dir%/src/Doctrine/Entity"
+        prefix: 'App\Doctrine\Entity'
+        alias: App

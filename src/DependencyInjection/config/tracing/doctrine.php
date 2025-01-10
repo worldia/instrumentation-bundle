@@ -8,8 +8,8 @@ declare(strict_types=1);
  */
 
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
-use Instrumentation\Tracing;
-use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
+use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
+use Instrumentation\Tracing\Doctrine;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -20,7 +20,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
-        ->set(Tracing\Instrumentation\Doctrine\DBAL\Middleware::class)
+        ->set(Doctrine\Instrumentation\DBAL\Middleware::class)
         ->args([
             service(TracerProviderInterface::class),
             service(DoctrineConnectionAttributeProviderInterface::class),
@@ -28,12 +28,12 @@ return static function (ContainerConfigurator $container) {
             param('tracing.doctrine.log_queries'),
         ])
 
-        ->set(Tracing\Propagation\Doctrine\DBAL\Middleware::class)
+        ->set(Doctrine\Propagation\DBAL\Middleware::class)
         ->args([
-            service(Tracing\Propagation\Doctrine\TraceContextInfoProviderInterface::class),
+            service(Doctrine\Propagation\TraceContextInfoProviderInterface::class),
         ])
 
-        ->set(Tracing\Propagation\Doctrine\TraceContextInfoProviderInterface::class, Tracing\Propagation\Doctrine\TraceContextInfoProvider::class)
+        ->set(Doctrine\Propagation\TraceContextInfoProviderInterface::class, Doctrine\Propagation\TraceContextInfoProvider::class)
         ->args([
             service(ResourceInfo::class),
             service(MainSpanContextInterface::class),

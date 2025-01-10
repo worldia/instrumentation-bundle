@@ -1,0 +1,37 @@
+include:
+  - ./docker/telemetry/docker-compose.yaml
+
+services:
+  caddy:
+    build:
+      context: docker/caddy
+    environment:
+      - OTEL_SERVICE_NAME=test-app
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - .:/app/example
+
+  php:
+    build:
+      context: docker/php
+    environment:
+      - OTEL_SERVICE_NAME=test-app
+      - OTEL_PHP_DETECTORS=none
+      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=Delta
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+    volumes:
+      - ..:/app
+
+  rabbitmq:
+    image: rabbitmq:alpine
+
+  postgresql:
+    image: postgres:alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
+      POSTGRES_USER: ${POSTGRES_USER:-app}

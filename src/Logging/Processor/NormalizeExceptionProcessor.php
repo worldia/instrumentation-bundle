@@ -16,8 +16,9 @@ class NormalizeExceptionProcessor implements ProcessorInterface
     public function __invoke(LogRecord $record): LogRecord
     {
         if (isset($record->context['exception']) && $record->context['exception'] instanceof \Throwable) {
-            // @phpstan-ignore-next-line
-            $record->context['exception'] = ExceptionNormalizer::normalizeException($record->context['exception']);
+            return $record->with(context: array_replace($record->context, [
+                'exception' => ExceptionNormalizer::normalizeException($record->context['exception']),
+            ]));
         }
 
         return $record;

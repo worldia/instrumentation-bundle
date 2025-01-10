@@ -7,6 +7,8 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
+use Instrumentation\Semantics\Attribute\ClientRequestAttributeProvider;
+use Instrumentation\Semantics\Attribute\ClientRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProvider;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\MessageAttributeProvider;
@@ -52,6 +54,7 @@ return static function (ContainerConfigurator $container) {
         ])
         ->set(ServerResponseAttributeProviderInterface::class, ServerResponseAttributeProvider::class)
         ->set(MessageAttributeProviderInterface::class, MessageAttributeProvider::class)
+        ->set(ClientRequestAttributeProviderInterface::class, ClientRequestAttributeProvider::class)
         ->set(DoctrineConnectionAttributeProviderInterface::class, DoctrineConnectionAttributeProvider::class)
 
         ->set(ClientRequestOperationNameResolverInterface::class, ClientRequestOperationNameResolver::class)

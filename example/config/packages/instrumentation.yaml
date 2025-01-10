@@ -1,0 +1,11 @@
+instrumentation:
+  tracing:
+    doctrine:
+      instrumentation: true
+      propagation: true
+      log_queries: true
+  metrics:
+    request:
+      enabled: true
+    message:
+      enabled: true

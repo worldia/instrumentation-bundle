@@ -22,7 +22,8 @@ class RequestEventSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => [['onRequest', 1001]],
+            KernelEvents::REQUEST => [['onRequest', 256]],
+            KernelEvents::TERMINATE => [['onTerminate', -256]],
         ];
     }
 

@@ -7,13 +7,13 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-use Instrumentation\Tracing\Exporter\ResetSpanExporter;
-use Instrumentation\Tracing\Instrumentation\MainSpanContext;
-use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
-use Instrumentation\Tracing\Sampling\TogglableSampler;
-use Instrumentation\Tracing\Serializer\Normalizer\ErrorNormalizer;
-use Instrumentation\Tracing\TraceUrlGeneratorInterface;
-use Instrumentation\Tracing\Twig\Extension\TracingExtension;
+use Instrumentation\Tracing\Bridge\Exporter\ResetSpanExporter;
+use Instrumentation\Tracing\Bridge\MainSpanContext;
+use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
+use Instrumentation\Tracing\Bridge\Sampling\TogglableSampler;
+use Instrumentation\Tracing\Bridge\Serializer\Normalizer\ErrorNormalizer;
+use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
+use Instrumentation\Tracing\Bridge\Twig\Extension\TracingExtension;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SDK\Trace\ExporterFactory;

@@ -10,10 +10,10 @@ declare(strict_types=1);
 namespace Instrumentation\DependencyInjection;
 
 use Instrumentation\Logging\OtelHandler;
-use Instrumentation\Tracing\Instrumentation\Doctrine\DBAL\Middleware as InstrumentationMiddleware;
-use Instrumentation\Tracing\Propagation\Doctrine\DBAL\Middleware as PropagationMiddleware;
-use Instrumentation\Tracing\TraceUrlGenerator;
-use Instrumentation\Tracing\TraceUrlGeneratorInterface;
+use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
+use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
+use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\Middleware as InstrumentationMiddleware;
+use Instrumentation\Tracing\Doctrine\Propagation\DBAL\Middleware as PropagationMiddleware;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -37,17 +37,17 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
+        $container->setParameter('instrumentation.default_service_name', 'app');
+        $container->setParameter('service.name', $config['resource']['service.name']);
+
         $this->loadSemConv($config['resource'], $container);
-        $this->loadHttp($container);
+        $this->loadLogging($config['logging'], $container);
 
         if ($this->isConfigEnabled($container, $config['baggage'])) {
             $this->loadBaggage($config['baggage'], $container);
         }
         if ($this->isConfigEnabled($container, $config['tracing'])) {
             $this->loadTracing($config['tracing'], $container);
-        }
-        if ($this->isConfigEnabled($container, $config['logging'])) {
-            $this->loadLogging($config['logging'], $container);
         }
         if ($this->isConfigEnabled($container, $config['metrics'])) {
             $this->loadMetrics($config['metrics'], $container);
@@ -70,7 +70,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         if ($container->hasExtension('twig')) {
             $container->prependExtensionConfig('twig', [
                 'paths' => [
-                    __DIR__.'/../Tracing/Twig/Templates' => 'Twig',
+                    __DIR__.'/../Tracing/Bridge/Twig/Templates' => 'Twig',
                 ],
             ]);
         }
@@ -137,13 +137,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('tracing.request.attributes.headers', []);
     }
 
-    protected function loadHttp(ContainerBuilder $container): void
-    {
-        $loader = $this->getLoader('http', $container);
-
-        $loader->load('http.php');
-    }
-
     /**
      * @param array<mixed> $config
      */
@@ -165,6 +158,8 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $container->setParameter('tracing.request.attributes.server_name', $config['request']['attributes']['server_name']);
         $container->setParameter('tracing.request.attributes.headers', array_map(fn (string $value): string => strtolower($value), $config['request']['attributes']['headers']));
+        $container->setParameter('tracing.message.flush_spans_after_handling', $config['message']['flush_spans_after_handling']);
+        $container->setParameter('tracing.http.propagate_by_default', $config['http']['propagate_by_default']);
 
         $loader->load('tracing.php');
         $loader->load('http.php');
@@ -205,24 +200,9 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
     {
         $loader = $this->getLoader('logging', $container);
 
+        $container->setParameter('logging.enabled', $this->isConfigEnabled($container, $config));
+
         $loader->load('logging.php');
-
-        $map = [];
-        foreach ($config['keys'] as $property => $key) {
-            /** @var array<string> $keys */
-            $keys = preg_split('/(?<!\\\)\./', $key);
-            $keys = array_map(fn (string $key) => str_replace('\.', '.', $key), $keys);
-            $map[$property] = $keys;
-        }
-
-        foreach ($config['handlers'] as $handler) {
-            if ($container->hasDefinition(\sprintf('monolog.handler.%s', $handler))) {
-                $container->getDefinition(\Instrumentation\Logging\Processor\TraceContextProcessor::class)
-                    ->addTag('monolog.processor', ['handler' => $handler]);
-            }
-        }
-
-        $container->setParameter('logging.trace_context_keys', $map);
     }
 
     /**

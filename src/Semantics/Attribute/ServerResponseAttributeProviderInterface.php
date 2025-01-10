@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 interface ServerResponseAttributeProviderInterface
 {
     /**
-     * @return array<string,string>
+     * @return array<string,string|int>
      */
     public function getAttributes(Response $response): array;
 }

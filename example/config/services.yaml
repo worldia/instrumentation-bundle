@@ -1,0 +1,14 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  App\:
+    resource: "../src/"
+    exclude:
+      - "../src/DependencyInjection/"
+      - "../src/Doctrine/Entity/"
+      - "../src/Kernel.php"
+
+  Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface:
+    class: App\Otel\GrafanaTraceUrlGenerator

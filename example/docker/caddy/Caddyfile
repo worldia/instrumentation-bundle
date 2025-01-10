@@ -1,0 +1,31 @@
+{
+	cache {
+		default_cache_control no-store
+	}
+}
+:80, :443 {
+	root * /app/example/public
+
+	log_append span_name {http.response.header.x-span-name}
+	log {
+		output net tcp/otel-collector:54525 {
+			soft_start
+		}
+
+		format transform `\{"timestamp":"{ts}","service":"{$OTEL_SERVICE_NAME}","scope_name":"caddy","logger":"{logger}","severity":"{level}","msg":"{msg}","service.instance.id":"{system.hostname}","http.response.status_code":"{status}","http.request.method":"{request>method}","url.full":"{request>uri}","http.response.size":"{size}","user_agent.original":"{request>headers>User-Agent>[0]}","network.peer.address":"{request>headers>X-Forwarded-For>[0]:request>remote_ip}","network.protocol.name":"{request>proto}","referer":"{request>headers>Referer>[0]}","latency":"{duration}","cache_hit":"{cacheHit}","span_name":"{span_name}","trace_id":"{traceID}"\}` {
+			time_format unix_nano
+		}
+	}
+
+	cache
+	tracing
+	update_span_name "x-span-name"
+
+	php_fastcgi php:9000 {
+		trusted_proxies private_ranges
+		capture_stderr
+	}
+
+	file_server
+	encode gzip
+}

@@ -9,14 +9,14 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\OperationName;
 
-use Instrumentation\Tracing\Instrumentation\Messenger\OperationNameStamp;
+use Instrumentation\Tracing\Messenger\Stamp\OperationNameStamp;
 use Symfony\Component\Messenger\Envelope;
 
 class MessageOperationNameResolver implements MessageOperationNameResolverInterface
 {
     public function getOperationName(Envelope $envelope, string $operation): string
     {
-        $name = \get_class($envelope->getMessage());
+        $name = str_replace('\\', '.', \get_class($envelope->getMessage()));
 
         /** @var OperationNameStamp|null $stamp */
         $stamp = $envelope->last(OperationNameStamp::class);
@@ -25,6 +25,6 @@ class MessageOperationNameResolver implements MessageOperationNameResolverInterf
             $name = $stamp->getOperationName();
         }
 
-        return \sprintf('message.%s %s', $name, $operation);
+        return \sprintf('message %s %s', $name, $operation);
     }
 }

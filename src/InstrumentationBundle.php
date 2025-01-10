@@ -51,8 +51,5 @@ class InstrumentationBundle extends Bundle
         if (method_exists($meterProvider, 'shutdown')) {
             ShutdownHandler::register([$meterProvider, 'shutdown']);
         }
-        if (method_exists($meterProvider, 'forceFlush')) {
-            ShutdownHandler::register([$meterProvider, 'forceFlush']);
-        }
     }
 }

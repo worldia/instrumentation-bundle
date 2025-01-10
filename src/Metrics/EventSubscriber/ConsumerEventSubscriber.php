@@ -38,7 +38,7 @@ class ConsumerEventSubscriber implements EventSubscriberInterface
     {
         $this->counter = $this->meter->createUpDownCounter('consumers_active', null, 'Number of active consumers');
 
-        $this->counter->add(-1, ['queue' => $this->getQueueAttribute($event)]);
+        $this->counter->add(1, ['queue' => $this->getQueueAttribute($event)]);
     }
 
     public function onStop(WorkerStoppedEvent $event): void

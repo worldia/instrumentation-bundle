@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Metrics\EventSubscriber;
 
-use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
+use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use OpenTelemetry\API\Metrics\MeterInterface;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -42,13 +42,9 @@ class RequestEventSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $time = microtime(true) - $event->getRequest()->server->get('REQUEST_TIME_FLOAT');
-        $code = \sprintf('%sxx', substr((string) $event->getResponse()->getStatusCode(), 0, 1));
         $operation = $this->mainSpanContext?->getOperationName() ?: 'unknown';
 
-        $this->meter->createCounter('requests_handled_total', null, 'Total requests handled by this instance')->add(1);
-        $this->meter->createHistogram('response_times_seconds', 's', 'Distribution of response times in seconds')->record($time);
-        $this->meter->createCounter('response_codes_total', null, 'Number of requests per status code')->add(1, ['code' => $code, 'operation' => $operation]);
+        $this->meter->createGauge('memory_usage_bytes', null, 'Memory usage of the request')->record(memory_get_peak_usage(), ['operation' => $operation]);
     }
 
     private function isBlacklisted(Request $request): bool

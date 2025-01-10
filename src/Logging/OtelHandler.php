@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Logging;
 
+use Instrumentation\Logging\Processor\NormalizeExceptionProcessor;
 use Monolog\Formatter\FormatterInterface;
 use Monolog\Formatter\NormalizerFormatter;
 use Monolog\Handler\AbstractProcessingHandler;
@@ -25,10 +26,11 @@ class OtelHandler extends AbstractProcessingHandler
      **/
     private array $loggers = [];
 
-    public function __construct(private readonly API\LoggerProviderInterface $loggerProvider, Level $level, bool $bubble = true)
+    public function __construct(private readonly bool $enabled, private readonly API\LoggerProviderInterface $loggerProvider, Level $level, bool $bubble = true)
     {
         parent::__construct($level, $bubble);
 
+        $this->pushProcessor(new NormalizeExceptionProcessor());
         $this->pushProcessor(new PsrLogMessageProcessor());
     }
 
@@ -48,6 +50,10 @@ class OtelHandler extends AbstractProcessingHandler
 
     protected function write(LogRecord $record): void
     {
+        if (!$this->enabled) {
+            return;
+        }
+
         $formatted = $record['formatted'];
         $logRecord = (new API\LogRecord())
             ->setTimestamp((int) $record['datetime']->format('Uu') * 1000) // @phpstan-ignore-line
@@ -55,6 +61,13 @@ class OtelHandler extends AbstractProcessingHandler
             ->setSeverityText($record['level_name']) // @phpstan-ignore-line
             ->setBody($formatted['message']) // @phpstan-ignore-line
         ;
+
+        if (isset($formatted['context']['exception'])) {
+            foreach ($formatted['context']['exception'] as $key => $value) {
+                $logRecord->setAttribute($key, $value);
+            }
+            unset($formatted['context']['exception']);
+        }
 
         foreach (['context', 'extra'] as $key) {
             if (isset($formatted[$key]) && \count($formatted[$key]) > 0) { // @phpstan-ignore-line

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\Attribute;
 
-use Instrumentation\Http\HttpSensitiveDataHelper;
+use Instrumentation\Tracing\HttpClient\HttpSensitiveDataHelper;
 use OpenTelemetry\SemConv\TraceAttributes;
 
 class ClientRequestAttributeProvider implements ClientRequestAttributeProviderInterface
@@ -47,9 +47,8 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
 
         $attributes += [
             TraceAttributes::URL_PATH => $components['path'] ?? null,
-            TraceAttributes::URL_PORT => $components['host'] ?? null,
             TraceAttributes::URL_SCHEME => $components['scheme'] ?? null,
-            TraceAttributes::SERVER_PORT => isset($components['port']) ? (string) $components['port'] : null,
+            TraceAttributes::URL_PORT => isset($components['port']) ? (string) $components['port'] : null,
         ];
 
         return array_filter($attributes);

@@ -8,9 +8,9 @@ declare(strict_types=1);
  */
 
 use Instrumentation\Semantics;
-use Instrumentation\Tracing\Instrumentation;
-use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
-use Instrumentation\Tracing\Sampling;
+use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
+use Instrumentation\Tracing\Bridge\Sampling;
+use Instrumentation\Tracing\Command;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -19,7 +19,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
-        ->set(Instrumentation\EventSubscriber\CommandEventSubscriber::class)
+        ->set(Command\EventListener\CommandEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
             service(MainSpanContextInterface::class),
@@ -33,7 +33,7 @@ return static function (ContainerConfigurator $container) {
         ])
         ->autoconfigure()
 
-        ->set(Sampling\EventSubscriber\CommandEventSubscriber::class)
+        ->set(Sampling\EventListener\CommandEventSubscriber::class)
         ->args([
             service(Sampling\TogglableSampler::class),
             service(Sampling\Voter\CommandVoterInterface::class),

@@ -1,0 +1,80 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    version: 1
+    editable: false
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    version: 1
+    editable: true
+    jsonData:
+      httpHeaderName1: "X-Scope-OrgID"
+    secureJsonData:
+      httpHeaderValue1: "tenant1"
+  - name: Tempo
+    type: tempo
+    access: proxy
+    orgId: 1
+    url: http://tempo:3200
+    basicAuth: false
+    isDefault: true
+    version: 1
+    editable: true
+    apiVersion: 1
+    uid: tempo
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+      streamingEnabled: true
+      search: true
+      tracesToLogsV2:
+        datasourceUid: "loki"
+        spanStartTimeShift: "-1m"
+        spanEndTimeShift: "1m"
+        filterByTraceID: true
+        filterBySpanID: false
+      tracesToMetrics:
+        datasourceUid: "prometheus"
+        spanStartTimeShift: "-1m"
+        spanEndTimeShift: "1m"
+        tags: [{ key: "service.name", value: "service_name" }]
+        queries:
+          - name: "Request rate"
+            query: 'rate(traces_span_metrics_calls_total{span_name="$${__span.name}",$$__tags}[$$__rate_interval])'
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    orgId: 1
+    url: http://jaeger:16686
+    basicAuth: false
+    version: 1
+    editable: true
+    apiVersion: 1
+    uid: jaeger
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: "loki"
+        spanStartTimeShift: "-1m"
+        spanEndTimeShift: "1m"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags: [{ key: "component", value: "service_name" }]
+        customQuery: true
+        query: '{$${__tags}}|trace_id="$${__trace.traceId}"'
+      tracesToMetrics:
+        datasourceUid: "prometheus"
+        spanStartTimeShift: "-1m"
+        spanEndTimeShift: "1m"
+        tags: [{ key: "component", value: "service_name" }]
+        queries:
+          - name: "Request rate"
+            query: 'rate(traces_span_metrics_calls_total{span_name="$${__span.name}",$$__tags}[$$__rate_interval])'

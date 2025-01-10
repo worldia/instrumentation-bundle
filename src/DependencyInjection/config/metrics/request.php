@@ -8,7 +8,7 @@ declare(strict_types=1);
  */
 
 use Instrumentation\Metrics;
-use Instrumentation\Tracing\Instrumentation\MainSpanContextInterface;
+use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 

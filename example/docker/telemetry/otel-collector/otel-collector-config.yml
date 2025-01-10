@@ -1,0 +1,132 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ":4317"
+      http:
+        endpoint: ":4318"
+  tcplog:
+    listen_address: "0.0.0.0:54525"
+    operators:
+      - type: json_parser
+        if: body matches "^{.*}$"
+        timestamp:
+          parse_from: attributes.timestamp
+          layout_type: epoch
+          layout: ns
+        severity:
+          parse_from: attributes.severity
+      - type: move
+        from: attributes.service
+        to: resource["service.name"]
+      - type: move
+        from: attributes.msg
+        to: body
+
+exporters:
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+    target_info:
+      enabled: true
+    resource_to_telemetry_conversion:
+      enabled: true
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  debug:
+    verbosity: detailed
+
+connectors:
+  routing/traces:
+    match_once: true
+    error_mode: ignore
+    default_pipelines: [traces/without-metrics]
+    table:
+      - context: resource
+        condition: attributes["webengine.name"] == "Caddy"
+        pipelines: [traces/with-metrics]
+      # - context: span
+      #   condition: attributes["messaging.operation"] == "process"
+      #   pipelines: [traces/with-metrics]
+      # - context: span
+      #   condition: attributes["process.command"] != nil
+      #   pipelines: [traces/with-metrics]
+      - context: span
+        condition: kind != SPAN_KIND_INTERNAL and kind != SPAN_KIND_SERVER
+        pipelines: [traces/with-metrics]
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [10ms, 100ms, 250ms, 500ms, 1s, 5s, 10s]
+    dimensions:
+      - name: http.method
+        default: GET
+      - name: http.status_code
+      - name: cache.hit
+    exemplars:
+      enabled: true
+    metrics_flush_interval: 15s
+    metrics_expiration: 5m
+    events:
+      enabled: true
+      dimensions:
+        - name: exception.type
+        - name: exception.message
+    resource_metrics_key_attributes:
+      - service.name
+
+processors:
+  deltatocumulative:
+  resourcedetection/system:
+    detectors: ["system"]
+    system:
+      hostname_sources: ["os"]
+  resource/service-instance:
+    attributes:
+      - key: service.instance.id
+        from_attribute: host.name
+        action: insert
+  transform/add-component-for-jaeger:
+    error_mode: ignore
+    trace_statements:
+      - context: resource
+        statements:
+          - set(attributes["component"], attributes["service.name"])
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors:
+        - resourcedetection/system
+        - resource/service-instance
+        - transform/add-component-for-jaeger
+      exporters: [routing/traces]
+    traces/without-metrics:
+      receivers: [routing/traces]
+      exporters: [otlp/tempo, otlp/jaeger]
+    traces/with-metrics:
+      receivers: [routing/traces]
+      exporters: [otlp/tempo, otlp/jaeger, spanmetrics]
+
+    metrics:
+      receivers: [otlp, spanmetrics]
+      processors:
+        - resourcedetection/system
+        - resource/service-instance
+        - deltatocumulative
+      exporters: [prometheusremotewrite]
+
+    logs:
+      receivers: [otlp, tcplog]
+      processors:
+        - resourcedetection/system
+        - resource/service-instance
+      exporters: [otlphttp/loki]

@@ -23,10 +23,10 @@ class MessengerEventSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            SendMessageToTransportsEvent::class => [['onSend', 1000]],
-            WorkerMessageReceivedEvent::class => [['onConsume', 1001]],
-            WorkerMessageHandledEvent::class => [['onHandled', -512]],
-            WorkerMessageFailedEvent::class => [['onHandled', -512]],
+            SendMessageToTransportsEvent::class => [['onSend', 256]],
+            WorkerMessageReceivedEvent::class => [['onConsume', 256]],
+            WorkerMessageHandledEvent::class => [['onHandled', -256]],
+            WorkerMessageFailedEvent::class => [['onHandled', -256]],
         ];
     }
 

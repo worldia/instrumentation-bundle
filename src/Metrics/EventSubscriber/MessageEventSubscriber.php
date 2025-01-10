@@ -7,13 +7,13 @@
 
 namespace Instrumentation\Metrics\EventSubscriber;
 
-use Instrumentation\Tracing\Instrumentation\Messenger\AbstractDateTimeStamp;
-use Instrumentation\Tracing\Instrumentation\Messenger\ConsumedAtStamp;
-use Instrumentation\Tracing\Instrumentation\Messenger\HandledAtStamp;
-use Instrumentation\Tracing\Instrumentation\Messenger\SentAtStamp;
-use OpenTelemetry\API\Metrics\GaugeInterface;
+use Instrumentation\Tracing\Messenger\Stamp\AbstractDateTimeStamp;
+use Instrumentation\Tracing\Messenger\Stamp\ConsumedAtStamp;
+use Instrumentation\Tracing\Messenger\Stamp\HandledAtStamp;
+use Instrumentation\Tracing\Messenger\Stamp\SentAtStamp;
 use OpenTelemetry\API\Metrics\MeterInterface;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
+use OpenTelemetry\API\Metrics\UpDownCounterInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\AbstractWorkerMessageEvent;
@@ -25,7 +25,7 @@ use Symfony\Component\Messenger\Stamp\BusNameStamp;
 class MessageEventSubscriber implements EventSubscriberInterface
 {
     private MeterInterface $meter;
-    private GaugeInterface|null $handlingGauge = null;
+    private UpDownCounterInterface|null $handlingCounter = null;
 
     public static function getSubscribedEvents(): array
     {
@@ -45,8 +45,8 @@ class MessageEventSubscriber implements EventSubscriberInterface
     {
         $attributes = $this->getAttributes($event->getEnvelope());
 
-        $this->handlingGauge = $this->meter->createGauge('messages_handling', null, 'Number of messages this instance is currently handling');
-        $this->handlingGauge->record(1, $attributes);
+        $this->handlingCounter = $this->meter->createUpDownCounter('messages_handling', null, 'Number of messages this instance is currently handling');
+        $this->handlingCounter->add(1, $attributes);
 
         if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), SentAtStamp::class, ConsumedAtStamp::class)) {
             return;
@@ -72,7 +72,7 @@ class MessageEventSubscriber implements EventSubscriberInterface
         $attributes = $this->getAttributes($event->getEnvelope());
         $this->meter->createCounter('messages_'.$counter.'_total')->add(1, $attributes);
 
-        $this->handlingGauge?->record(-1, $attributes);
+        $this->handlingCounter?->add(-1, $attributes);
 
         if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), ConsumedAtStamp::class, HandledAtStamp::class)) {
             return;

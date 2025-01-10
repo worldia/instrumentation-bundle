@@ -9,8 +9,9 @@ declare(strict_types=1);
 
 use Instrumentation\Semantics;
 use Instrumentation\Tracing;
+use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
+use Instrumentation\Tracing\Bridge\Sampling;
 use Instrumentation\Tracing\Instrumentation;
-use Instrumentation\Tracing\Propagation;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -20,35 +21,32 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
-        ->set(Propagation\EventSubscriber\RequestEventSubscriber::class)
-        ->autoconfigure()
-
-        ->set(Instrumentation\EventSubscriber\RequestEventSubscriber::class)
+        ->set(Tracing\Request\EventListener\RequestEventSubscriber::class)
         ->args([
             service(TracerProviderInterface::class),
-            service(Instrumentation\MainSpanContextInterface::class),
+            service(MainSpanContextInterface::class),
             service(Semantics\OperationName\ServerRequestOperationNameResolverInterface::class),
             service(Semantics\Attribute\ServerRequestAttributeProviderInterface::class),
             service(Semantics\Attribute\ServerResponseAttributeProviderInterface::class),
         ])
         ->autoconfigure()
 
-        ->set(Tracing\Sampling\Voter\RequestVoterInterface::class, Tracing\Sampling\Voter\RequestVoter::class)
+        ->set(Sampling\Voter\RequestVoterInterface::class, Sampling\Voter\RequestVoter::class)
         ->args([
             param('tracing.request.blacklist'),
             param('tracing.request.methods'),
         ])
         ->autoconfigure()
-        ->set(Tracing\Sampling\EventSubscriber\RequestEventSubscriber::class)
+        ->set(Sampling\EventListener\RequestEventSubscriber::class)
         ->args([
-            service(Tracing\Sampling\TogglableSampler::class),
-            service(Tracing\Sampling\Voter\RequestVoterInterface::class),
+            service(Sampling\TogglableSampler::class),
+            service(Sampling\Voter\RequestVoterInterface::class),
         ])
         ->autoconfigure()
 
-        ->set(Instrumentation\EventSubscriber\AddUserEventSubscriber::class)
+        ->set(Tracing\Request\EventListener\AddUserEventSubscriber::class)
         ->args([
-            service(Instrumentation\MainSpanContextInterface::class),
+            service(MainSpanContextInterface::class),
             service(TokenStorageInterface::class)->nullOnInvalid(),
         ])
         ->autoconfigure();

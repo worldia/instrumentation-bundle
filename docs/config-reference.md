@@ -10,54 +10,31 @@ instrumentation:
     resource:
 
         # Default:
-        service.name:        app
+        service.name:        %env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%
 
         # Examples:
-        service.name:        my-instrumented-app
-        service.version:     1.2.3
+        # service.name:        my_instrumented_app
+        # service.version:     1.2.3
     baggage:
-        enabled:              true
-    health:
-        enabled:              true
-        path:                 /_healthz
+        enabled:              false
     logging:
         enabled:              true
-
-        # Handlers to which the trace context processor should be bound
-        handlers:
-
-            # Defaults:
-            - main
-            - console
-        keys:
-            trace:                context.trace
-            span:                 context.span
-            sampled:              context.sampled
-            operation:            context.operation
     tracing:
         enabled:              true
 
         # Allows you to have links to your traces generated in error messages and twig.
         trace_url:            ~ # Example: 'http://localhost:16682/trace/{traceId}'
-        logs:
-
-            # One of the Monolog\Logger levels.
-            level:                200 # One of 100; 200; 250; 300; 400; 500; 550; 600
-            channels:             []
         request:
             enabled:              true
             attributes:
 
                 # Use the primary server name of the matched virtual host
                 server_name:          null # Example: example.com
-                headers:
+                headers:              []
 
                     # Examples:
-                    - accept
-                    - accept-encoding
-            incoming_header:
-                name:                 ~
-                regex:                ~
+                    # - accept
+                    # - accept-encoding
             blacklist:
 
                 # Defaults:
@@ -81,33 +58,27 @@ instrumentation:
                 - ^assets:install$
         message:
             enabled:              true
+            flush_spans_after_handling: true
             blacklist:            []
+        http:
+            enabled:              true
+            propagate_by_default: true
         doctrine:
-            instrumentation:      true
-            propagation:          true
-            log_queries:          true
+            instrumentation:      false
+            propagation:          false
+            log_queries:          false
             connections:          []
     metrics:
         enabled:              true
-        path:                 /metrics
+        message:
+            enabled:              false
+        request:
+            enabled:              false
+            blacklist:
 
-        # Prefix added to all metrics.
-        namespace:            ''
-        storage:
-            adapter:              apcu # One of "apc"; "apcu"; "redis"; "in_memory"
+                # Defaults:
+                - ^/_fragment
+                - ^/_profiler
+                - ^/_wdt
 
-            # When using the redis adapter, set "instance" to a service id that is an instance of \Redis
-            instance:             null
-
-            # Set a prefix for Redis keys to avoid collisions, defaults to "metrics:<hostname>"
-            prefix:               null
-        metrics:
-
-            # Prototype
-            -
-                name:                 ~ # Required
-                help:                 ~ # Required
-                type:                 ~ # One of "gauge"; "counter"; "histogram", Required
-                labels:               []
-                buckets:              []
 ```

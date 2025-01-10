@@ -10,6 +10,7 @@ declare(strict_types=1);
 use Instrumentation\Logging;
 use Monolog\Level;
 use OpenTelemetry\API\Logs\LoggerProviderInterface;
+use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use OpenTelemetry\SDK\Logs\LoggerProviderFactory;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Psr\Log\LoggerInterface;
@@ -25,15 +26,9 @@ return static function (ContainerConfigurator $container) {
         ->lazy(false)
         ->public()
 
-        ->set(Logging\Formatter\JsonFormatter::class)
-        ->alias('monolog.formatter.json', Logging\Formatter\JsonFormatter::class)
-
-        ->set(Logging\Processor\TraceContextProcessor::class)
-        ->args([param('logging.trace_context_keys')])
-
         ->set(LoggerProviderFactory::class)
         ->args([
-            null,
+            service(MeterProviderInterface::class)->nullOnInvalid(),
             service(ResourceInfo::class),
         ])
         ->set(LoggerProviderInterface::class)
@@ -44,6 +39,7 @@ return static function (ContainerConfigurator $container) {
 
         ->set(Logging\OtelHandler::class)
         ->args([
+            '$enabled' => param('logging.enabled'),
             '$loggerProvider' => service(LoggerProviderInterface::class),
             '$level' => Level::Debug,
             '$bubble' => true,

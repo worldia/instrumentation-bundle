@@ -25,13 +25,7 @@ class CurrentTime
     public function __invoke(Request $request): Response
     {
         $ip = $request->getClientIp();
-
-        $span = $this->getTracer()->spanBuilder('http')
-            ->setSpanKind(SpanKind::KIND_CLIENT)
-            ->setAttribute('net.peer.name', 'worldtimeapi.org')
-            ->startSpan();
         $info = $this->httpClient->request('GET', 'http://worldtimeapi.org/api/ip/' . $ip)->toArray();
-        $span->end();
 
         $span = $this->getTracer()->spanBuilder('process')->startSpan();
         $result = sprintf('Current time is %s in timezone "%s".', $info['datetime'], $info['timezone']);

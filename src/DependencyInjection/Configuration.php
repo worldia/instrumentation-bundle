@@ -24,23 +24,19 @@ class Configuration implements ConfigurationInterface
                 ->arrayNode('resource')
                     ->info('Use semantic tags defined in the OpenTelemetry specification (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md)')
                     ->example([
-                        ResourceAttributes::SERVICE_NAME => 'my-instrumented-app',
+                        ResourceAttributes::SERVICE_NAME => 'my_instrumented_app',
                         ResourceAttributes::SERVICE_VERSION => '1.2.3',
                     ])
-                    ->defaultValue([
-                        ResourceAttributes::SERVICE_NAME => 'app',
-                    ])
                     ->scalarPrototype()->end()
-                    ->beforeNormalization()
-                        ->ifTrue(fn ($v) => !isset($v[ResourceAttributes::SERVICE_NAME]))
-                        ->thenInvalid(\sprintf('You must provide the "%s" attribute in resource info.', ResourceAttributes::SERVICE_NAME))
-                    ->end()
+                    ->defaultValue([
+                        ResourceAttributes::SERVICE_NAME => '%env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%',
+                    ])
                 ->end()
 
                 ->arrayNode('baggage')
                     ->addDefaultsIfNotSet()
                     ->children()
-                        ->booleanNode('enabled')->defaultTrue()->end()
+                        ->booleanNode('enabled')->defaultFalse()->end()
                     ->end()
                 ->end()
 
@@ -48,23 +44,6 @@ class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
-                        ->arrayNode('handlers')
-                            ->defaultValue([
-                                'main',
-                                'console',
-                            ])
-                            ->scalarPrototype()->end()
-                            ->info('Handlers to which the trace context processor should be bound')
-                        ->end()
-                        ->arrayNode('keys')
-                            ->addDefaultsIfNotSet()
-                            ->children()
-                                ->scalarNode('trace')->defaultValue('context.trace')->end()
-                                ->scalarNode('span')->defaultValue('context.span')->end()
-                                ->scalarNode('sampled')->defaultValue('context.sampled')->end()
-                                ->scalarNode('operation')->defaultValue('context.operation')->end()
-                            ->end()
-                        ->end()
                     ->end()
                 ->end()
 
@@ -136,18 +115,26 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultTrue()->end()
+                                ->booleanNode('flush_spans_after_handling')->defaultTrue()->end()
                                 ->arrayNode('blacklist')
                                     ->defaultValue([])
                                     ->scalarPrototype()->end()
                                 ->end()
                             ->end()
                         ->end()
+                        ->arrayNode('http')
+                            ->addDefaultsIfNotSet()
+                            ->children()
+                                ->booleanNode('enabled')->defaultTrue()->end()
+                                ->booleanNode('propagate_by_default')->defaultTrue()->end()
+                            ->end()
+                        ->end()
                         ->arrayNode('doctrine')
                             ->addDefaultsIfNotSet()
                             ->children()
-                                ->booleanNode('instrumentation')->defaultTrue()->end()
-                                ->booleanNode('propagation')->defaultTrue()->end()
-                                ->booleanNode('log_queries')->defaultTrue()->end()
+                                ->booleanNode('instrumentation')->defaultFalse()->end()
+                                ->booleanNode('propagation')->defaultFalse()->end()
+                                ->booleanNode('log_queries')->defaultFalse()->end()
                                 ->arrayNode('connections')
                                     ->defaultValue([])
                                     ->scalarPrototype()->end()
@@ -184,6 +171,14 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
 
+            ->end()
+            ->beforeNormalization()
+                ->ifTrue(fn ($v) => false === \array_key_exists(ResourceAttributes::SERVICE_NAME, $v))
+                ->then(function ($v) {
+                    $v['resource'][ResourceAttributes::SERVICE_NAME] = '%env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%';
+
+                    return $v;
+                })
             ->end()
         ->end();
 

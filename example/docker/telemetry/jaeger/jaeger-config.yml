@@ -1,0 +1,36 @@
+service:
+  extensions: [jaeger_storage, jaeger_query]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: []
+      exporters: [jaeger_storage_exporter]
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ":4317"
+      http:
+        endpoint: ":4318"
+
+extensions:
+  jaeger_query:
+    storage:
+      traces: trace_storage
+      metrics: metrics_storage
+  jaeger_storage:
+    backends:
+      trace_storage:
+        memory:
+          max_traces: 100000
+    metric_backends:
+      metrics_storage:
+        prometheus:
+          endpoint: http://prometheus:9090
+          normalize_calls: true
+          normalize_duration: true
+
+exporters:
+  jaeger_storage_exporter:
+    trace_storage: trace_storage
