@@ -11,9 +11,9 @@
 		output net tcp/otel-collector:54525 {
 			soft_start
 		}
-
-		format transform `\{"timestamp":"{ts}","service":"{$OTEL_SERVICE_NAME}","scope_name":"caddy","logger":"{logger}","severity":"{level}","msg":"{msg}","service.instance.id":"{system.hostname}","http.response.status_code":"{status}","http.request.method":"{request>method}","url.full":"{request>uri}","http.response.size":"{size}","user_agent.original":"{request>headers>User-Agent>[0]}","network.peer.address":"{request>headers>X-Forwarded-For>[0]:request>remote_ip}","network.protocol.name":"{request>proto}","referer":"{request>headers>Referer>[0]}","latency":"{duration}","cache_hit":"{cacheHit}","span_name":"{span_name}","trace_id":"{traceID}"\}` {
+		format transform `\{"timestamp":"{ts}","service":"{$OTEL_SERVICE_NAME}","scope_name":"caddy","logger":"{logger}","severity":"{level}","msg":"{msg}","service.instance.id":"{system.hostname}","http.response.status_code":"{status}","http.request.method":"{request>method}","url.full":"{request>uri}","http.response.size":"{size}","user_agent.original":"{request>headers>User-Agent>[0]}","network.peer.address":"{request>headers>X-Forwarded-For>[0]:request>remote_ip}","network.protocol.name":"{request>proto}","referer":"{request>headers>Referer>[0]}","latency":"{duration}","span_name":"{span_name}","trace_id":"{traceID}"\}` {
 			time_format unix_nano
+			level_format upper
 		}
 	}
 
