@@ -6,7 +6,7 @@ services:
     build:
       context: docker/caddy
     environment:
-      - OTEL_SERVICE_NAME=test-app
+      - OTEL_SERVICE_NAME
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
     ports:
       - "80:80"
@@ -17,12 +17,6 @@ services:
   php:
     build:
       context: docker/php
-    environment:
-      - OTEL_SERVICE_NAME=test-app
-      - OTEL_PHP_DETECTORS=none
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=Delta
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     volumes:
       - ..:/app
 

@@ -18,37 +18,27 @@ For a fully working example including Jaeger, Grafana, Tempo, Loki and Prometheu
 Install along your [exporter implementation](https://packagist.org/packages/open-telemetry/exporter-otlp?query=open-telemetry%2Fexporter-), eg. `open-telemetry/exporter-otlp`.
 
 ```sh
-$ composer require worldia/instrumentation-bundle open-telemetry/exporter-otlp
+composer require worldia/instrumentation-bundle open-telemetry/exporter-otlp
 ```
-
+Add to `bundles.php`.
 ```php
-// bundles.php
-
 return [
     // Other bundles
     Instrumentation\InstrumentationBundle::class => ['all' => true],
 ];
 ```
+Configure OTEL env vars. Replace `<your-telemetry-collector>` by yours, eg. `jaeger`, `tempo`, `otel-collector`, ...
 ```yaml
-// docker-compose.yaml
-
-services:
-  php:
-    image: php:8.4-fpm-alpine
-    environment:
-      - OTEL_SERVICE_NAME=test-app
-      - OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=Delta
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/json
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
-  jaeger:
-    image: jaegertracing/jaeger
+OTEL_SERVICE_NAME=test-app
+OTEL_PHP_DETECTORS=none
+OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=Delta
+OTEL_EXPORTER_OTLP_PROTOCOL=http/json
+OTEL_EXPORTER_OTLP_ENDPOINT=http://<your-telemetry-collector>:4318
 ```
+Enable the extension. See the complete [configuration reference here](./docs/config-reference.md) or run ```bin/console config:dump-reference instrumentation```.
 ```yaml
-// instrumentation.yaml
-
 instrumentation: ~
 ```
-See the complete [configuration reference here](./docs/config-reference.md) or run ```bin/console config:dump-reference instrumentation```.
 
 ### Usage
 
