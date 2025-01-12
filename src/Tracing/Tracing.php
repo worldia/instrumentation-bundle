@@ -13,6 +13,7 @@ use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\Context;
+use OpenTelemetry\SDK\Trace\NoopTracerProvider;
 
 final class Tracing
 {
@@ -46,10 +47,6 @@ final class Tracing
 
     private static function getProvider(): TracerProviderInterface
     {
-        if (!self::$tracerProvider) {
-            throw new \RuntimeException('No trace provider was set.');
-        }
-
-        return self::$tracerProvider;
+        return self::$tracerProvider ?: new NoopTracerProvider();
     }
 }
