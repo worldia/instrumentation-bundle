@@ -62,7 +62,7 @@ class OtelHandler extends AbstractProcessingHandler
             ->setBody($formatted['message']) // @phpstan-ignore-line
         ;
 
-        if (isset($formatted['context']['exception'])) {
+        if (isset($formatted['context']['exception'])) { // @phpstan-ignore-line
             foreach ($formatted['context']['exception'] as $key => $value) {
                 $logRecord->setAttribute($key, $value);
             }

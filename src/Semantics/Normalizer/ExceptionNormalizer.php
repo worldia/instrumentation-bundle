@@ -16,7 +16,7 @@ class ExceptionNormalizer
     /**
      * @see https://opentelemetry.io/docs/specs/semconv/exceptions/
      *
-     * @return array{type:string,message:string}
+     * @return array{"exception.type":string,"exception.message":string,"exception.stacktrace":string}
      */
     public static function normalizeException(\Throwable $exception): array
     {
