@@ -9,3 +9,9 @@ instrumentation:
       enabled: true
     message:
       enabled: true
+
+monolog:
+  handlers:
+    otel:
+      type: service
+      id: Instrumentation\Logging\OtelHandler
