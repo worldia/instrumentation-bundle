@@ -159,13 +159,12 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
         try {
             if (\is_callable($info['user_data']['on_response'] ?? null)) {
-                if (empty($this->content)) {
+                $stream = $this->content;
+                if (empty($stream)) {
                     $stream = $this->toStream(false);
-                    $this->content = stream_get_contents($stream) ?: null;
-                    rewind($stream);
                 }
 
-                \call_user_func($info['user_data']['on_response'], $this->getHeaders(false), $this->content, $this->span);
+                \call_user_func($info['user_data']['on_response'], $this->getHeaders(false), $stream, $this->span);
             }
         } catch (\Throwable) {
         }
