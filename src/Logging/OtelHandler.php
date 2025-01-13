@@ -26,7 +26,7 @@ class OtelHandler extends AbstractProcessingHandler
      **/
     private array $loggers = [];
 
-    public function __construct(private readonly bool $enabled, private readonly API\LoggerProviderInterface $loggerProvider, Level $level, bool $bubble = true)
+    public function __construct(private readonly API\LoggerProviderInterface $loggerProvider, Level $level, bool $bubble = true)
     {
         parent::__construct($level, $bubble);
 
@@ -50,10 +50,6 @@ class OtelHandler extends AbstractProcessingHandler
 
     protected function write(LogRecord $record): void
     {
-        if (!$this->enabled) {
-            return;
-        }
-
         $formatted = $record['formatted'];
         $logRecord = (new API\LogRecord())
             ->setTimestamp((int) $record['datetime']->format('Uu') * 1000) // @phpstan-ignore-line

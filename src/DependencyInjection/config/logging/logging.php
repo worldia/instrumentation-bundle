@@ -16,7 +16,6 @@ use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
@@ -39,7 +38,6 @@ return static function (ContainerConfigurator $container) {
 
         ->set(Logging\OtelHandler::class)
         ->args([
-            '$enabled' => param('logging.enabled'),
             '$loggerProvider' => service(LoggerProviderInterface::class),
             '$level' => Level::Debug,
             '$bubble' => true,

@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection;
 
-use Instrumentation\Logging\OtelHandler;
 use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\Middleware as InstrumentationMiddleware;
@@ -41,8 +40,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('service.name', $config['resource']['service.name']);
 
         $this->loadSemConv($config['resource'], $container);
-        $this->loadLogging($config['logging'], $container);
 
+        if ($this->isConfigEnabled($container, $config['logging'])) {
+            $this->loadLogging($config['baggage'], $container);
+        }
         if ($this->isConfigEnabled($container, $config['baggage'])) {
             $this->loadBaggage($config['baggage'], $container);
         }
@@ -56,17 +57,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
     public function prepend(ContainerBuilder $container): void
     {
-        if ($container->hasExtension('monolog')) {
-            $container->prependExtensionConfig('monolog', [
-                'handlers' => [
-                    'otel' => [
-                        'type' => 'service',
-                        'id' => OtelHandler::class,
-                    ],
-                ],
-            ]);
-        }
-
         if ($container->hasExtension('twig')) {
             $container->prependExtensionConfig('twig', [
                 'paths' => [
@@ -199,8 +189,6 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
     protected function loadLogging(array $config, ContainerBuilder $container): void
     {
         $loader = $this->getLoader('logging', $container);
-
-        $container->setParameter('logging.enabled', $this->isConfigEnabled($container, $config));
 
         $loader->load('logging.php');
     }

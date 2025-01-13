@@ -38,6 +38,12 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://<your-telemetry-collector>:4318
 Enable the extension. See the complete [configuration reference here](./docs/config-reference.md) or run ```bin/console config:dump-reference instrumentation```.
 ```yaml
 instrumentation: ~
+
+monolog:
+  handlers:
+    otel:
+      type: service
+      id: Instrumentation\Logging\OtelHandler
 ```
 
 ### Usage
