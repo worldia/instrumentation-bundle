@@ -13,6 +13,7 @@ use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\Middleware as InstrumentationMiddleware;
 use Instrumentation\Tracing\Doctrine\Propagation\DBAL\Middleware as PropagationMiddleware;
+use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -124,7 +125,8 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('app.resource_info', $config);
 
         $container->setParameter('tracing.request.attributes.server_name', null);
-        $container->setParameter('tracing.request.attributes.headers', []);
+        $container->setParameter('tracing.request.attributes.request_headers', []);
+        $container->setParameter('tracing.http.attributes.request_headers', []);
     }
 
     /**
@@ -147,9 +149,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $loader = $this->getLoader('tracing', $container);
 
         $container->setParameter('tracing.request.attributes.server_name', $config['request']['attributes']['server_name']);
-        $container->setParameter('tracing.request.attributes.headers', array_map(fn (string $value): string => strtolower($value), $config['request']['attributes']['headers']));
+        $container->setParameter('tracing.request.attributes.request_headers', array_map(fn (string $value): string => strtolower($value), $config['request']['attributes']['request_headers']));
         $container->setParameter('tracing.message.flush_spans_after_handling', $config['message']['flush_spans_after_handling']);
         $container->setParameter('tracing.http.propagate_by_default', $config['http']['propagate_by_default']);
+        $container->setParameter('tracing.http.attributes.request_headers', array_map(fn (string $value): string => strtolower($value), $config['http']['attributes']['request_headers']));
 
         $loader->load('tracing.php');
         $loader->load('http.php');
@@ -188,6 +191,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
      */
     protected function loadLogging(array $config, ContainerBuilder $container): void
     {
+        if (!class_exists(MonologBundle::class)) {
+            throw new \InvalidArgumentException('Logging requires "symfony/monolog-bundle". Did you forget to add it?');
+        }
+
         $loader = $this->getLoader('logging', $container);
 
         $loader->load('logging.php');

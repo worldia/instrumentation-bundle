@@ -50,11 +50,14 @@ return static function (ContainerConfigurator $container) {
         ->set(ServerRequestAttributeProviderInterface::class, ServerRequestAttributeProvider::class)
         ->args([
             param('tracing.request.attributes.server_name'),
-            param('tracing.request.attributes.headers'),
+            param('tracing.request.attributes.request_headers'),
         ])
         ->set(ServerResponseAttributeProviderInterface::class, ServerResponseAttributeProvider::class)
         ->set(MessageAttributeProviderInterface::class, MessageAttributeProvider::class)
         ->set(ClientRequestAttributeProviderInterface::class, ClientRequestAttributeProvider::class)
+        ->args([
+            param('tracing.http.attributes.request_headers'),
+        ])
         ->set(DoctrineConnectionAttributeProviderInterface::class, DoctrineConnectionAttributeProvider::class)
 
         ->set(ClientRequestOperationNameResolverInterface::class, ClientRequestOperationNameResolver::class)

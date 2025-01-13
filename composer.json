@@ -16,11 +16,7 @@
     }
   ],
   "require": {
-    "monolog/monolog": "^3.0",
-    "nyholm/dsn": "^2.0",
-    "nyholm/psr7": "^1.5",
     "open-telemetry/sdk": "^1.1",
-    "psr/http-client": "^1.0",
     "symfony/dependency-injection": "*"
   },
   "require-dev": {
@@ -39,6 +35,10 @@
     "symfony/serializer": "*",
     "symfony/twig-bundle": "*",
     "worldia/coding-standards": "^1.0"
+  },
+  "suggest": {
+    "open-telemetry/exporter-otlp": "To export telemetry data to an OTLP compatible ingester (Jaeger, Tempo, Loki, etc.)",
+    "symfony/monolog-bundle": "To enable open-telemetry logging"
   },
   "autoload": {
     "psr-4": {

@@ -68,7 +68,8 @@ class Configuration implements ConfigurationInterface
                                             ->example('example.com')
 
                                         ->end()
-                                        ->arrayNode('headers')
+                                        ->arrayNode('request_headers')
+                                            ->info('Incoming request headers to add as span attributes')
                                             ->defaultValue([])
                                             ->scalarPrototype()->end()
                                             ->example([
@@ -115,7 +116,10 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultTrue()->end()
-                                ->booleanNode('flush_spans_after_handling')->defaultTrue()->end()
+                                ->booleanNode('flush_spans_after_handling')
+                                    ->info('Whether exporter should be flushed after each message')
+                                    ->defaultTrue()
+                                ->end()
                                 ->arrayNode('blacklist')
                                     ->defaultValue([])
                                     ->scalarPrototype()->end()
@@ -126,7 +130,19 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultTrue()->end()
-                                ->booleanNode('propagate_by_default')->defaultTrue()->end()
+                                ->booleanNode('propagate_by_default')
+                                    ->info('Whether trace context should be propagated by default for outgoing requests')
+                                    ->defaultTrue()
+                                ->end()
+                                ->arrayNode('request_headers')
+                                    ->info('Outgoing request headers to add as span attributes')
+                                    ->defaultValue([])
+                                    ->scalarPrototype()->end()
+                                    ->example([
+                                        'accept',
+                                        'accept-encoding',
+                                    ])
+                                ->end()
                             ->end()
                         ->end()
                         ->arrayNode('doctrine')
