@@ -27,6 +27,7 @@
     "php-http/httplug": "^2.3",
     "phpspec/phpspec": "^7.5",
     "phpstan/phpstan": "^1.4",
+    "phpunit/phpunit": "^10.5",
     "symfony/framework-bundle": "^7.1",
     "symfony/http-client": "*",
     "symfony/messenger": "*",
@@ -47,7 +48,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "spec\\Instrumentation\\": "spec/"
+      "spec\\Instrumentation\\": "spec/",
+      "Tests\\Instrumentation\\": "tests/"
     }
   },
   "config": {

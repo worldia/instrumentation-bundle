@@ -49,63 +49,38 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $token = null;
+        $token = $this->tokenStorage?->getToken();
 
-        if (null !== $this->tokenStorage) {
-            $token = $this->tokenStorage->getToken();
+        if (!$token) {
+            return;
         }
 
-        if ($token && $this->isTokenAuthenticated($token)) {
-            $span = LocalRootSpan::current();
-            $user = $token->getUser();
-            if ($user) {
-                $span->setAttribute(TraceAttributes::USER_ID, $this->getUsername($user));
-                $span->setAttribute(TraceAttributes::USER_ROLES, $this->getRoles($user));
-            }
+        $span = LocalRootSpan::current();
+
+        if ($user = $this->getUser($token)) {
+            $span->setAttribute(TraceAttributes::USER_ID, $this->getUsername($user));
+
+            $span->setAttribute(TraceAttributes::USER_ROLES, $user->getRoles());
+
+            return;
         }
+
+        $span->setAttribute(TraceAttributes::USER_ID, $token->getUserIdentifier());
     }
 
-    /**
-     * @return string[]
-     */
-    private function getRoles(UserInterface|\Stringable|string $user): array
+    protected function getUsername(UserInterface $user): string
     {
-        if ($user instanceof UserInterface) {
-            return $user->getRoles();
-        }
-
-        return [];
+        return $user->getUserIdentifier();
     }
 
-    private function getUsername(UserInterface|\Stringable|string $user): string|null
-    {
-        if ($user instanceof UserInterface) {
-            if (method_exists($user, 'getUserIdentifier')) {
-                return $user->getUserIdentifier();
-            }
-
-            if (method_exists($user, 'getUsername')) {
-                return $user->getUsername();
-            }
-        }
-
-        if (\is_string($user)) {
-            return $user;
-        }
-
-        if (\is_object($user) && method_exists($user, '__toString')) {
-            return (string) $user;
-        }
-
-        return null;
-    }
-
-    private function isTokenAuthenticated(TokenInterface $token): bool
+    private function getUser(TokenInterface $token): UserInterface|null
     {
         if (method_exists($token, 'isAuthenticated') && !$token->isAuthenticated(false)) {
-            return false;
+            dump('it exists');
+
+            return null;
         }
 
-        return null !== $token->getUser();
+        return $token->getUser();
     }
 }
