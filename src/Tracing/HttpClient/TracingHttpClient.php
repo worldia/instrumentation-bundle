@@ -39,9 +39,7 @@ final class TracingHttpClient implements HttpClientInterface
      * @param HttpClientInterface|array<mixed>|null $client
      */
     public function __construct(
-        HttpClientInterface|array|null $client = null,
-        ClientRequestOperationNameResolverInterface|null $operationNameResolver = null,
-        ClientRequestAttributeProviderInterface|null $attributeProvider = null,
+        HttpClientInterface|array|null $client = null, ClientRequestOperationNameResolverInterface|null $operationNameResolver = null, ClientRequestAttributeProviderInterface|null $attributeProvider = null,
         private readonly bool $propagateByDefault = true,
         int $maxHostConnections = 6,
         int $maxPendingPushes = 50,
@@ -66,7 +64,7 @@ final class TracingHttpClient implements HttpClientInterface
      *         operation_name: non-empty-string,
      *         propagate: bool,
      *         extra_attributes: array<non-empty-string, string>,
-     *         on_request: callable(array<string,array<string>>, string|null, SpanInterface): void,
+     *         on_request: callable(array<string,array<string>>, string|resource|null, SpanInterface): void,
      *         on_response: callable(array<string,array<string>>, string|resource|null, SpanInterface): void,
      *     }
      * } $options

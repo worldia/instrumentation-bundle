@@ -7,7 +7,6 @@
 
 namespace spec\Instrumentation\Tracing\Request\EventListener;
 
-use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\SemConv\TraceAttributes;
 use PhpSpec\ObjectBehavior;
@@ -34,16 +33,14 @@ class AddUserEventSubscriberSpec extends ObjectBehavior
         SpanInterface $requestSpan,
         TokenStorageInterface $tokenStorage,
         UsernamePasswordToken $usernamePasswordToken,
-        MainSpanContextInterface $mainSpanContext,
         UserInterface $user,
     ): void {
         $user->getRoles()->willReturn(['ADMIN']);
         $user->getUserIdentifier()->willReturn('David');
         $usernamePasswordToken->getUser()->willReturn($user);
         $tokenStorage->getToken()->willReturn($usernamePasswordToken);
-        $this->setupRequestSpan($requestSpan, $mainSpanContext);
+        $this->setupRequestSpan($requestSpan);
         $this->beConstructedWith(
-            $mainSpanContext,
             $tokenStorage
         );
         $mainRequestEvent = $this->createRequestEvent('/somewhere/{id}', Request::METHOD_PUT);
@@ -52,10 +49,9 @@ class AddUserEventSubscriberSpec extends ObjectBehavior
         $requestSpan->setAttribute(TraceAttributes::USER_ROLES, ['ADMIN'])->shouldHaveBeenCalled();
     }
 
-    private function setupRequestSpan(SpanInterface $requestSpan, MainSpanContextInterface $mainSpanContext)
+    private function setupRequestSpan(SpanInterface $requestSpan)
     {
         $requestSpan->setAttribute(Argument::cetera())->willReturn($requestSpan);
-        $mainSpanContext->getMainSpan()->willReturn($requestSpan);
     }
 
     private function createRequestEvent(
