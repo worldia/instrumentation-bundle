@@ -77,6 +77,10 @@ class Configuration implements ConfigurationInterface
                                                 'accept-encoding',
                                             ])
                                         ->end()
+                                        ->booleanNode('user')
+                                            ->info('Whether to add the `user.id` and `user.roles` attributes')
+                                            ->defaultTrue()
+                                        ->end()
                                     ->end()
                                 ->end()
                                 ->arrayNode('blacklist')
@@ -134,14 +138,19 @@ class Configuration implements ConfigurationInterface
                                     ->info('Whether trace context should be propagated by default for outgoing requests')
                                     ->defaultTrue()
                                 ->end()
-                                ->arrayNode('request_headers')
-                                    ->info('Outgoing request headers to add as span attributes')
-                                    ->defaultValue([])
-                                    ->scalarPrototype()->end()
-                                    ->example([
-                                        'accept',
-                                        'accept-encoding',
-                                    ])
+                                ->arrayNode('attributes')
+                                    ->addDefaultsIfNotSet()
+                                    ->children()
+                                        ->arrayNode('request_headers')
+                                            ->info('Outgoing request headers to add as span attributes')
+                                            ->defaultValue([])
+                                            ->scalarPrototype()->end()
+                                            ->example([
+                                                'accept',
+                                                'accept-encoding',
+                                            ])
+                                        ->end()
+                                    ->end()
                                 ->end()
                             ->end()
                         ->end()
@@ -187,14 +196,6 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
 
-            ->end()
-            ->beforeNormalization()
-                ->ifTrue(fn ($v) => false === \array_key_exists(ResourceAttributes::SERVICE_NAME, $v))
-                ->then(function ($v) {
-                    $v['resource'][ResourceAttributes::SERVICE_NAME] = '%env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%';
-
-                    return $v;
-                })
             ->end()
         ->end();
 

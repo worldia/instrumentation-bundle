@@ -15,7 +15,7 @@ use OpenTelemetry\SDK\Resource\ResourceInfoFactory;
 
 class ResourceInfoProvider implements ResourceInfoProviderInterface
 {
-    private ResourceInfo|null $info = null;
+    private ?ResourceInfo $info = null;
 
     /**
      * @param array<string,string> $attributes

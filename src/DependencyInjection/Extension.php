@@ -13,6 +13,8 @@ use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\Middleware as InstrumentationMiddleware;
 use Instrumentation\Tracing\Doctrine\Propagation\DBAL\Middleware as PropagationMiddleware;
+use Instrumentation\Tracing\Request\EventListener\AddUserEventSubscriber;
+use OpenTelemetry\SDK\Trace\SpanLimitsBuilder;
 use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -184,6 +186,12 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('tracing.doctrine.log_queries', $config['doctrine']['log_queries']);
         $container->setParameter('tracing.doctrine.propagation', $config['doctrine']['propagation']);
         $container->setParameter('tracing.doctrine.instrumentation', $config['doctrine']['instrumentation']);
+
+        if (!$config['request']['attributes']['user']) {
+            $container->removeDefinition(AddUserEventSubscriber::class);
+        } else {
+            $container->getDefinition(SpanLimitsBuilder::class)->addMethodCall('retainGeneralIdentityAttributes');
+        }
     }
 
     /**

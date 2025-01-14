@@ -15,6 +15,10 @@ use Instrumentation\Tracing\Bridge\Serializer\Normalizer\ErrorNormalizer;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Bridge\Twig\Extension\TracingExtension;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use OpenTelemetry\SDK\Common\Attribute\AttributesFactory;
+use OpenTelemetry\SDK\Common\Attribute\AttributesFactoryInterface;
+use OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactory;
+use OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScopeFactoryInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SDK\Trace\ExporterFactory;
 use OpenTelemetry\SDK\Trace\IdGeneratorInterface;
@@ -22,6 +26,8 @@ use OpenTelemetry\SDK\Trace\RandomIdGenerator;
 use OpenTelemetry\SDK\Trace\SamplerFactory;
 use OpenTelemetry\SDK\Trace\SamplerInterface;
 use OpenTelemetry\SDK\Trace\SpanExporterInterface;
+use OpenTelemetry\SDK\Trace\SpanLimits;
+use OpenTelemetry\SDK\Trace\SpanLimitsBuilder;
 use OpenTelemetry\SDK\Trace\SpanProcessorFactory;
 use OpenTelemetry\SDK\Trace\SpanProcessorInterface;
 use OpenTelemetry\SDK\Trace\TracerProvider;
@@ -66,6 +72,20 @@ return static function (ContainerConfigurator $container) {
         ->factory([service(SpanProcessorFactory::class), 'create'])
         ->args([service(SpanExporterInterface::class)])
 
+        ->set(SpanLimitsBuilder::class)
+
+        ->set(SpanLimits::class)
+        ->factory([service(SpanLimitsBuilder::class), 'build'])
+
+        ->set(AttributesFactoryInterface::class)
+        ->class(AttributesFactory::class)
+
+        ->set(InstrumentationScopeFactoryInterface::class)
+        ->class(InstrumentationScopeFactory::class)
+        ->args([
+            service(AttributesFactoryInterface::class),
+        ])
+
         ->set(TracerProviderFactory::class)
 
         ->set(TracerProviderInterface::class, TracerProvider::class)
@@ -73,8 +93,9 @@ return static function (ContainerConfigurator $container) {
             [service(SpanProcessorInterface::class)],
             service(SamplerInterface::class),
             service(ResourceInfo::class),
-            null,
+            service(SpanLimits::class),
             service(IdGeneratorInterface::class),
+            service(InstrumentationScopeFactoryInterface::class),
         ])
         ->public()
 

@@ -28,7 +28,16 @@ class InstrumentationBundle extends Bundle
             return;
         }
 
-        $this->container->get(Logging\Logging::class);
+        if ($this->container->has(Logging\Logging::class)) {
+            $this->container->get(Logging\Logging::class);
+
+            /** @var LoggerProviderInterface $loggerProvider */
+            $loggerProvider = $this->container->get(LoggerProviderInterface::class);
+
+            if (method_exists($loggerProvider, 'shutdown')) {
+                ShutdownHandler::register([$loggerProvider, 'shutdown']);
+            }
+        }
 
         /** @var TracerProviderInterface $tracerProvider */
         $tracerProvider = $this->container->get(TracerProviderInterface::class);
@@ -36,13 +45,6 @@ class InstrumentationBundle extends Bundle
 
         if (method_exists($tracerProvider, 'shutdown')) {
             ShutdownHandler::register([$tracerProvider, 'shutdown']);
-        }
-
-        /** @var LoggerProviderInterface $loggerProvider */
-        $loggerProvider = $this->container->get(LoggerProviderInterface::class);
-
-        if (method_exists($loggerProvider, 'shutdown')) {
-            ShutdownHandler::register([$loggerProvider, 'shutdown']);
         }
 
         /** @var MeterProviderInterface $meterProvider */

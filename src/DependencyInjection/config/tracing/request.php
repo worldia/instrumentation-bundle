@@ -37,6 +37,7 @@ return static function (ContainerConfigurator $container) {
             param('tracing.request.methods'),
         ])
         ->autoconfigure()
+
         ->set(Sampling\EventListener\RequestEventSubscriber::class)
         ->args([
             service(Sampling\TogglableSampler::class),
@@ -46,8 +47,8 @@ return static function (ContainerConfigurator $container) {
 
         ->set(Tracing\Request\EventListener\AddUserEventSubscriber::class)
         ->args([
-            service(MainSpanContextInterface::class),
             service(TokenStorageInterface::class)->nullOnInvalid(),
         ])
-        ->autoconfigure();
+        ->autoconfigure()
+    ;
 };

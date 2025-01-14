@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\HttpClient;
 
+use Instrumentation\Logging\Logging;
 use OpenTelemetry\API\Trace\SpanInterface;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\Exception\RedirectionException;
@@ -21,7 +22,7 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class TracedResponse implements ResponseInterface, StreamableInterface
 {
-    private string|null $content = null;
+    private ?string $content = null;
     /** @var resource|null */
     private $stream;
 
@@ -87,7 +88,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
         }
     }
 
-    public function getInfo(string|null $type = null): mixed
+    public function getInfo(?string $type = null): mixed
     {
         return $this->response->getInfo($type);
     }
@@ -116,7 +117,7 @@ class TracedResponse implements ResponseInterface, StreamableInterface
      *
      * @internal
      */
-    public static function stream(HttpClientInterface $client, iterable $responses, float|null $timeout): \Generator
+    public static function stream(HttpClientInterface $client, iterable $responses, ?float $timeout): \Generator
     {
         $wrappedResponses = [];
         $traceableMap = new \SplObjectStorage();
@@ -166,7 +167,8 @@ class TracedResponse implements ResponseInterface, StreamableInterface
 
                 \call_user_func($info['user_data']['on_response'], $this->getHeaders(false), $stream, $this->span);
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Logging::getLogger()->error('There was an error during the response callback.', ['exception' => $e]);
         }
 
         $this->span->end($endEpochNanos);

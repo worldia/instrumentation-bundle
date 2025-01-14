@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Request\EventListener;
 
-use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use Instrumentation\Tracing\TracerAwareTrait;
+use OpenTelemetry\API\Trace\LocalRootSpan;
 use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -19,6 +19,15 @@ use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInt
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/**
+ * Adds the `user.id` and `user.roles`attributes.
+ *
+ * @see https://opentelemetry.io/docs/specs/semconv/attributes-registry/user/
+ *
+ * Caution: Enabling this subscriber is not enough because they are dropped by default by
+ * the `open-telemetry/sdk` (causing 'Dropped span attributes, links or events' warnings).
+ * @see https://github.com/open-telemetry/opentelemetry-php/blob/83cddd9157438e7a72b7824708be36298c8e589f/src/SDK/Trace/SpanLimitsBuilder.php#L134.
+ */
 final class AddUserEventSubscriber implements EventSubscriberInterface
 {
     use TracerAwareTrait;
@@ -30,7 +39,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function __construct(private MainSpanContextInterface $mainSpanContext, private TokenStorageInterface|null $tokenStorage = null)
+    public function __construct(private readonly ?TokenStorageInterface $tokenStorage = null)
     {
     }
 
@@ -47,7 +56,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         }
 
         if ($token && $this->isTokenAuthenticated($token)) {
-            $span = $this->mainSpanContext->getMainSpan();
+            $span = LocalRootSpan::current();
             $user = $token->getUser();
             if ($user) {
                 $span->setAttribute(TraceAttributes::USER_ID, $this->getUsername($user));
@@ -68,7 +77,7 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         return [];
     }
 
-    private function getUsername(UserInterface|\Stringable|string $user): string|null
+    private function getUsername(UserInterface|\Stringable|string $user): ?string
     {
         if ($user instanceof UserInterface) {
             if (method_exists($user, 'getUserIdentifier')) {
