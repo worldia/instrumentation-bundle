@@ -27,7 +27,8 @@ class ServerRequestAttributeProvider implements ServerRequestAttributeProviderIn
             TraceAttributes::CLIENT_ADDRESS => $request->getClientIp(),
             TraceAttributes::SERVER_ADDRESS => $this->serverName ?: $request->getHost(),
             TraceAttributes::SERVER_PORT => (string) $request->getPort(),
-            TraceAttributes::NETWORK_PROTOCOL_NAME => substr((string) $request->getProtocolVersion(), 5),
+            TraceAttributes::NETWORK_PROTOCOL_NAME => 'http',
+            TraceAttributes::NETWORK_PROTOCOL_VERSION => substr((string) $request->getProtocolVersion(), 5),
             TraceAttributes::URL_SCHEME => $request->getScheme(),
             TraceAttributes::URL_DOMAIN => $request->getHost(),
             TraceAttributes::URL_PATH => $request->getPathInfo(),
@@ -35,8 +36,8 @@ class ServerRequestAttributeProvider implements ServerRequestAttributeProviderIn
             TraceAttributes::HTTP_REQUEST_METHOD => $request->getMethod(),
             TraceAttributes::HTTP_ROUTE => $request->attributes->get('_route'),
             TraceAttributes::USER_AGENT_ORIGINAL => $request->headers->get('user-agent', null),
-            'http.request.header.host' => $request->headers->get('host'), // Per spec, only if host header is present
-            'http.request.header.content-length' => $request->headers->get('content-length', null),
+            'http.request.header.host' => $request->headers->has('host') ? [$request->headers->get('host')] : null, // Per spec, only if host header is present
+            'http.request.header.content_length' => $request->headers->has('content-length') ? [$request->headers->get('content-length', null)] : null,
         ];
 
         foreach ($this->capturedHeaders as $header) {

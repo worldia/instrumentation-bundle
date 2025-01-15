@@ -18,7 +18,7 @@ class BaggageHeaderProvider implements \Stringable
         return BaggagePropagator::BAGGAGE;
     }
 
-    public function getHeaderValue(): string
+    public static function getHeaderValue(): string
     {
         $baggageContext = [];
         BaggagePropagator::getInstance()->inject($baggageContext);

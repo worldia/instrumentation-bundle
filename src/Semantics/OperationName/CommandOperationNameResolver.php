@@ -18,7 +18,7 @@ class CommandOperationNameResolver implements CommandOperationNameResolverInterf
         $name = 'unknown-command';
 
         if ($command) {
-            $name = $command->getName() ?: $command->getDefaultName();
+            $name = $command->getName() ?: $command->getDefaultName() ?: $name;
         }
 
         return \sprintf('cli %s', $name);

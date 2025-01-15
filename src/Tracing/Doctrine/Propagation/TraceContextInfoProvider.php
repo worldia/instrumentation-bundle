@@ -49,13 +49,15 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
                 $info['application'] = $this->resourceInfo->getAttributes()->get(ResourceAttributes::SERVICE_NAME);
             }
 
-            if ($controller = $this->requestStack?->getCurrentRequest()?->attributes->get('_controller')) {
-                if (\is_string($controller)) {
-                    $info['controller'] = str_replace('\\', '\\\\', $controller);
+            if ($request = $this->requestStack?->getCurrentRequest()) {
+                if ($controller = $request->attributes->get('_controller')) {
+                    if (\is_string($controller)) {
+                        $info['controller'] = str_replace('\\', '\\\\', $controller);
+                    }
                 }
-            }
 
-            $info['route'] = $this->requestStack?->getCurrentRequest()?->attributes->get('_route');
+                $info['route'] = $request->attributes->get('_route');
+            }
 
             $this->info = array_filter($info);
         }
