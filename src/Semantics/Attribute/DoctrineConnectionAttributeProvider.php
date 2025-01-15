@@ -10,11 +10,12 @@ declare(strict_types=1);
 namespace Instrumentation\Semantics\Attribute;
 
 use Doctrine\DBAL\Platforms;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 use OpenTelemetry\SemConv\TraceAttributes;
 
 class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttributeProviderInterface
 {
-    public function getAttributes(Platforms\AbstractPlatform $platform, array $params): array
+    public function getAttributes(AbstractPlatform $platform, array $params): array
     {
         $attributes = [TraceAttributes::DB_SYSTEM => $this->getSystemAttribute($platform)];
 
@@ -47,7 +48,7 @@ class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttribute
         return $attributes;
     }
 
-    private function getSystemAttribute(Platforms\AbstractPlatform $platform): string
+    private function getSystemAttribute(AbstractPlatform $platform): string
     {
         if ($platform instanceof Platforms\MariaDBPlatform) {
             return 'mariadb';

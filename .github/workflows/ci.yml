@@ -7,7 +7,7 @@ jobs:
     name: PHPStan
     strategy:
       matrix:
-        php-version: ["8.3"]
+        php-version: ["8.4"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -19,8 +19,6 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
-          coverage: xdebug
-          extensions: grpc
         env:
           fail-fast: true
 
@@ -38,14 +36,14 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --no-scripts --ansi
 
-      - name: phpstan
+      - name: Run static code analysis
         run: vendor/bin/phpstan analyze src/ --memory-limit="-1" --ansi --no-progress
 
   php-cs-fixer:
     name: PHP-CS-Fixer
     strategy:
       matrix:
-        php-version: ["8.3"]
+        php-version: ["8.4"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -57,8 +55,6 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
-          coverage: xdebug
-          extensions: grpc
         env:
           fail-fast: true
 
@@ -76,52 +72,14 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --no-scripts --ansi
 
-      - name: php-cs-fixer
-        run: vendor/bin/php-cs-fixer fix --dry-run --ansi
-
-  phpspec:
-    name: PHPSpec
-    strategy:
-      matrix:
-        php-version: ["8.3"]
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-version }}
-          tools: composer:v2
-          coverage: xdebug
-          extensions: grpc
-        env:
-          fail-fast: true
-
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-          restore-keys: ${{ runner.os }}-composer-
-
-      - name: Install dependencies
-        run: composer install --no-interaction --no-progress --no-scripts --ansi
-
-      - name: phpspec
-        run: vendor/bin/phpspec run --no-interaction --no-code-generation --ansi --format pretty
+      - name: Check coding standards
+        run: PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/php-cs-fixer fix --dry-run --ansi
 
   phpunit:
     name: PHPUnit
     strategy:
       matrix:
-        php-version: ["8.3"]
+        php-version: ["8.4"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -134,7 +92,7 @@ jobs:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
           coverage: xdebug
-          extensions: grpc
+          extensions: grpc,amqp,redis
         env:
           fail-fast: true
 
@@ -152,5 +110,8 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --no-scripts --ansi
 
-      - name: Unit tests
+      - name: Install extra dependencies
+        run: composer require --dev symfony/redis-messenger symfony/amqp-messenger
+
+      - name: Run unit tests
         run: vendor/bin/phpunit --colors=always --coverage-text

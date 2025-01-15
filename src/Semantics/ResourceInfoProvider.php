@@ -20,7 +20,7 @@ class ResourceInfoProvider implements ResourceInfoProviderInterface
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(private array $attributes)
+    public function __construct(private readonly array $attributes = [])
     {
     }
 
