@@ -1,0 +1,68 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{% block toolbar %}
+    {% set icon %}
+        {{ source('@InstrumentationDataCollector/icon.svg') }}
+    {% endset %}
+
+    {% set text %}
+        {% if collector.instrumentationScope %}
+            <div class="sf-toolbar-info-group">
+                <div class="sf-toolbar-info-piece">
+                    <b>Scope</b>
+                    <span>{{ collector.instrumentationScope.name }}</span>
+                </div>
+            </div>
+        {% endif %}
+        <!--
+        <div class="sf-toolbar-info-group">
+            {% for attribute,value in collector.attributes %}
+            <div class="sf-toolbar-info-piece">
+                <b>{{ attribute }}</b>
+                <span>{{ value }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        -->
+        <div class="sf-toolbar-info-group">
+            <div class="sf-toolbar-info-piece">
+                <b>Sampled</b>
+                {% if collector.rootSpan.context.sampled %}
+                    <span class="sf-toolbar-status sf-toolbar-status-green">yes</span>
+                {% else %}
+                    <span class="sf-toolbar-status sf-toolbar-status-red">no</span>
+                {% endif %}
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Valid</b>
+                {% if collector.rootSpan.context.valid %}
+                    <span class="sf-toolbar-status sf-toolbar-status-green">yes</span>
+                {% else %}
+                    <span class="sf-toolbar-status sf-toolbar-status-red">no</span>
+                {% endif %}
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Remote</b>
+                {% if collector.rootSpan.context.remote %}
+                    <span class="sf-toolbar-status">yes</span>
+                {% else %}
+                    <span class="sf-toolbar-status">no</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="sf-toolbar-info-group">
+            <div class="sf-toolbar-info-piece">
+                <b>Trace Id</b>
+                {% if collector.traceUrl %}
+                <span><a href="{{ collector.traceUrl() }}" target="_trace">{{ collector.traceId }}</a></span>
+                {% else %}
+                <span>{{ collector.traceId }}</span>
+                {% endif %}
+            </div>
+        </div>
+    {% endset %}
+
+    {# the 'link' value set to 'false' means that this panel doesn't
+       show a section in the web profiler #}
+    {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', { link: false }) }}
+{% endblock %}

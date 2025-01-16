@@ -64,6 +64,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             $container->prependExtensionConfig('twig', [
                 'paths' => [
                     __DIR__.'/../Tracing/Bridge/Twig/Templates' => 'Twig',
+                    __DIR__.'/../Tracing/Bridge/Profiler/Templates' => 'InstrumentationDataCollector',
                 ],
             ]);
         }
@@ -228,6 +229,12 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
     private function getLoader(string $component, ContainerBuilder $container): PhpFileLoader
     {
-        return new PhpFileLoader($container, new FileLocator(__DIR__.'/config/'.$component));
+        $env = $container->getParameter('kernel.environment');
+
+        if (!\is_string($env)) {
+            $env = null;
+        }
+
+        return new PhpFileLoader($container, new FileLocator(__DIR__.'/config/'.$component), $env);
     }
 }

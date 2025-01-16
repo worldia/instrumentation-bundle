@@ -27,7 +27,7 @@ class Configuration implements ConfigurationInterface
                         ResourceAttributes::SERVICE_NAME => 'my_instrumented_app',
                         ResourceAttributes::SERVICE_VERSION => '1.2.3',
                     ])
-                    ->scalarPrototype()->end()
+                    ->variablePrototype()->end()
                     ->defaultValue([
                         ResourceAttributes::SERVICE_NAME => '%env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%',
                     ])

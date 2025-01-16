@@ -10,6 +10,7 @@ declare(strict_types=1);
 use Instrumentation\Tracing\Bridge\Exporter\ResetSpanExporter;
 use Instrumentation\Tracing\Bridge\MainSpanContext;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
+use Instrumentation\Tracing\Bridge\Profiler\DataCollector\TraceContextDataCollector;
 use Instrumentation\Tracing\Bridge\Sampling\TogglableSampler;
 use Instrumentation\Tracing\Bridge\Serializer\Normalizer\ErrorNormalizer;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
@@ -101,6 +102,21 @@ return static function (ContainerConfigurator $container) {
 
         ->set(MainSpanContextInterface::class, MainSpanContext::class)
     ;
+
+    if ('dev' === $container->env()) {
+        $container->services()
+            ->set(TraceContextDataCollector::class)
+            ->args([
+                service(TraceUrlGeneratorInterface::class)->nullOnInvalid(),
+            ])
+            ->tag('data_collector', [
+                'id' => TraceContextDataCollector::class,
+                // optional template (it has more priority than the value returned by getTemplate())
+                // 'template' => 'data_collector/template.html.twig',
+                // optional priority (positive or negative integer; default = 0)
+                // 'priority' => 300,
+            ]);
+    }
 
     if (class_exists(Serializer::class)) {
         $container->services()
