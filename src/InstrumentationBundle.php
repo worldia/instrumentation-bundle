@@ -12,7 +12,6 @@ namespace Instrumentation;
 use OpenTelemetry\API\Logs\LoggerProviderInterface;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
-use OpenTelemetry\SDK\Common\Util\ShutdownHandler;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class InstrumentationBundle extends Bundle
@@ -30,31 +29,28 @@ class InstrumentationBundle extends Bundle
 
         if ($this->container->has(Logging\Logging::class)) {
             $this->container->get(Logging\Logging::class);
-
-            /** @var LoggerProviderInterface $loggerProvider */
-            $loggerProvider = $this->container->get(LoggerProviderInterface::class);
-
-            if (method_exists($loggerProvider, 'shutdown')) {
-                ShutdownHandler::register([$loggerProvider, 'shutdown']);
-            }
         }
 
         if ($this->container->has(TracerProviderInterface::class)) {
             /** @var TracerProviderInterface $tracerProvider */
             $tracerProvider = $this->container->get(TracerProviderInterface::class);
             Tracing\Tracing::setProvider($tracerProvider);
-
-            if (method_exists($tracerProvider, 'shutdown')) {
-                ShutdownHandler::register([$tracerProvider, 'shutdown']);
-            }
         }
+    }
 
-        if ($this->container->has(MeterProviderInterface::class)) {
-            /** @var MeterProviderInterface $meterProvider */
-            $meterProvider = $this->container->get(MeterProviderInterface::class);
+    public function shutdown(): void
+    {
+        foreach ([
+            TracerProviderInterface::class,
+            MeterProviderInterface::class,
+            LoggerProviderInterface::class,
+        ] as $interface) {
+            if ($this->container->has($interface)) {
+                $provider = $this->container->get($interface);
 
-            if (method_exists($meterProvider, 'shutdown')) {
-                ShutdownHandler::register([$meterProvider, 'shutdown']);
+                if (method_exists($provider, 'shutdown')) {
+                    $provider->shutdown();
+                }
             }
         }
     }
