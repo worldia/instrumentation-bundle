@@ -38,7 +38,7 @@ class InstrumentationBundle extends Bundle
         }
     }
 
-    public function shutdown(): void
+    public function __destruct()
     {
         foreach ([
             TracerProviderInterface::class,
