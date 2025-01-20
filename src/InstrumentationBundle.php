@@ -39,19 +39,23 @@ class InstrumentationBundle extends Bundle
             }
         }
 
-        /** @var TracerProviderInterface $tracerProvider */
-        $tracerProvider = $this->container->get(TracerProviderInterface::class);
-        Tracing\Tracing::setProvider($tracerProvider);
+        if ($this->container->has(TracerProviderInterface::class)) {
+            /** @var TracerProviderInterface $tracerProvider */
+            $tracerProvider = $this->container->get(TracerProviderInterface::class);
+            Tracing\Tracing::setProvider($tracerProvider);
 
-        if (method_exists($tracerProvider, 'shutdown')) {
-            ShutdownHandler::register([$tracerProvider, 'shutdown']);
+            if (method_exists($tracerProvider, 'shutdown')) {
+                ShutdownHandler::register([$tracerProvider, 'shutdown']);
+            }
         }
 
-        /** @var MeterProviderInterface $meterProvider */
-        $meterProvider = $this->container->get(MeterProviderInterface::class);
+        if ($this->container->has(MeterProviderInterface::class)) {
+            /** @var MeterProviderInterface $meterProvider */
+            $meterProvider = $this->container->get(MeterProviderInterface::class);
 
-        if (method_exists($meterProvider, 'shutdown')) {
-            ShutdownHandler::register([$meterProvider, 'shutdown']);
+            if (method_exists($meterProvider, 'shutdown')) {
+                ShutdownHandler::register([$meterProvider, 'shutdown']);
+            }
         }
     }
 }

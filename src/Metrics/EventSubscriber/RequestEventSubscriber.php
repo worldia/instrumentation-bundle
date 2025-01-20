@@ -10,8 +10,8 @@ declare(strict_types=1);
 namespace Instrumentation\Metrics\EventSubscriber;
 
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
-use OpenTelemetry\API\Metrics\MeterInterface;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
+use OpenTelemetry\API\Trace\SpanKind;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event;
@@ -19,14 +19,11 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 class RequestEventSubscriber implements EventSubscriberInterface
 {
-    private MeterInterface $meter;
-
     /**
      * @param array<string> $blacklist
      */
     public function __construct(private readonly MeterProviderInterface $meterProvider, private array $blacklist, private MainSpanContextInterface|null $mainSpanContext = null)
     {
-        $this->meter = $this->meterProvider->getMeter('instrumentation');
     }
 
     public static function getSubscribedEvents(): array
@@ -44,7 +41,8 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
         $operation = $this->mainSpanContext?->getOperationName() ?: 'unknown';
 
-        $this->meter->createGauge('memory_usage_bytes', null, 'Memory usage of the request')->record(memory_get_peak_usage(), ['operation' => $operation]);
+        $meter = $this->meterProvider->getMeter('instrumentation');
+        $meter->createGauge('memory_usage_bytes', null, 'Memory usage of the request')->record(memory_get_peak_usage(), ['span_name' => $operation, 'span_kind' => SpanKind::KIND_SERVER]);
     }
 
     private function isBlacklisted(Request $request): bool
