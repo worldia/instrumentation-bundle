@@ -40,6 +40,10 @@ class InstrumentationBundle extends Bundle
 
     public function __destruct()
     {
+        if (null === $this->container) {
+            return;
+        }
+
         foreach ([
             TracerProviderInterface::class,
             MeterProviderInterface::class,
