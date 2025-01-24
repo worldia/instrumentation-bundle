@@ -17,27 +17,27 @@ use OpenTelemetry\SDK\Trace\NoopTracerProvider;
 
 final class Tracing
 {
-    public const NAME = 'io.opentelemetry.contrib.php';
+    public const NAME = 'io.opentelemetry.contrib.php.worldia';
 
     private static TracerProviderInterface|null $tracerProvider = null;
 
     /**
-     * @param non-empty-string     $operation
+     * @param non-empty-string     $spanName
      * @param array<string,string> $attributes
      * @param SpanKind::KIND_*     $kind
      */
-    public static function trace(string $operation, array|null $attributes = null, int|null $kind = null, Context|null $parentContext = null): SpanInterface
+    public static function trace(string $spanName, array|null $attributes = null, int|null $kind = null, Context|null $parentContext = null): SpanInterface
     {
-        return static::getTracer()->spanBuilder($operation)
+        return static::getTracer()->spanBuilder($spanName)
             ->setAttributes($attributes ?: [])
-            ->setSpanKind($kind ?: SpanKind::KIND_SERVER)
+            ->setSpanKind($kind ?: SpanKind::KIND_INTERNAL)
             ->setParent($parentContext ?: Context::getCurrent())
             ->startSpan();
     }
 
-    public static function getTracer(): TracerInterface
+    public static function getTracer(string|null $name = null): TracerInterface
     {
-        return new Tracer(self::getProvider()->getTracer(self::NAME));
+        return new Tracer(self::getProvider()->getTracer($name ?: self::NAME));
     }
 
     public static function setProvider(TracerProviderInterface $tracerProvider): void
