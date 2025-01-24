@@ -166,6 +166,10 @@ class TracedResponse implements ResponseInterface, StreamableInterface
                 }
 
                 \call_user_func($info['user_data']['on_response'], $this->getHeaders(false), $stream, $this->span);
+
+                if (\is_resource($stream)) {
+                    rewind($stream);
+                }
             }
         } catch (\Throwable $e) {
             Logging::getLogger()->error('There was an error during the response callback.', ['exception' => $e]);
