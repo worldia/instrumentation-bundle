@@ -11,8 +11,6 @@ namespace Instrumentation\Tracing\Bridge\Profiler\DataCollector;
 
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use OpenTelemetry\API\Trace\LocalRootSpan;
-use OpenTelemetry\API\Trace\SpanInterface;
-use OpenTelemetry\SDK\Common\Instrumentation\InstrumentationScope;
 use OpenTelemetry\SDK\Trace\ReadableSpanInterface;
 use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
 use Symfony\Component\HttpFoundation\Request;
@@ -44,9 +42,13 @@ class TraceContextDataCollector extends AbstractDataCollector
         }
 
         $this->data = [
-            'instrumentation_scope' => $instrumentationScope,
+            'instrumentation_scope_name' => $instrumentationScope?->getName(),
             'trace_id' => $rootSpan->getContext()->getTraceId(),
-            'root_span' => $rootSpan,
+            'root_span_context' => [
+                'isSampled' => $rootSpan->getContext()->isSampled(),
+                'isValid' => $rootSpan->getContext()->isValid(),
+                'isRemote' => $rootSpan->getContext()->isRemote(),
+            ],
             'attributes' => $attributes,
             'trace_url' => $this->traceUrlGenerator?->getTraceUrl($rootSpan->getContext()->getTraceId()),
         ];
@@ -62,9 +64,12 @@ class TraceContextDataCollector extends AbstractDataCollector
         return $this->data['trace_id'];
     }
 
-    public function getRootSpan(): SpanInterface
+    /**
+     * @return array{'isSampled': bool, 'isValid': bool, 'isRemote': bool}
+     */
+    public function getRootSpanContext(): array
     {
-        return $this->data['root_span'];
+        return $this->data['root_span_context'];
     }
 
     public function getTraceUrl(): string|null
@@ -80,9 +85,9 @@ class TraceContextDataCollector extends AbstractDataCollector
         return $this->data['attributes'];
     }
 
-    public function getInstrumentationScope(): InstrumentationScope|null
+    public function getInstrumentationScopeName(): string|null
     {
-        return $this->data['instrumentation_scope'];
+        return $this->data['instrumentation_scope_name'];
     }
 
     public static function getTemplate(): string|null
