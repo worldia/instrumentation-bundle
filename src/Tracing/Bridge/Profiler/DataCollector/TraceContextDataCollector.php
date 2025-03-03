@@ -92,6 +92,6 @@ class TraceContextDataCollector extends AbstractDataCollector
 
     public static function getTemplate(): string|null
     {
-        return '@InstrumentationDataCollector/collector.html.twig';
+        return '@Instrumentation/collector.html.twig';
     }
 }
