@@ -6,11 +6,11 @@
     {% endset %}
 
     {% set text %}
-        {% if collector.instrumentationScope %}
+        {% if collector.instrumentationScopeName %}
             <div class="sf-toolbar-info-group">
                 <div class="sf-toolbar-info-piece">
                     <b>Scope</b>
-                    <span>{{ collector.instrumentationScope.name }}</span>
+                    <span>{{ collector.instrumentationScopeName }}</span>
                 </div>
             </div>
         {% endif %}
@@ -27,7 +27,7 @@
         <div class="sf-toolbar-info-group">
             <div class="sf-toolbar-info-piece">
                 <b>Sampled</b>
-                {% if collector.rootSpan.context.sampled %}
+                {% if collector.rootSpanContext.isSampled %}
                     <span class="sf-toolbar-status sf-toolbar-status-green">yes</span>
                 {% else %}
                     <span class="sf-toolbar-status sf-toolbar-status-red">no</span>
@@ -35,7 +35,7 @@
             </div>
             <div class="sf-toolbar-info-piece">
                 <b>Valid</b>
-                {% if collector.rootSpan.context.valid %}
+                {% if collector.rootSpanContext.isValid %}
                     <span class="sf-toolbar-status sf-toolbar-status-green">yes</span>
                 {% else %}
                     <span class="sf-toolbar-status sf-toolbar-status-red">no</span>
@@ -43,7 +43,7 @@
             </div>
             <div class="sf-toolbar-info-piece">
                 <b>Remote</b>
-                {% if collector.rootSpan.context.remote %}
+                {% if collector.rootSpanContext.isRemote %}
                     <span class="sf-toolbar-status">yes</span>
                 {% else %}
                     <span class="sf-toolbar-status">no</span>
