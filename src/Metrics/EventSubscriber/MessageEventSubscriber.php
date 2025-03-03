@@ -48,11 +48,11 @@ class MessageEventSubscriber implements EventSubscriberInterface
         $this->handlingCounter = $this->meter->createUpDownCounter('messages_handling', null, 'Number of messages this instance is currently handling');
         $this->handlingCounter->add(1, $attributes);
 
-        if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), SentAtStamp::class, ConsumedAtStamp::class)) {
-            return;
+        if ($time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), SentAtStamp::class, ConsumedAtStamp::class)) {
+            $this->meter->createHistogram('messages_time_to_consume_seconds', 's', 'Time between a message is sent and consumed')->record($time, $attributes);
         }
 
-        $this->meter->createHistogram('messages_time_to_consume_seconds', 's', 'Time between a message is sent and consumed')->record($time, $attributes);
+        $this->flushMetrics();
     }
 
     public function onHandled(WorkerMessageHandledEvent $event): void
@@ -74,11 +74,11 @@ class MessageEventSubscriber implements EventSubscriberInterface
 
         $this->handlingCounter?->add(-1, $attributes);
 
-        if (!$time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), ConsumedAtStamp::class, HandledAtStamp::class)) {
-            return;
+        if ($time = $this->getTimeInSecondsBetweenStamps($event->getEnvelope(), ConsumedAtStamp::class, HandledAtStamp::class)) {
+            $this->meter->createHistogram('messages_time_to_handle_seconds', 's', 'Time between a message is consumed and handled')->record($time, $attributes);
         }
 
-        $this->meter->createHistogram('messages_time_to_handle_seconds', 's', 'Time between a message is consumed and handled')->record($time, $attributes);
+        $this->flushMetrics();
     }
 
     /**
@@ -118,5 +118,12 @@ class MessageEventSubscriber implements EventSubscriberInterface
     private function getTimeDifferenceInSeconds(\DateTimeInterface $start, \DateTimeInterface $end): float
     {
         return (float) ((float) $end->format('U.u') - (float) $start->format('U.u'));
+    }
+
+    private function flushMetrics(): void
+    {
+        if (method_exists($this->meterProvider, 'forceFlush')) {
+            $this->meterProvider->forceFlush();
+        }
     }
 }
