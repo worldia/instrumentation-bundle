@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\HttpClient;
 
 use Instrumentation\Logging\Logging;
+use Instrumentation\Tracing\HttpClient\Tracing\SpanAwareInterface;
 use Instrumentation\Tracing\HttpClient\Tracing\SpanAwareTrait;
 use OpenTelemetry\API\Trace\SpanInterface;
 use Symfony\Component\HttpClient\Exception\ClientException;
@@ -21,7 +22,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
-class TracedResponse implements ResponseInterface, StreamableInterface
+class TracedResponse implements ResponseInterface, StreamableInterface, SpanAwareInterface
 {
     use SpanAwareTrait;
 
