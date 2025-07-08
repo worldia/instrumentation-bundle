@@ -1,11 +1,15 @@
 {
   "name": "worldia/instrumentation-bundle",
+  "description": "Symfony opentelemetry auto-instrumentation: requests, commands, messenger, doctrine.",
   "type": "symfony-bundle",
   "license": "MIT",
   "keywords": [
     "instrumentation",
     "tracing",
     "metrics",
+    "symfony",
+    "opentelemetry",
+    "otel",
     "open-telemetry",
     "prometheus"
   ],
