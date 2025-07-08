@@ -57,7 +57,11 @@ class AddUserEventSubscriberTest extends TestCase
 
     private function getSpanBuilder(string $name = 'test'): SpanBuilderInterface
     {
-        $spanLimits = (new SpanLimitsBuilder())->retainGeneralIdentityAttributes()->build();
+        $spanLimitsBuilder = new SpanLimitsBuilder();
+        if (method_exists($spanLimitsBuilder, 'retainGeneralIdentityAttributes')) {
+            $spanLimitsBuilder->retainGeneralIdentityAttributes();
+        }
+        $spanLimits = $spanLimitsBuilder->build();
 
         return (new TracerProvider(
             spanLimits: $spanLimits,

@@ -190,7 +190,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         if (!$config['request']['attributes']['user']) {
             $container->removeDefinition(AddUserEventSubscriber::class);
-        } else {
+        } else if (method_exists(SpanLimitsBuilder::class, 'retainGeneralIdentityAttributes')) {
             $container->getDefinition(SpanLimitsBuilder::class)->addMethodCall('retainGeneralIdentityAttributes');
         }
     }
