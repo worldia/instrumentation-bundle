@@ -23,7 +23,7 @@ class ExceptionNormalizer
         return [
             TraceAttributes::EXCEPTION_TYPE => $exception::class,
             TraceAttributes::EXCEPTION_MESSAGE => $exception->getMessage(),
-            TraceAttributes::EXCEPTION_STACKTRACE => $exception->getTraceAsString(),
+            TraceAttributes::EXCEPTION_STACKTRACE => (string) $exception,
         ];
     }
 }
