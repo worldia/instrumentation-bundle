@@ -16,6 +16,11 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class InstrumentationBundle extends Bundle
 {
+    public function __construct()
+    {
+        $this->container = null;
+    }
+
     public function getContainerExtensionClass(): string
     {
         return DependencyInjection\Extension::class;
