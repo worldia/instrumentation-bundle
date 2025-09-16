@@ -64,7 +64,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             $container->prependExtensionConfig('twig', [
                 'paths' => [
                     __DIR__.'/../Tracing/Bridge/Twig/Templates' => 'Twig',
-                    __DIR__.'/../Tracing/Bridge/Profiler/Templates' => 'InstrumentationDataCollector',
+                    __DIR__.'/../Tracing/Bridge/Profiler/Templates' => 'Instrumentation',
                 ],
             ]);
         }
