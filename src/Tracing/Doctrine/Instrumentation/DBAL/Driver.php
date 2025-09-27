@@ -9,13 +9,12 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Doctrine\Instrumentation\DBAL;
 
-use Doctrine\DBAL\Connection as DBALConnection;
+use Doctrine\DBAL\Connection\StaticServerVersionProvider;
 use Doctrine\DBAL\Driver\API\ExceptionConverter;
 use Doctrine\DBAL\Driver as DriverInterface;
 use Doctrine\DBAL\Driver\Connection as DriverConnection;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Schema\AbstractSchemaManager;
-use Doctrine\DBAL\VersionAwarePlatformDriver;
+use Doctrine\DBAL\ServerVersionProvider;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
@@ -28,39 +27,28 @@ final class Driver implements DriverInterface
 
     public function connect(array $params): DriverConnection
     {
-        $attributes = $this->attributeProvider->getAttributes($this->decorated->getDatabasePlatform(), $params);
+        $versionProvider = new StaticServerVersionProvider('');
+        if (isset($params['serverVersion'])) {
+            $versionProvider = new StaticServerVersionProvider($params['serverVersion']);
+        } elseif (isset($params['primary']['serverVersion'])) {
+            $versionProvider = new StaticServerVersionProvider($params['primary']['serverVersion']);
+        }
+
+        $attributes = $this->attributeProvider->getAttributes(
+            $this->decorated->getDatabasePlatform($versionProvider),
+            $params,
+        );
 
         return new Connection($this->tracerProvider, $this->decorated->connect($params), $this->mainSpanContext, $attributes, $this->logQueries);
     }
 
-    public function getDatabasePlatform(): AbstractPlatform
+    public function getDatabasePlatform(ServerVersionProvider $versionProvider): AbstractPlatform
     {
-        return $this->decorated->getDatabasePlatform();
-    }
-
-    /**
-     * @phpstan-template T of AbstractPlatform
-     *
-     * @phpstan-param T $platform
-     *
-     * @phpstan-return AbstractSchemaManager<T>
-     */
-    public function getSchemaManager(DBALConnection $conn, AbstractPlatform $platform): AbstractSchemaManager
-    {
-        return $this->decorated->getSchemaManager($conn, $platform);
+        return $this->decorated->getDatabasePlatform($versionProvider);
     }
 
     public function getExceptionConverter(): ExceptionConverter
     {
         return $this->decorated->getExceptionConverter();
-    }
-
-    public function createDatabasePlatformForVersion(string $version): AbstractPlatform
-    {
-        if ($this->decorated instanceof VersionAwarePlatformDriver) {
-            return $this->decorated->createDatabasePlatformForVersion($version);
-        }
-
-        return $this->decorated->getDatabasePlatform();
     }
 }

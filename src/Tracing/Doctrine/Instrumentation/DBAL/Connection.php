@@ -12,7 +12,6 @@ namespace Instrumentation\Tracing\Doctrine\Instrumentation\DBAL;
 use Doctrine\DBAL\Driver\Connection as ConnectionInterface;
 use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\Statement as StatementInterface;
-use Doctrine\DBAL\ParameterType;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
@@ -54,42 +53,47 @@ final class Connection implements ConnectionInterface
         return $this->trace(self::OP_CONN_QUERY, $sql, fn (): Result => $this->decorated->query($sql));
     }
 
-    public function quote($value, $type = ParameterType::STRING): mixed
+    public function quote(string $value): string
     {
-        return $this->decorated->quote($value, $type);
+        return $this->decorated->quote($value);
     }
 
-    public function exec(string $sql): int
+    public function exec(string $sql): int|string
     {
-        return $this->trace(self::OP_CONN_EXEC, $sql, fn (): int => $this->decorated->exec($sql));
+        return $this->trace(self::OP_CONN_EXEC, $sql, fn (): int|string => $this->decorated->exec($sql));
     }
 
-    public function lastInsertId($name = null): string|int|false
+    public function lastInsertId(): string|int
     {
-        return $this->decorated->lastInsertId($name);
+        return $this->decorated->lastInsertId();
     }
 
-    public function beginTransaction(): bool
+    public function beginTransaction(): void
     {
-        return $this->trace(self::OP_CONN_BEGIN_TRANSACTION, 'BEGIN TRANSACTION', fn (): bool => $this->decorated->beginTransaction());
+        $this->trace(self::OP_CONN_BEGIN_TRANSACTION, 'BEGIN TRANSACTION', fn () => $this->decorated->beginTransaction());
     }
 
-    public function commit(): bool
+    public function commit(): void
     {
-        return $this->trace(self::OP_TRANSACTION_COMMIT, 'COMMIT', fn (): bool => $this->decorated->commit());
+        $this->trace(self::OP_TRANSACTION_COMMIT, 'COMMIT', fn () => $this->decorated->commit());
     }
 
-    public function rollBack(): bool
+    public function rollBack(): void
     {
-        return $this->trace(self::OP_TRANSACTION_ROLLBACK, 'ROLLBACK', fn (): bool => $this->decorated->rollBack());
+        $this->trace(self::OP_TRANSACTION_ROLLBACK, 'ROLLBACK', fn () => $this->decorated->rollBack());
     }
 
     /**
-     * @return \PDO|object|resource
+     * @return object|resource
      */
     public function getNativeConnection()
     {
         return $this->decorated->getNativeConnection();
+    }
+
+    public function getServerVersion(): string
+    {
+        return $this->decorated->getServerVersion();
     }
 
     protected function trace(string $operation, string $sql, callable $callback): mixed

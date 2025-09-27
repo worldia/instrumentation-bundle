@@ -17,7 +17,7 @@ interface DoctrineConnectionAttributeProviderInterface
      * @param array<string,mixed> $connectionParams
      *
      * @return array{
-     *           'db.system':string,
+     *           'db.system.name':string,
      *           'db.user'?:string,
      *           'db.name'?:string,
      *           'net.peer.name'?:string,

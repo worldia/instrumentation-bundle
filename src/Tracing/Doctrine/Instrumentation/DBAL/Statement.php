@@ -30,17 +30,12 @@ class Statement implements DoctrineStatement
     {
     }
 
-    public function bindValue($param, $value, $type = ParameterType::STRING): bool
+    public function bindValue(int|string $param, mixed $value, ParameterType $type = ParameterType::STRING): void
     {
-        return $this->decoratedStatement->bindValue($param, $value, $type);
+        $this->decoratedStatement->bindValue($param, $value, $type);
     }
 
-    public function bindParam($param, &$variable, $type = ParameterType::STRING, $length = null): bool
-    {
-        return $this->decoratedStatement->bindParam($param, $variable, $type, ...\array_slice(\func_get_args(), 3));
-    }
-
-    public function execute($params = null): Result
+    public function execute(): Result
     {
         $span = $this->getTracer()
             ->spanBuilder(self::OP_STMT_EXECUTE)
@@ -54,7 +49,7 @@ class Statement implements DoctrineStatement
         }
 
         try {
-            return $this->decoratedStatement->execute($params);
+            return $this->decoratedStatement->execute();
         } finally {
             $span->end();
         }
