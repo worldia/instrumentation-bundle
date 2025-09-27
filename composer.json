@@ -24,7 +24,7 @@
     "symfony/dependency-injection": "*"
   },
   "require-dev": {
-    "doctrine/dbal": "4.3.3",
+    "doctrine/dbal": "^4.0",
     "open-telemetry/gen-otlp-protobuf": "^1.0",
     "phpstan/phpstan": "^1.4",
     "phpunit/phpunit": "^10.5",
