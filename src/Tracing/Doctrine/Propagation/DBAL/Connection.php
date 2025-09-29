@@ -11,9 +11,7 @@ namespace Instrumentation\Tracing\Doctrine\Propagation\DBAL;
 
 use Doctrine\DBAL\Driver\Connection as ConnectionInterface;
 use Doctrine\DBAL\Driver\Result;
-use Doctrine\DBAL\Driver\ServerInfoAwareConnection;
 use Doctrine\DBAL\Driver\Statement;
-use Doctrine\DBAL\ParameterType;
 use Instrumentation\Tracing\Doctrine\Propagation\TraceContextInfoProviderInterface;
 
 final class Connection implements ConnectionInterface
@@ -34,47 +32,43 @@ final class Connection implements ConnectionInterface
         return $this->decorated->query($sql);
     }
 
-    public function quote($value, $type = ParameterType::STRING): mixed
+    public function quote(string $value): string
     {
-        return $this->decorated->quote($value, $type);
+        return $this->decorated->quote($value);
     }
 
-    public function exec(string $sql): int
+    public function exec(string $sql): int|string
     {
         return $this->decorated->exec($sql);
     }
 
-    public function lastInsertId($name = null): string|int|false
+    public function lastInsertId(): string|int
     {
-        return $this->decorated->lastInsertId($name);
+        return $this->decorated->lastInsertId();
     }
 
-    public function beginTransaction(): bool
+    public function beginTransaction(): void
     {
-        return $this->decorated->beginTransaction();
+        $this->decorated->beginTransaction();
     }
 
-    public function commit(): bool
+    public function commit(): void
     {
-        return $this->decorated->commit();
+        $this->decorated->commit();
     }
 
-    public function rollBack(): bool
+    public function rollBack(): void
     {
-        return $this->decorated->rollBack();
+        $this->decorated->rollBack();
     }
 
     public function getServerVersion(): string
     {
-        if ($this->decorated instanceof ServerInfoAwareConnection) {
-            return $this->decorated->getServerVersion();
-        }
-
-        return 'unknown';
+        return $this->decorated->getServerVersion();
     }
 
     /**
-     * @return \PDO|object|resource
+     * @return object|resource
      */
     public function getNativeConnection()
     {
