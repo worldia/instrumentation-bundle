@@ -18,7 +18,7 @@ use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\VersionAwarePlatformDriver;
 use Instrumentation\Tracing\Doctrine\Propagation\TraceContextInfoProviderInterface;
 
-final class Driver implements DriverInterface
+final class Driver implements VersionAwarePlatformDriver
 {
     public function __construct(private DriverInterface $decorated, private TraceContextInfoProviderInterface $infoProvider)
     {
@@ -51,7 +51,7 @@ final class Driver implements DriverInterface
         return $this->decorated->getExceptionConverter();
     }
 
-    public function createDatabasePlatformForVersion(string $version): AbstractPlatform
+    public function createDatabasePlatformForVersion($version): AbstractPlatform
     {
         if ($this->decorated instanceof VersionAwarePlatformDriver) {
             return $this->decorated->createDatabasePlatformForVersion($version);
