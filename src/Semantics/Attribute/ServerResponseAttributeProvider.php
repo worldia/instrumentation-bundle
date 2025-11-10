@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\Attribute;
 
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Attributes\HttpAttributes;
 use Symfony\Component\HttpFoundation\Response;
 
 class ServerResponseAttributeProvider implements ServerResponseAttributeProviderInterface
@@ -17,10 +17,10 @@ class ServerResponseAttributeProvider implements ServerResponseAttributeProvider
     public function getAttributes(Response $response): array
     {
         return array_filter([
-            TraceAttributes::HTTP_RESPONSE_STATUS_CODE => $response->getStatusCode(),
+            HttpAttributes::HTTP_RESPONSE_STATUS_CODE => $response->getStatusCode(),
 
             // Irrelevant, never set by Symfony.
-            // TraceAttributes::HTTP_RESPONSE_BODY_SIZE => $response->headers->get('content-length', null),
+            // HttpAttributes::HTTP_RESPONSE_BODY_SIZE => $response->headers->get('content-length', null),
         ]);
     }
 }

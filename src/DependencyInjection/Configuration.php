@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection;
 
-use OpenTelemetry\SemConv\ResourceAttributes;
+use OpenTelemetry\SemConv\Attributes\ServiceAttributes;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
@@ -26,12 +26,12 @@ class Configuration implements ConfigurationInterface
                 ->arrayNode('resource')
                     ->info('Use semantic tags defined in the OpenTelemetry specification (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md)')
                     ->example([
-                        ResourceAttributes::SERVICE_NAME => 'my_instrumented_app',
-                        ResourceAttributes::SERVICE_VERSION => '1.2.3',
+                        ServiceAttributes::SERVICE_NAME => 'my_instrumented_app',
+                        ServiceAttributes::SERVICE_VERSION => '1.2.3',
                     ])
                     ->variablePrototype()->end()
                     ->defaultValue([
-                        ResourceAttributes::SERVICE_NAME => '%env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%',
+                        ServiceAttributes::SERVICE_NAME => '%env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%',
                     ])
                 ->end()
 

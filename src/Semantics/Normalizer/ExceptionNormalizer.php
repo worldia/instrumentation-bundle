@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\Normalizer;
 
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Attributes\ExceptionAttributes;
 
 class ExceptionNormalizer
 {
@@ -21,9 +21,9 @@ class ExceptionNormalizer
     public static function normalizeException(\Throwable $exception): array
     {
         return [
-            TraceAttributes::EXCEPTION_TYPE => $exception::class,
-            TraceAttributes::EXCEPTION_MESSAGE => $exception->getMessage(),
-            TraceAttributes::EXCEPTION_STACKTRACE => (string) $exception,
+            ExceptionAttributes::EXCEPTION_TYPE => $exception::class,
+            ExceptionAttributes::EXCEPTION_MESSAGE => $exception->getMessage(),
+            ExceptionAttributes::EXCEPTION_STACKTRACE => (string) $exception,
         ];
     }
 }

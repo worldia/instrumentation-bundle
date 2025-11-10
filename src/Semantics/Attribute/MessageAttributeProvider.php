@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\Attribute;
 
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Incubating\Attributes\MessagingIncubatingAttributes;
 use Symfony\Component\Messenger\Bridge\Amqp\Transport\AmqpReceivedStamp;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisReceivedStamp;
 use Symfony\Component\Messenger\Envelope;
@@ -25,15 +25,15 @@ class MessageAttributeProvider implements MessageAttributeProviderInterface
         ];
 
         if ($envelope->last(RedisReceivedStamp::class)) { // @phpstan-ignore-line
-            $attributes[TraceAttributes::MESSAGING_SYSTEM] = 'redis';
+            $attributes[MessagingIncubatingAttributes::MESSAGING_SYSTEM] = 'redis';
         } elseif ($envelope->last(AmqpReceivedStamp::class)) { // @phpstan-ignore-line
-            $attributes[TraceAttributes::MESSAGING_SYSTEM] = 'rabbitmq';
+            $attributes[MessagingIncubatingAttributes::MESSAGING_SYSTEM] = 'rabbitmq';
         }
 
         /** @var TransportMessageIdStamp|null $stamp */
         $stamp = $envelope->last(TransportMessageIdStamp::class);
         if ($stamp) {
-            $attributes[TraceAttributes::MESSAGING_MESSAGE_ID] = (string) $stamp->getId();
+            $attributes[MessagingIncubatingAttributes::MESSAGING_MESSAGE_ID] = (string) $stamp->getId();
         }
 
         /** @var BusNameStamp|null $stamp */

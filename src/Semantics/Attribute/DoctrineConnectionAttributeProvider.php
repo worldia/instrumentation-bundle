@@ -11,38 +11,40 @@ namespace Instrumentation\Semantics\Attribute;
 
 use Doctrine\DBAL\Platforms;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Attributes\DbAttributes;
+use OpenTelemetry\SemConv\Attributes\NetworkAttributes;
+use OpenTelemetry\SemConv\Attributes\ServerAttributes;
 
 class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttributeProviderInterface
 {
     public function getAttributes(AbstractPlatform $platform, array $params): array
     {
-        $attributes = [TraceAttributes::DB_SYSTEM => $this->getSystemAttribute($platform)];
+        $attributes = [DbAttributes::DB_SYSTEM_NAME => $this->getSystemAttribute($platform)];
 
         if (isset($params['user'])) {
             $attributes['db.user'] = $params['user'];
         }
 
         if (isset($params['dbname'])) {
-            $attributes[TraceAttributes::DB_NAMESPACE] = $params['dbname'];
+            $attributes[DbAttributes::DB_NAMESPACE] = $params['dbname'];
         }
 
         if (isset($params['host']) && !empty($params['host']) && !isset($params['memory'])) {
             if (false === filter_var($params['host'], \FILTER_VALIDATE_IP)) {
-                $attributes[TraceAttributes::SERVER_ADDRESS] = $params['host'];
+                $attributes[ServerAttributes::SERVER_ADDRESS] = $params['host'];
             } else {
-                $attributes[TraceAttributes::NETWORK_PEER_ADDRESS] = $params['host'];
+                $attributes[NetworkAttributes::NETWORK_PEER_ADDRESS] = $params['host'];
             }
         }
 
         if (isset($params['port'])) {
-            $attributes[TraceAttributes::SERVER_PORT] = (string) $params['port'];
+            $attributes[ServerAttributes::SERVER_PORT] = (string) $params['port'];
         }
 
         if (isset($params['unix_socket'])) {
-            $attributes[TraceAttributes::NETWORK_TRANSPORT] = 'unix';
+            $attributes[NetworkAttributes::NETWORK_TRANSPORT] = 'unix';
         } elseif (isset($params['memory'])) {
-            $attributes[TraceAttributes::NETWORK_TRANSPORT] = 'inproc';
+            $attributes[NetworkAttributes::NETWORK_TRANSPORT] = 'inproc';
         }
 
         return $attributes;

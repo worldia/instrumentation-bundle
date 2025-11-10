@@ -35,7 +35,7 @@ class DoctrineConnectionAttributeProviderTest extends TestCase
             Platforms\DB2Platform::class => 'db2',
         ] as $class => $name) {
             $attributes = $provider->getAttributes($this->createMock($class), []);
-            $this->assertEquals($name, $attributes['db.system']);
+            $this->assertEquals($name, $attributes['db.system.name']);
         }
     }
 

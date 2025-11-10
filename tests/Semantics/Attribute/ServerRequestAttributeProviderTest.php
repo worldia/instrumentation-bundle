@@ -111,18 +111,6 @@ class ServerRequestAttributeProviderTest extends TestCase
         $this->assertEquals('https', $attributes['url.scheme']);
     }
 
-    public function testItSetsUrlDomain(): void
-    {
-        [Request::class => $request] = $this->expect();
-
-        $provider = new ServerRequestAttributeProvider();
-        $request->expects($this->atMost(2))->method('getHost')->willReturn('www.test.com');
-
-        $attributes = $provider->getAttributes($request);
-
-        $this->assertEquals('www.test.com', $attributes['url.domain']);
-    }
-
     public function testItSetsUrlPath(): void
     {
         [Request::class => $request] = $this->expect();

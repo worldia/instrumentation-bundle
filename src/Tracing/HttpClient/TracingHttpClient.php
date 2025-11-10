@@ -18,7 +18,8 @@ use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Attributes\HttpAttributes;
+use OpenTelemetry\SemConv\Attributes\UrlAttributes;
 use Symfony\Component\HttpClient\DecoratorTrait;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\HttpClientTrait;
@@ -117,8 +118,8 @@ final class TracingHttpClient implements HttpClientInterface
                         $span->updateName($operationName);
                     }
 
-                    $span->setAttribute(TraceAttributes::HTTP_RESPONSE_STATUS_CODE, $info['http_code']);
-                    $span->setAttribute(TraceAttributes::URL_FULL, $info['url']);
+                    $span->setAttribute(HttpAttributes::HTTP_RESPONSE_STATUS_CODE, $info['http_code']);
+                    $span->setAttribute(UrlAttributes::URL_FULL, $info['url']);
 
                     if ($info['http_code'] >= 400) {
                         $span->setStatus(StatusCode::STATUS_ERROR);
