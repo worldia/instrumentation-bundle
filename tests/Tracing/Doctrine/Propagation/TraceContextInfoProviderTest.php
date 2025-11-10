@@ -15,7 +15,7 @@ use Instrumentation\Tracing\Doctrine\Propagation\TraceContextInfoProviderInterfa
 use OpenTelemetry\SDK\Common\Attribute\AttributesFactory;
 use OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
-use OpenTelemetry\SemConv\ResourceAttributes;
+use OpenTelemetry\SemConv\Attributes\ServiceAttributes;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
@@ -48,8 +48,8 @@ class TraceContextInfoProviderTest extends TestCase
     public function testItGetsServiceName(): void
     {
         $attributes = $this->createMock(AttributesInterface::class);
-        $attributes->expects($this->once())->method('has')->with(ResourceAttributes::SERVICE_NAME)->willReturn(true);
-        $attributes->expects($this->once())->method('get')->with(ResourceAttributes::SERVICE_NAME)->willReturn('dummy-app');
+        $attributes->expects($this->once())->method('has')->with(ServiceAttributes::SERVICE_NAME)->willReturn(true);
+        $attributes->expects($this->once())->method('get')->with(ServiceAttributes::SERVICE_NAME)->willReturn('dummy-app');
 
         $provider = new TraceContextInfoProvider(ResourceInfo::create($attributes));
 

@@ -11,7 +11,7 @@ namespace Instrumentation\Tracing\Request\EventListener;
 
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\LocalRootSpan;
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Incubating\Attributes\UserIncubatingAttributes;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -58,14 +58,14 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
         $span = LocalRootSpan::current();
 
         if ($user = $this->getUser($token)) {
-            $span->setAttribute(TraceAttributes::USER_ID, $this->getUsername($user));
+            $span->setAttribute(UserIncubatingAttributes::USER_ID, $this->getUsername($user));
 
-            $span->setAttribute(TraceAttributes::USER_ROLES, $user->getRoles());
+            $span->setAttribute(UserIncubatingAttributes::USER_ROLES, $user->getRoles());
 
             return;
         }
 
-        $span->setAttribute(TraceAttributes::USER_ID, $token->getUserIdentifier());
+        $span->setAttribute(UserIncubatingAttributes::USER_ID, $token->getUserIdentifier());
     }
 
     protected function getUsername(UserInterface $user): string

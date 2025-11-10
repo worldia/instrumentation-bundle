@@ -17,7 +17,7 @@ use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ScopeInterface;
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Incubating\Attributes\ProcessIncubatingAttributes;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\Console\Event\ConsoleSignalEvent;
@@ -58,7 +58,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
 
         $operationName = $this->operationNameResolver->getOperationName($event->getCommand());
         $attributes = [
-            TraceAttributes::PROCESS_COMMAND => $operationName,
+            ProcessIncubatingAttributes::PROCESS_COMMAND => $operationName,
         ];
 
         $this->span = $this->getTracer()
@@ -88,7 +88,7 @@ class CommandEventSubscriber implements EventSubscriberInterface
     {
         if (0 !== $event->getExitCode()) {
             $this->span?->setStatus(StatusCode::STATUS_ERROR);
-            $this->span?->setAttribute(TraceAttributes::PROCESS_EXIT_CODE, $event->getExitCode());
+            $this->span?->setAttribute(ProcessIncubatingAttributes::PROCESS_EXIT_CODE, $event->getExitCode());
         }
 
         $this->closeTrace();

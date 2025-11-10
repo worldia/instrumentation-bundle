@@ -13,7 +13,7 @@ use Composer\InstalledVersions;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
-use OpenTelemetry\SemConv\ResourceAttributes;
+use OpenTelemetry\SemConv\Attributes\ServiceAttributes;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Kernel;
 
@@ -45,8 +45,8 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
                 // Ignore
             }
 
-            if ($this->resourceInfo->getAttributes()->has(ResourceAttributes::SERVICE_NAME)) {
-                $info['application'] = $this->resourceInfo->getAttributes()->get(ResourceAttributes::SERVICE_NAME);
+            if ($this->resourceInfo->getAttributes()->has(ServiceAttributes::SERVICE_NAME)) {
+                $info['application'] = $this->resourceInfo->getAttributes()->get(ServiceAttributes::SERVICE_NAME);
             }
 
             if ($request = $this->requestStack?->getCurrentRequest()) {

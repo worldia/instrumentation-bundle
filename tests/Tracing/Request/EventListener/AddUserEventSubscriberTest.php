@@ -15,7 +15,7 @@ use OpenTelemetry\API\Trace\SpanBuilderInterface;
 use OpenTelemetry\Context\Context;
 use OpenTelemetry\SDK\Trace\SpanLimitsBuilder;
 use OpenTelemetry\SDK\Trace\TracerProvider;
-use OpenTelemetry\SemConv\TraceAttributes;
+use OpenTelemetry\SemConv\Incubating\Attributes\UserIncubatingAttributes;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,8 +51,8 @@ class AddUserEventSubscriberTest extends TestCase
         $subscriber->onRequestEvent($this->createRequestEvent('GET', '/hello'));
         $scope->detach();
 
-        $this->assertEquals('customer@example.com', $span->getAttribute(TraceAttributes::USER_ID));
-        $this->assertEquals(['ROLE_CUSTOMER'], $span->getAttribute(TraceAttributes::USER_ROLES));
+        $this->assertEquals('customer@example.com', $span->getAttribute(UserIncubatingAttributes::USER_ID));
+        $this->assertEquals(['ROLE_CUSTOMER'], $span->getAttribute(UserIncubatingAttributes::USER_ROLES));
     }
 
     private function getSpanBuilder(string $name = 'test'): SpanBuilderInterface
