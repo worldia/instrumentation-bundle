@@ -29,10 +29,10 @@ class DoctrineConnectionAttributeProviderTest extends TestCase
             Platforms\MariaDBPlatform::class => 'mariadb',
             Platforms\PostgreSQLPlatform::class => 'postgresql',
             Platforms\AbstractMySQLPlatform::class => 'mysql',
-            Platforms\SQLServerPlatform::class => 'mssql',
+            Platforms\SQLServerPlatform::class => 'microsoft.sql_server',
             Platforms\SqlitePlatform::class => 'sqlite',
-            Platforms\OraclePlatform::class => 'oracle',
-            Platforms\DB2Platform::class => 'db2',
+            Platforms\OraclePlatform::class => 'oracle.db',
+            Platforms\DB2Platform::class => 'ibm.db2',
         ] as $class => $name) {
             $attributes = $provider->getAttributes($this->createMock($class), []);
             $this->assertEquals($name, $attributes['db.system.name']);

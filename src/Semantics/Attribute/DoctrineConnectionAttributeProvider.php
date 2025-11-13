@@ -14,6 +14,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use OpenTelemetry\SemConv\Attributes\DbAttributes;
 use OpenTelemetry\SemConv\Attributes\NetworkAttributes;
 use OpenTelemetry\SemConv\Attributes\ServerAttributes;
+use OpenTelemetry\SemConv\Incubating\Attributes\DbIncubatingAttributes;
 
 class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttributeProviderInterface
 {
@@ -53,27 +54,27 @@ class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttribute
     private function getSystemAttribute(AbstractPlatform $platform): string
     {
         if ($platform instanceof Platforms\MariaDBPlatform) {
-            return 'mariadb';
+            return DbAttributes::DB_SYSTEM_NAME_VALUE_MARIADB;
         }
         if ($platform instanceof Platforms\PostgreSQLPlatform) {
-            return 'postgresql';
+            return DbAttributes::DB_SYSTEM_NAME_VALUE_POSTGRESQL;
         }
         if ($platform instanceof Platforms\AbstractMySQLPlatform) {
-            return 'mysql';
+            return DbAttributes::DB_SYSTEM_NAME_VALUE_MYSQL;
         }
         if ($platform instanceof Platforms\SQLServerPlatform) {
-            return 'mssql';
+            return DbAttributes::DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
         }
         if ($platform instanceof Platforms\SqlitePlatform) {
-            return 'sqlite';
+            return DbIncubatingAttributes::DB_SYSTEM_NAME_VALUE_SQLITE;
         }
         if ($platform instanceof Platforms\OraclePlatform) {
-            return 'oracle';
+            return DbIncubatingAttributes::DB_SYSTEM_NAME_VALUE_ORACLE_DB;
         }
         if ($platform instanceof Platforms\DB2Platform) {
-            return 'db2';
+            return DbIncubatingAttributes::DB_SYSTEM_NAME_VALUE_IBM_DB2;
         }
 
-        return 'other_sql';
+        return DbIncubatingAttributes::DB_SYSTEM_NAME_VALUE_OTHER_SQL;
     }
 }
