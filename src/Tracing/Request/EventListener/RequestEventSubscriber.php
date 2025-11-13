@@ -53,7 +53,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
             ],
             KernelEvents::RESPONSE => ['onResponseEvent'],
             KernelEvents::FINISH_REQUEST => [['onFinishRequestEvent', -512]],
-            KernelEvents::EXCEPTION => [['onExceptionEvent', -512]],
+            KernelEvents::EXCEPTION => [['onExceptionEvent', -127]],
             KernelEvents::TERMINATE => [['onTerminate', -512]],
         ];
     }
