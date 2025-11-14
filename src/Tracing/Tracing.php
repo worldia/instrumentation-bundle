@@ -13,6 +13,7 @@ use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\Context;
+use OpenTelemetry\Context\ContextInterface;
 use OpenTelemetry\SDK\Trace\NoopTracerProvider;
 
 final class Tracing
@@ -26,7 +27,7 @@ final class Tracing
      * @param array<string,string> $attributes
      * @param SpanKind::KIND_*     $kind
      */
-    public static function trace(string $spanName, array|null $attributes = null, int|null $kind = null, Context|null $parentContext = null): SpanInterface
+    public static function trace(string $spanName, array|null $attributes = null, int|null $kind = null, ContextInterface|null $parentContext = null): SpanInterface
     {
         return static::getTracer()->spanBuilder($spanName)
             ->setAttributes($attributes ?: [])
