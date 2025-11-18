@@ -80,6 +80,7 @@ final class TracingHttpClient implements HttpClientInterface
             ->spanBuilder($operationName)
             ->setSpanKind(SpanKind::KIND_CLIENT)
             ->startSpan();
+        $options['user_data']['span'] = $span;
 
         $scope = $span->activate();
 
