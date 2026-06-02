@@ -33,13 +33,10 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      # PHPStan 1.x cannot parse the PHP 8.4 property-hook syntax used by
-      # symfony/http-foundation 8.x, so the analysis runs against doctrine/dbal 3,
-      # which keeps Symfony on the 7.4 line. The code is exercised on Symfony 8 at
-      # runtime by the PHPUnit job below.
-      - name: Pin doctrine/dbal 3
-        run: composer require --dev --no-update "doctrine/dbal:^3.6"
-
+      # Analysis runs against the highest set (doctrine/dbal 4 + Symfony 8).
+      # The doctrine/dbal 3 only DBAL3\Connection decorator is excluded in
+      # phpstan.neon (its bool transaction methods are not covariant with the
+      # dbal 4 parent); it is exercised on dbal 3 by the PHPUnit job below.
       - name: Install dependencies
         run: composer update --no-interaction --no-progress --no-scripts --ansi
 

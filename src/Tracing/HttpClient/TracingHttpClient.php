@@ -62,11 +62,11 @@ final class TracingHttpClient implements HttpClientInterface
      *     on_progress?: ?callable,
      *     headers?: array<string,array<string>>,
      *     extra?: array{
-     *         operation_name: non-empty-string,
-     *         propagate: bool,
-     *         extra_attributes: array<non-empty-string, string>,
-     *         on_request: callable(array<string,array<string>>, string|resource|null, SpanInterface): void,
-     *         on_response: callable(array<string,array<string>>, string|resource|null, SpanInterface): void,
+     *         operation_name?: non-empty-string,
+     *         propagate?: bool,
+     *         extra_attributes?: array<non-empty-string, string>,
+     *         on_request?: callable(array<string,array<string>|string>, string|resource|null, SpanInterface): void,
+     *         on_response?: callable(array<string,array<string>|string>, string|resource|null, SpanInterface): void,
      *     }
      * } $options
      */

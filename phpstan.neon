@@ -6,11 +6,8 @@ parameters:
   # ignores work whichever major version is installed in CI.
   reportUnmatchedIgnoredErrors: false
   excludePaths:
-    # The two connection decorators are thin signature adapters over the shared
-    # (and analysed) ConnectionTrait: Connection returns void from its transaction
-    # methods (dbal 4), DBAL3\Connection returns bool (dbal 3). Each is incompatible
-    # with the parent signatures of the *other* major version — a non-ignorable
-    # covariance error — so both are excluded regardless of which version is
-    # installed. Only one is ever instantiated, picked at compile time.
-    - src/Tracing/Doctrine/Instrumentation/DBAL/Connection.php
+    # Analysis runs against doctrine/dbal 4, where DBAL3\Connection's bool-returning
+    # transaction methods are not covariant with the void parent signatures (a
+    # non-ignorable error). That class is only ever loaded under doctrine/dbal 3;
+    # the dbal 4 Connection and the shared ConnectionTrait are analysed normally.
     - src/Tracing/Doctrine/Instrumentation/DBAL/DBAL3/Connection.php

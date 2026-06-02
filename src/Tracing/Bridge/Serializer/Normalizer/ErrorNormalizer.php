@@ -35,7 +35,7 @@ class ErrorNormalizer implements NormalizerInterface, SerializerAwareInterface
     public function getSupportedTypes(string|null $format): array
     {
         return [
-            FlattenException::class => __CLASS__ === self::class,
+            FlattenException::class => self::class === static::class,
         ];
     }
 
