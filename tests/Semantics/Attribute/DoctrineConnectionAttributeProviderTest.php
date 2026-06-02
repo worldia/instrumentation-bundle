@@ -25,12 +25,17 @@ class DoctrineConnectionAttributeProviderTest extends TestCase
     {
         $provider = new DoctrineConnectionAttributeProvider();
 
+        // doctrine/dbal 3 names it SqlitePlatform, doctrine/dbal 4 SQLitePlatform.
+        $sqlitePlatform = class_exists(Platforms\SQLitePlatform::class)
+            ? Platforms\SQLitePlatform::class
+            : Platforms\SqlitePlatform::class;
+
         foreach ([
             Platforms\MariaDBPlatform::class => 'mariadb',
             Platforms\PostgreSQLPlatform::class => 'postgresql',
             Platforms\AbstractMySQLPlatform::class => 'mysql',
             Platforms\SQLServerPlatform::class => 'microsoft.sql_server',
-            Platforms\SqlitePlatform::class => 'sqlite',
+            $sqlitePlatform => 'sqlite',
             Platforms\OraclePlatform::class => 'oracle.db',
             Platforms\DB2Platform::class => 'ibm.db2',
         ] as $class => $name) {
