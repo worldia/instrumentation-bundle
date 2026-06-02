@@ -8,7 +8,6 @@ jobs:
     strategy:
       matrix:
         php-version: ["8.4"]
-        dbal: ["^3.6", "^4.0"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -34,11 +33,15 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Install dependencies
-        run: composer install --no-interaction --no-progress --no-scripts --ansi
+      # PHPStan 1.x cannot parse the PHP 8.4 property-hook syntax used by
+      # symfony/http-foundation 8.x, so the analysis runs against doctrine/dbal 3,
+      # which keeps Symfony on the 7.4 line. The code is exercised on Symfony 8 at
+      # runtime by the PHPUnit job below.
+      - name: Pin doctrine/dbal 3
+        run: composer require --dev --no-update "doctrine/dbal:^3.6"
 
-      - name: Select doctrine/dbal version
-        run: composer update "doctrine/dbal:${{ matrix.dbal }}" -W --no-interaction --no-progress --no-scripts --ansi
+      - name: Install dependencies
+        run: composer update --no-interaction --no-progress --no-scripts --ansi
 
       - name: Run static code analysis
         run: vendor/bin/phpstan analyze src/ --memory-limit="-1" --ansi --no-progress
@@ -112,14 +115,18 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
+      # Pin the doctrine/dbal major up front so the whole graph resolves
+      # consistently: dbal 4 pulls Symfony 8, dbal 3 keeps Symfony on 7.4
+      # (symfony/http-foundation 8 conflicts with dbal 3). This gives runtime
+      # coverage of both Symfony majors across the matrix.
+      - name: Pin doctrine/dbal version
+        run: composer require --dev --no-update "doctrine/dbal:${{ matrix.dbal }}"
+
       - name: Install dependencies
-        run: composer install --no-interaction --no-progress --no-scripts --ansi
+        run: composer update --no-interaction --no-progress --no-scripts --ansi
 
       - name: Install extra dependencies
         run: composer require --dev symfony/redis-messenger symfony/amqp-messenger
-
-      - name: Select doctrine/dbal version
-        run: composer update "doctrine/dbal:${{ matrix.dbal }}" -W --no-interaction --no-progress --no-scripts --ansi
 
       - name: Run unit tests
         run: vendor/bin/phpunit --colors=always --coverage-text

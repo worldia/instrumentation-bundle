@@ -22,6 +22,6 @@ class CommandVoter extends AbstractVoter implements CommandVoterInterface
             return 'unknown-command';
         }
 
-        return $command->getDefaultName() ?: ($command->getName() ?: 'unknown-command');
+        return $command->getName() ?: 'unknown-command';
     }
 }
