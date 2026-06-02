@@ -20,7 +20,7 @@ class Handler
     {
     }
 
-    public function __invoke(Message $message)
+    public function __invoke(Message $message): void
     {
         $span = $this->tracerProvider->getTracer('test')->spanBuilder('handling')->startSpan();
         Logging::getLogger()->alert('Processing');

@@ -28,12 +28,12 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 class AddUserEventSubscriberTest extends TestCase
 {
-    public function testItImplementsEventSubscriberInterface()
+    public function testItImplementsEventSubscriberInterface(): void
     {
         $this->assertTrue(is_a(AddUserEventSubscriber::class, EventSubscriberInterface::class, true));
     }
 
-    public function testItAddsUserAttributes()
+    public function testItAddsUserAttributes(): void
     {
         $user = $this->createMock(UserInterface::class);
         $user->expects($this->any())->method('getUserIdentifier')->willReturn('customer@example.com');

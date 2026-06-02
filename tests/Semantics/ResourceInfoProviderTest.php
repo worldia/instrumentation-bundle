@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
 
 class ResourceInfoProviderTest extends TestCase
 {
-    public function testItImplementsEventSubscriberInterface()
+    public function testItImplementsEventSubscriberInterface(): void
     {
         $this->assertTrue(is_a(ResourceInfoProvider::class, ResourceInfoProviderInterface::class, true));
     }

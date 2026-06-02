@@ -23,7 +23,7 @@ class Doctrine extends AbstractController
 
         $href = $this->getTraceLink();
 
-        $content = array_map(fn (Post $post) => $post->getText(), $posts);
+        $content = array_map(static fn (Post $post) => $post->getText(), $posts);
 
         $content = implode('<br>', $content);
 

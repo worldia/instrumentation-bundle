@@ -152,10 +152,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $loader = $this->getLoader('tracing', $container);
 
         $container->setParameter('tracing.request.attributes.server_name', $config['request']['attributes']['server_name']);
-        $container->setParameter('tracing.request.attributes.request_headers', array_map(fn (string $value): string => strtolower($value), $config['request']['attributes']['request_headers']));
+        $container->setParameter('tracing.request.attributes.request_headers', array_map(static fn (string $value): string => strtolower($value), $config['request']['attributes']['request_headers']));
         $container->setParameter('tracing.message.flush_spans_after_handling', $config['message']['flush_spans_after_handling']);
         $container->setParameter('tracing.http.propagate_by_default', $config['http']['propagate_by_default']);
-        $container->setParameter('tracing.http.attributes.request_headers', array_map(fn (string $value): string => strtolower($value), $config['http']['attributes']['request_headers']));
+        $container->setParameter('tracing.http.attributes.request_headers', array_map(static fn (string $value): string => strtolower($value), $config['http']['attributes']['request_headers']));
 
         $loader->load('tracing.php');
         $loader->load('http.php');
