@@ -146,8 +146,8 @@ class MessageEventSubscriber implements EventSubscriberInterface
         }
 
         if ($this->createSubSpan) {
-            if (null !== $scope = $this->scopes[$span]) {
-                $scope->detach();
+            if (isset($this->scopes[$span])) {
+                $this->scopes[$span]->detach();
                 unset($this->scopes[$span]); // Free memory
             }
             $span->end();

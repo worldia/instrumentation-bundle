@@ -38,7 +38,7 @@ final class ContextInitializer
         return static::activateContext($stamp->getBaggage());
     }
 
-    public static function fromW3CHeader(string $header): ScopeInterface|null
+    public static function fromW3CHeader(string $header): ScopeInterface
     {
         return static::activateContext($header);
     }
