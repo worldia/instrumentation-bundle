@@ -1,2 +1,16 @@
 parameters:
   level: 8
+  # The DBAL decorators must compile against both doctrine/dbal 3 and 4, whose
+  # driver interfaces have incompatible signatures. The version-specific code is
+  # guarded at runtime; reportUnmatchedIgnoredErrors is disabled so the inline
+  # ignores work whichever major version is installed in CI.
+  reportUnmatchedIgnoredErrors: false
+  excludePaths:
+    # The two connection decorators are thin signature adapters over the shared
+    # (and analysed) ConnectionTrait: Connection returns void from its transaction
+    # methods (dbal 4), DBAL3\Connection returns bool (dbal 3). Each is incompatible
+    # with the parent signatures of the *other* major version — a non-ignorable
+    # covariance error — so both are excluded regardless of which version is
+    # installed. Only one is ever instantiated, picked at compile time.
+    - src/Tracing/Doctrine/Instrumentation/DBAL/Connection.php
+    - src/Tracing/Doctrine/Instrumentation/DBAL/DBAL3/Connection.php

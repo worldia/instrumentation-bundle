@@ -65,7 +65,7 @@ class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttribute
         if ($platform instanceof Platforms\SQLServerPlatform) {
             return DbAttributes::DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
         }
-        if ($platform instanceof Platforms\SqlitePlatform) {
+        if ($this->isSqlitePlatform($platform)) {
             return DbIncubatingAttributes::DB_SYSTEM_NAME_VALUE_SQLITE;
         }
         if ($platform instanceof Platforms\OraclePlatform) {
@@ -76,5 +76,21 @@ class DoctrineConnectionAttributeProvider implements DoctrineConnectionAttribute
         }
 
         return DbIncubatingAttributes::DB_SYSTEM_NAME_VALUE_OTHER_SQL;
+    }
+
+    /**
+     * doctrine/dbal 3 names the platform SqlitePlatform, doctrine/dbal 4 renamed
+     * it to SQLitePlatform (no alias). Match either via a dynamic instanceof so
+     * the missing class name does not trigger a static analysis error.
+     */
+    private function isSqlitePlatform(AbstractPlatform $platform): bool
+    {
+        foreach (['Doctrine\DBAL\Platforms\SQLitePlatform', 'Doctrine\DBAL\Platforms\SqlitePlatform'] as $class) {
+            if ($platform instanceof $class) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -9,15 +9,15 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Doctrine\Instrumentation\DBAL;
 
+use Doctrine\DBAL\Driver\Middleware\AbstractStatementMiddleware;
 use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\Statement as DoctrineStatement;
-use Doctrine\DBAL\ParameterType;
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ContextInterface;
 
-class Statement implements DoctrineStatement
+class Statement extends AbstractStatementMiddleware
 {
     use TracerAwareTrait;
 
@@ -26,20 +26,21 @@ class Statement implements DoctrineStatement
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(protected TracerProviderInterface $tracerProvider, private ContextInterface $parentContext, private DoctrineStatement $decoratedStatement, private string $sqlQuery, private array $attributes, private bool $logSql)
+    public function __construct(TracerProviderInterface $tracerProvider, private ContextInterface $parentContext, DoctrineStatement $decoratedStatement, private string $sqlQuery, private array $attributes, private bool $logSql)
     {
+        parent::__construct($decoratedStatement);
+
+        $this->tracerProvider = $tracerProvider;
     }
 
-    public function bindValue($param, $value, $type = ParameterType::STRING): bool
-    {
-        return $this->decoratedStatement->bindValue($param, $value, $type);
-    }
-
-    public function bindParam($param, &$variable, $type = ParameterType::STRING, $length = null): bool
-    {
-        return $this->decoratedStatement->bindParam($param, $variable, $type, ...\array_slice(\func_get_args(), 3));
-    }
-
+    /**
+     * The optional $params argument keeps backward compatibility with
+     * doctrine/dbal 3, where Statement::execute() still accepts parameters.
+     * It is forwarded as-is so that dbal 4 (which takes no argument) is never
+     * passed one.
+     *
+     * @param array<int|string,mixed>|null $params
+     */
     public function execute($params = null): Result
     {
         $span = $this->getTracer()
@@ -54,7 +55,7 @@ class Statement implements DoctrineStatement
         }
 
         try {
-            return $this->decoratedStatement->execute($params);
+            return parent::execute(...\func_get_args());
         } finally {
             $span->end();
         }

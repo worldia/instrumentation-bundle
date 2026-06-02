@@ -9,58 +9,46 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Doctrine\Instrumentation\DBAL;
 
-use Doctrine\DBAL\Connection as DBALConnection;
-use Doctrine\DBAL\Driver\API\ExceptionConverter;
 use Doctrine\DBAL\Driver as DriverInterface;
 use Doctrine\DBAL\Driver\Connection as DriverConnection;
+use Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Schema\AbstractSchemaManager;
-use Doctrine\DBAL\VersionAwarePlatformDriver;
+use Doctrine\DBAL\ServerVersionProvider;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 
-final class Driver implements VersionAwarePlatformDriver
+final class Driver extends AbstractDriverMiddleware
 {
-    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private DriverInterface $decorated, private MainSpanContextInterface $mainSpanContext, private bool $logQueries)
+    /**
+     * @param class-string<DriverConnection> $connectionClass The connection decorator to use, picked at compile
+     *                                                        time depending on the installed doctrine/dbal major version
+     */
+    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, DriverInterface $decorated, private MainSpanContextInterface $mainSpanContext, private bool $logQueries, private string $connectionClass = Connection::class)
     {
+        parent::__construct($decorated);
     }
 
     public function connect(array $params): DriverConnection
     {
-        $attributes = $this->attributeProvider->getAttributes($this->decorated->getDatabasePlatform(), $params);
+        $connection = parent::connect($params);
+        $attributes = $this->attributeProvider->getAttributes($this->getPlatform($connection), $params);
 
-        return new Connection($this->tracerProvider, $this->decorated->connect($params), $this->mainSpanContext, $attributes, $this->logQueries);
+        $connectionClass = $this->connectionClass;
+
+        return new $connectionClass($this->tracerProvider, $connection, $this->mainSpanContext, $attributes, $this->logQueries);
     }
 
-    public function getDatabasePlatform(): AbstractPlatform
+    private function getPlatform(DriverConnection $connection): AbstractPlatform
     {
-        return $this->decorated->getDatabasePlatform();
-    }
-
-    /**
-     * @phpstan-template T of AbstractPlatform
-     *
-     * @phpstan-param T $platform
-     *
-     * @phpstan-return AbstractSchemaManager<T>
-     */
-    public function getSchemaManager(DBALConnection $conn, AbstractPlatform $platform): AbstractSchemaManager
-    {
-        return $this->decorated->getSchemaManager($conn, $platform);
-    }
-
-    public function getExceptionConverter(): ExceptionConverter
-    {
-        return $this->decorated->getExceptionConverter();
-    }
-
-    public function createDatabasePlatformForVersion($version): AbstractPlatform
-    {
-        if ($this->decorated instanceof VersionAwarePlatformDriver) {
-            return $this->decorated->createDatabasePlatformForVersion($version);
+        // doctrine/dbal 4: the driver needs a ServerVersionProvider, which the
+        // connection itself implements. The interface does not exist on dbal 3,
+        // where this instanceof is simply always false.
+        if ($connection instanceof ServerVersionProvider) { // @phpstan-ignore-line
+            return parent::getDatabasePlatform($connection); // @phpstan-ignore-line
         }
 
-        return $this->decorated->getDatabasePlatform();
+        // doctrine/dbal 3: getDatabasePlatform() takes no argument.
+        return parent::getDatabasePlatform(); // @phpstan-ignore-line
     }
 }
