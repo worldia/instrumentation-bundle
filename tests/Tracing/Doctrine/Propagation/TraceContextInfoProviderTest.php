@@ -61,7 +61,7 @@ class TraceContextInfoProviderTest extends TestCase
     public function testItGetsControllerAndRoute(): void
     {
         $parameters = $this->createMock(ParameterBag::class);
-        $parameters->method('get')->willReturnCallback(function (string $param) {
+        $parameters->method('get')->willReturnCallback(static function (string $param) {
             return match ($param) {
                 '_controller' => 'Some\Controller',
                 '_route' => 'some_route',

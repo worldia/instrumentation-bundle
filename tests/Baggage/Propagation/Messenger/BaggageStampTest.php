@@ -16,7 +16,7 @@ use Symfony\Component\Messenger\Stamp\StampInterface;
 
 class BaggageStampTest extends TestCase
 {
-    public function testItImplementsStampInterface()
+    public function testItImplementsStampInterface(): void
     {
         $this->assertTrue(is_a(BaggageStamp::class, StampInterface::class, true));
     }

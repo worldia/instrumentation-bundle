@@ -21,7 +21,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 
 class RequestEventSubscriberTest extends TestCase
 {
-    public function testItImplementsEventSubscriberInterface()
+    public function testItImplementsEventSubscriberInterface(): void
     {
         $this->assertTrue(is_a(RequestEventSubscriber::class, EventSubscriberInterface::class, true));
     }

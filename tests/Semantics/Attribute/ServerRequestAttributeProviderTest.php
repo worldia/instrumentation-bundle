@@ -164,7 +164,7 @@ class ServerRequestAttributeProviderTest extends TestCase
         [Request::class => $request, HeaderBag::class => $headers] = $this->expect();
 
         $provider = new ServerRequestAttributeProvider();
-        $headers->method('get')->willReturnCallback(function (string $param) {
+        $headers->method('get')->willReturnCallback(static function (string $param) {
             return match ($param) {
                 'user-agent' => 'Prometheus/1.1',
                 default => 'some-value',
@@ -182,7 +182,7 @@ class ServerRequestAttributeProviderTest extends TestCase
 
         $provider = new ServerRequestAttributeProvider();
         $headers->method('has')->willReturn(true);
-        $headers->method('get')->willReturnCallback(function (string $param) {
+        $headers->method('get')->willReturnCallback(static function (string $param) {
             return match ($param) {
                 'host' => 'www.some-host.com',
                 'content-length' => '2',
@@ -202,7 +202,7 @@ class ServerRequestAttributeProviderTest extends TestCase
 
         $provider = new ServerRequestAttributeProvider(null, ['x-foo']);
         $headers->method('has')->willReturn(true);
-        $headers->method('get')->willReturnCallback(function (string $param) {
+        $headers->method('get')->willReturnCallback(static function (string $param) {
             return match ($param) {
                 'x-foo' => 'bar',
                 default => 'some-value',

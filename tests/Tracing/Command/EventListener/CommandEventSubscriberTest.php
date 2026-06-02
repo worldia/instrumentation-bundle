@@ -66,7 +66,7 @@ class CommandEventSubscriberTest extends TestCase
         ];
     }
 
-    public function testItImplementsEventSubscriberInterface()
+    public function testItImplementsEventSubscriberInterface(): void
     {
         $this->assertTrue(is_a(CommandEventSubscriber::class, EventSubscriberInterface::class, true));
     }

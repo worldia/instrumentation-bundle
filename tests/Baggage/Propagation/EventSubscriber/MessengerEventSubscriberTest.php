@@ -20,7 +20,7 @@ use Symfony\Component\Messenger\Event\WorkerMessageReceivedEvent;
 
 class MessengerEventSubscriberTest extends TestCase
 {
-    public function testItImplementsEventSubscriberInterface()
+    public function testItImplementsEventSubscriberInterface(): void
     {
         $this->assertTrue(is_a(MessengerEventSubscriber::class, EventSubscriberInterface::class, true));
     }

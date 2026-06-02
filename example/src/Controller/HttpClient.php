@@ -67,10 +67,10 @@ class HttpClient extends AbstractController
         return [
             'propagate' => false,
             'operation_name' => 'http.get timeapi.io-time',
-            'on_request' => function (array $headers, $body, SpanInterface $span): void {
+            'on_request' => static function (array $headers, $body, SpanInterface $span): void {
                 $span->setAttribute('request.headers', $headers);
             },
-            'on_response' => function (array $headers, $body, SpanInterface $span): void {
+            'on_response' => static function (array $headers, $body, SpanInterface $span): void {
                 $span->setAttribute('response.headers', json_encode($headers));
             },
         ];
