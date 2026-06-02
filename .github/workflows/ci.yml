@@ -8,6 +8,7 @@ jobs:
     strategy:
       matrix:
         php-version: ["8.4"]
+        dbal: ["^3.6", "^4.0"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +36,9 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --no-scripts --ansi
+
+      - name: Select doctrine/dbal version
+        run: composer update "doctrine/dbal:${{ matrix.dbal }}" -W --no-interaction --no-progress --no-scripts --ansi
 
       - name: Run static code analysis
         run: vendor/bin/phpstan analyze src/ --memory-limit="-1" --ansi --no-progress
@@ -80,6 +84,7 @@ jobs:
     strategy:
       matrix:
         php-version: ["8.4"]
+        dbal: ["^3.6", "^4.0"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -112,6 +117,9 @@ jobs:
 
       - name: Install extra dependencies
         run: composer require --dev symfony/redis-messenger symfony/amqp-messenger
+
+      - name: Select doctrine/dbal version
+        run: composer update "doctrine/dbal:${{ matrix.dbal }}" -W --no-interaction --no-progress --no-scripts --ansi
 
       - name: Run unit tests
         run: vendor/bin/phpunit --colors=always --coverage-text
