@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection;
 
+use Instrumentation\DependencyInjection\CompilerPass\AIPlatformTracingCompilerPass;
 use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\Middleware as InstrumentationMiddleware;
@@ -17,6 +18,7 @@ use Instrumentation\Tracing\Request\EventListener\AddUserEventSubscriber;
 use OpenTelemetry\SDK\Trace\SpanLimitsBuilder;
 use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Component\Config\FileLocator;
+use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
@@ -72,6 +74,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
     public function process(ContainerBuilder $container): void
     {
+        if ($container->hasParameter('tracing.ai.enabled') && $container->getParameter('tracing.ai.enabled')) {
+            (new AIPlatformTracingCompilerPass())->process($container);
+        }
+
         if ($container->hasParameter('tracing.doctrine.connections') && $container->hasParameter('doctrine.connections')) {
             /** @var array<string> $connectionsToTrace */
             $connectionsToTrace = $container->getParameter('tracing.doctrine.connections');
@@ -168,6 +174,8 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         }
 
         $config['doctrine']['enabled'] = $config['doctrine']['instrumentation'] || $config['doctrine']['propagation'];
+
+        $container->setParameter('tracing.ai.enabled', $this->isConfigEnabled($container, $config['ai']) && interface_exists(PlatformInterface::class));
 
         foreach (['request', 'command', 'message', 'doctrine'] as $feature) {
             if (!$this->isConfigEnabled($container, $config[$feature])) {
