@@ -83,6 +83,21 @@ class TracingPlatformTest extends TestCase
         $this->assertSame(StatusCode::STATUS_OK, $this->spans[0]->getStatus()->getCode());
     }
 
+    public function testItEndsSpanWhenResultIsNeverConsumed(): void
+    {
+        $platform = $this->buildPlatform('gemini');
+
+        $result = $platform->invoke('gemini-2.5-pro', 'Hello');
+        $this->assertCount(0, $this->spans, 'Span must not end before the result is consumed');
+
+        // Drop the result without consuming it: the converter's destructor must
+        // end the span so it is exported rather than leaked.
+        unset($result);
+        gc_collect_cycles();
+
+        $this->assertCount(1, $this->spans);
+    }
+
     public function testItAddsTokenUsageAttributesFromExtractor(): void
     {
         $extractor = $this->createMock(TokenUsageExtractorInterface::class);
