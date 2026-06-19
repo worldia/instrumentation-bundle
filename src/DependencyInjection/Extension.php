@@ -9,8 +9,10 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection;
 
-use Instrumentation\DependencyInjection\CompilerPass\DoctrineTracingCompilerPass;
+use Instrumentation\DependencyInjection\CompilerPass\AIAgentTracingCompilerPass;
 use Instrumentation\DependencyInjection\CompilerPass\AIPlatformTracingCompilerPass;
+use Instrumentation\DependencyInjection\CompilerPass\DoctrineTracingCompilerPass;
+use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
@@ -76,6 +78,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         if ($container->hasDefinition(TracingPlatform::class)) {
             (new AIPlatformTracingCompilerPass())->process($container);
+        }
+
+        if ($container->hasDefinition(TracingAgent::class)) {
+            (new AIAgentTracingCompilerPass())->process($container);
         }
     }
 
