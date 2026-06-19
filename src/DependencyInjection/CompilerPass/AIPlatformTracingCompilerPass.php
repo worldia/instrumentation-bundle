@@ -19,11 +19,11 @@ final class AIPlatformTracingCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        foreach (array_keys($container->findTaggedServiceIds('ai.platform')) as $platformId) {
-            $system = str_contains($platformId, 'ai.platform.')
-                ? substr($platformId, \strlen('ai.platform.'))
-                : $platformId;
+        foreach ($container->findTaggedServiceIds('ai.platform') as $platformId => $tags) {
+            $system = $tags[0]['name'] ?? $platformId;
 
+            // Low priority ensures TracingPlatform is the outermost decorator,
+            // so the span covers the full call including any inner decorators (retry, cache, etc.).
             $definition = (new Definition(TracingPlatform::class))
                 ->setDecoratedService($platformId, priority: -512)
                 ->setArguments([new Reference('.inner'), $system]);

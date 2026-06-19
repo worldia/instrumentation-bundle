@@ -34,15 +34,16 @@ final class TracingResultConverter implements ResultConverterInterface
     {
         try {
             $converted = $this->inner->convert($result, $options);
-            $this->span->setStatus(StatusCode::STATUS_OK);
-
-            return $converted;
         } catch (\Throwable $e) {
             $this->span->recordException($e);
             $this->span->setStatus(StatusCode::STATUS_ERROR);
             $this->span->end();
             throw $e;
         }
+
+        $this->span->setStatus(StatusCode::STATUS_OK);
+
+        return $converted;
         // On success, span is ended by TracingTokenUsageExtractor after token extraction.
     }
 
