@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\AI\Platform;
 
 use Instrumentation\Semantics\Attribute\PlatformAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\PlatformOperationNameResolverInterface;
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -25,6 +26,7 @@ final class TracingPlatform implements PlatformInterface
     public function __construct(
         private readonly PlatformInterface $platform,
         TracerProviderInterface $tracerProvider,
+        private readonly PlatformOperationNameResolverInterface $operationNameResolver,
         private readonly PlatformAttributeProviderInterface $attributeProvider,
         private readonly string $system,
     ) {
@@ -33,7 +35,7 @@ final class TracingPlatform implements PlatformInterface
 
     public function invoke(string $model, array|string|object $input, array $options = []): DeferredResult
     {
-        $operationName = $options['extra']['operation_name'] ?? 'symfony_ai';
+        $operationName = $this->operationNameResolver->getOperationName($model, $options);
 
         $span = $this->getTracer()
             ->spanBuilder($operationName)

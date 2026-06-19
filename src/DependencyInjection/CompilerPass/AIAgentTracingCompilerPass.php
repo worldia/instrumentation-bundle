@@ -11,6 +11,8 @@ namespace Instrumentation\DependencyInjection\CompilerPass;
 
 use Instrumentation\Semantics\Attribute\AgentAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ToolAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\AgentOperationNameResolverInterface;
+use Instrumentation\Semantics\OperationName\ToolOperationNameResolverInterface;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Toolbox\TracingToolbox;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
@@ -34,6 +36,7 @@ final class AIAgentTracingCompilerPass implements CompilerPassInterface
                 ->setArguments([
                     new Reference('.inner'),
                     new Reference(TracerProviderInterface::class),
+                    new Reference(AgentOperationNameResolverInterface::class),
                     new Reference(AgentAttributeProviderInterface::class),
                 ]);
 
@@ -48,6 +51,7 @@ final class AIAgentTracingCompilerPass implements CompilerPassInterface
                 ->setArguments([
                     new Reference('.inner'),
                     new Reference(TracerProviderInterface::class),
+                    new Reference(ToolOperationNameResolverInterface::class),
                     new Reference(ToolAttributeProviderInterface::class),
                 ]);
 

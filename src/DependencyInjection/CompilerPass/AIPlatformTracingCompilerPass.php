@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\DependencyInjection\CompilerPass;
 
 use Instrumentation\Semantics\Attribute\PlatformAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\PlatformOperationNameResolverInterface;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -31,6 +32,7 @@ final class AIPlatformTracingCompilerPass implements CompilerPassInterface
                 ->setArguments([
                     new Reference('.inner'),
                     new Reference(TracerProviderInterface::class),
+                    new Reference(PlatformOperationNameResolverInterface::class),
                     new Reference(PlatformAttributeProviderInterface::class),
                     $system,
                 ]);

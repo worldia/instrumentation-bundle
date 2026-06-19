@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Tests\Instrumentation\Tracing\AI\Agent;
 
 use Instrumentation\Semantics\Attribute\AgentAttributeProvider;
+use Instrumentation\Semantics\OperationName\AgentOperationNameResolver;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -71,7 +72,7 @@ class TracingAgentTest extends TestCase
         $inner->method('getName')->willReturn('my_agent');
         $inner->method('call')->willThrowException($exception);
 
-        $agent = new TracingAgent($inner, $this->tracerProvider, new AgentAttributeProvider());
+        $agent = new TracingAgent($inner, $this->tracerProvider, new AgentOperationNameResolver(), new AgentAttributeProvider());
 
         try {
             $agent->call(new MessageBag());
@@ -98,6 +99,6 @@ class TracingAgentTest extends TestCase
         $inner->method('getName')->willReturn($name);
         $inner->method('call')->willReturn($result);
 
-        return new TracingAgent($inner, $this->tracerProvider, new AgentAttributeProvider());
+        return new TracingAgent($inner, $this->tracerProvider, new AgentOperationNameResolver(), new AgentAttributeProvider());
     }
 }

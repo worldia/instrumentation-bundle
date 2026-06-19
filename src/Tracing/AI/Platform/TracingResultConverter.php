@@ -51,4 +51,15 @@ final class TracingResultConverter implements ResultConverterInterface
     {
         return new TracingTokenUsageExtractor($this->inner->getTokenUsageExtractor(), $this->span);
     }
+
+    /**
+     * Backstop: if the deferred result is never consumed (so neither convert()
+     * nor the token usage extractor runs), end the span here so it is not leaked.
+     * Span::end() is idempotent, so this is a no-op on the normal path. Mirrors
+     * the destructor in the HttpClient TracedResponse.
+     */
+    public function __destruct()
+    {
+        $this->span->end();
+    }
 }

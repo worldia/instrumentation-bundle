@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\AI\Toolbox;
 
 use Instrumentation\Semantics\Attribute\ToolAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\ToolOperationNameResolverInterface;
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -32,6 +33,7 @@ final class TracingToolbox implements ToolboxInterface
     public function __construct(
         private readonly ToolboxInterface $toolbox,
         TracerProviderInterface $tracerProvider,
+        private readonly ToolOperationNameResolverInterface $operationNameResolver,
         private readonly ToolAttributeProviderInterface $attributeProvider,
     ) {
         $this->tracerProvider = $tracerProvider;
@@ -48,7 +50,7 @@ final class TracingToolbox implements ToolboxInterface
     public function execute(ToolCall $toolCall): ToolResult
     {
         $span = $this->getTracer()
-            ->spanBuilder('execute_tool '.$toolCall->getName())
+            ->spanBuilder($this->operationNameResolver->getOperationName($toolCall))
             ->setSpanKind(SpanKind::KIND_INTERNAL)
             ->setAttributes($this->attributeProvider->getAttributes($toolCall))
             ->startSpan();
