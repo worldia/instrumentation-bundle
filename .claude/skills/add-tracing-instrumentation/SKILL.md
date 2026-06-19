@@ -34,9 +34,18 @@ If users should be able to exclude items, add a Voter extending `AbstractVoter` 
 
 ### 5. DI wiring
 
-- **`src/DependencyInjection/config/tracing/<feature>.php`** — register the decorator/subscriber, voter, sampling listener. Inject providers via `service(...)`, config via `param('tracing.<feature>.*')`. Use `->autoconfigure()` on subscribers. Decorators: `->decorate(Interface::class, null, <priority>)` with `service('.inner')` as first arg. Multiple tagged targets → use a compiler pass instead (model: AI platform's `AIPlatformTracingCompilerPass`).
+- **`src/DependencyInjection/config/tracing/<feature>.php`** — register the decorator/subscriber, voter, sampling listener. Inject providers via `service(...)`, config via `param('tracing.<feature>.*')`. Use `->autoconfigure()` on subscribers.
 - **`src/DependencyInjection/Configuration.php`** — add an `arrayNode('<feature>')->addDefaultsIfNotSet()` under `tracing`, with `booleanNode('enabled')` (default `true`, or `false` if it needs an optional dependency) and any `blacklist`/`methods` array nodes. See lines 121–164.
 - **`src/DependencyInjection/Extension.php` → `loadTracing()`** — add `'<feature>'` to the feature loop (`foreach (['request', 'command', 'message', ...] as $feature)`), which loads `<feature>.php` when enabled and copies `blacklist`/`methods` into `tracing.<feature>.*` params. Gate optional-dependency features behind an `interface_exists()`/`class_exists()` check.
+
+#### Choosing the decoration mechanism
+
+This is the bundle's standing convention — follow it, don't introduce a third style:
+
+- **Single, statically-known service id** → decorate declaratively in the `<feature>.php` config: `->decorate(Interface::class, null, <priority>)` with `service('.inner')` as the first arg. This is the _only_ case where compile-time code is not needed. Model: HttpClient (`config/tracing/http.php` decorates `HttpClientInterface`).
+- **Multiple services discovered by tag** (you don't know the ids/count until the app is configured, e.g. `ai.platform`, `ai.agent`, `ai.toolbox`) → you must `findTaggedServiceIds()` and loop, which is only reliable at compile time. Put that loop in a **dedicated `*CompilerPass` class** under `src/DependencyInjection/CompilerPass/`, register an `->abstract()` template service in `<feature>.php`, and invoke the pass from `Extension::process()` gated on `$container->hasDefinition(<TemplateService>::class)`. Models: `AIPlatformTracingCompilerPass`, `AIAgentTracingCompilerPass`, `DoctrineTracingCompilerPass`.
+
+Do **not** inline compile-time container logic directly in `Extension::process()` — all such logic lives in dedicated `*CompilerPass` classes (the Doctrine wiring used to be the lone inline exception and was extracted into `DoctrineTracingCompilerPass`).
 
 ## Verify
 
