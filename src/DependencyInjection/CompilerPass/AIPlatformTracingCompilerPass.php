@@ -12,6 +12,7 @@ namespace Instrumentation\DependencyInjection\CompilerPass;
 use Instrumentation\Semantics\Attribute\PlatformAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\PlatformOperationNameResolverInterface;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
+use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -22,6 +23,9 @@ final class AIPlatformTracingCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
+        /** @var array<string> $blacklist */
+        $blacklist = $container->hasParameter('tracing.ai.platform.blacklist') ? $container->getParameter('tracing.ai.platform.blacklist') : [];
+
         foreach ($container->findTaggedServiceIds('ai.platform') as $platformId => $tags) {
             $system = $tags[0]['name'] ?? $platformId;
 
@@ -35,6 +39,7 @@ final class AIPlatformTracingCompilerPass implements CompilerPassInterface
                     new Reference(PlatformOperationNameResolverInterface::class),
                     new Reference(PlatformAttributeProviderInterface::class),
                     $system,
+                    new Definition(OperationNameVoter::class, [$blacklist]),
                 ]);
 
             $container->setDefinition('instrumentation.tracing.ai.platform.'.$system, $definition);

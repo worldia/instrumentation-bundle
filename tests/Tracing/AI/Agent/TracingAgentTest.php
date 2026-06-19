@@ -12,6 +12,7 @@ namespace Tests\Instrumentation\Tracing\AI\Agent;
 use Instrumentation\Semantics\Attribute\AgentAttributeProvider;
 use Instrumentation\Semantics\OperationName\AgentOperationNameResolver;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
+use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
@@ -72,7 +73,7 @@ class TracingAgentTest extends TestCase
         $inner->method('getName')->willReturn('my_agent');
         $inner->method('call')->willThrowException($exception);
 
-        $agent = new TracingAgent($inner, $this->tracerProvider, new AgentOperationNameResolver(), new AgentAttributeProvider());
+        $agent = new TracingAgent($inner, $this->tracerProvider, new AgentOperationNameResolver(), new AgentAttributeProvider(), new OperationNameVoter([]));
 
         try {
             $agent->call(new MessageBag());
@@ -84,6 +85,19 @@ class TracingAgentTest extends TestCase
         $this->assertCount(1, $this->spans);
         $this->assertSame(StatusCode::STATUS_ERROR, $this->spans[0]->getStatus()->getCode());
         $this->assertSame('exception', $this->spans[0]->getEvents()[0]->getName());
+    }
+
+    public function testItDoesNotTraceBlacklistedAgents(): void
+    {
+        $inner = $this->createMock(AgentInterface::class);
+        $inner->method('getName')->willReturn('internal_agent');
+        $inner->method('call')->willReturn(new TextResult('Hello'));
+
+        $agent = new TracingAgent($inner, $this->tracerProvider, new AgentOperationNameResolver(), new AgentAttributeProvider(), new OperationNameVoter(['^internal_']));
+
+        $agent->call(new MessageBag());
+
+        $this->assertCount(0, $this->spans);
     }
 
     public function testItDelegatesGetName(): void
@@ -99,6 +113,6 @@ class TracingAgentTest extends TestCase
         $inner->method('getName')->willReturn($name);
         $inner->method('call')->willReturn($result);
 
-        return new TracingAgent($inner, $this->tracerProvider, new AgentOperationNameResolver(), new AgentAttributeProvider());
+        return new TracingAgent($inner, $this->tracerProvider, new AgentOperationNameResolver(), new AgentAttributeProvider(), new OperationNameVoter([]));
     }
 }
