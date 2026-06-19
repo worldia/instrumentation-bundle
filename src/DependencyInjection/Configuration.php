@@ -159,7 +159,7 @@ class Configuration implements ConfigurationInterface
                         ->arrayNode('ai')
                             ->addDefaultsIfNotSet()
                             ->children()
-                                ->booleanNode('enabled')->defaultTrue()->end()
+                                ->booleanNode('enabled')->defaultFalse()->end()
                             ->end()
                         ->end()
                         ->arrayNode('doctrine')

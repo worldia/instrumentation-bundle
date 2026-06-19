@@ -18,7 +18,6 @@ use Instrumentation\Tracing\Request\EventListener\AddUserEventSubscriber;
 use OpenTelemetry\SDK\Trace\SpanLimitsBuilder;
 use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Component\Config\FileLocator;
-use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
@@ -175,9 +174,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $config['doctrine']['enabled'] = $config['doctrine']['instrumentation'] || $config['doctrine']['propagation'];
 
-        $container->setParameter('tracing.ai.enabled', $this->isConfigEnabled($container, $config['ai']) && interface_exists(PlatformInterface::class));
-
-        foreach (['request', 'command', 'message', 'doctrine'] as $feature) {
+        foreach (['request', 'command', 'message', 'ai', 'doctrine'] as $feature) {
             if (!$this->isConfigEnabled($container, $config[$feature])) {
                 continue;
             }
