@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\AI\Platform;
 
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\SemConv\TraceAttributes;
 use Symfony\AI\Platform\Result\RawResultInterface;
 use Symfony\AI\Platform\TokenUsage\TokenUsageExtractorInterface;
 use Symfony\AI\Platform\TokenUsage\TokenUsageInterface;
@@ -17,12 +18,12 @@ use Symfony\AI\Platform\TokenUsage\TokenUsageInterface;
 final class TracingTokenUsageExtractor implements TokenUsageExtractorInterface
 {
     public function __construct(
-        private readonly ?TokenUsageExtractorInterface $inner,
+        private readonly TokenUsageExtractorInterface|null $inner,
         private readonly SpanInterface $span,
     ) {
     }
 
-    public function extract(RawResultInterface $rawResult, array $options = []): ?TokenUsageInterface
+    public function extract(RawResultInterface $rawResult, array $options = []): TokenUsageInterface|null
     {
         try {
             if (null === $this->inner) {
@@ -36,10 +37,10 @@ final class TracingTokenUsageExtractor implements TokenUsageExtractorInterface
             }
 
             if (null !== $tokenUsage->getPromptTokens()) {
-                $this->span->setAttribute('gen_ai.usage.input_tokens', $tokenUsage->getPromptTokens());
+                $this->span->setAttribute(TraceAttributes::GEN_AI_USAGE_INPUT_TOKENS, $tokenUsage->getPromptTokens());
             }
             if (null !== $tokenUsage->getCompletionTokens()) {
-                $this->span->setAttribute('gen_ai.usage.output_tokens', $tokenUsage->getCompletionTokens());
+                $this->span->setAttribute(TraceAttributes::GEN_AI_USAGE_OUTPUT_TOKENS, $tokenUsage->getCompletionTokens());
             }
 
             return $tokenUsage;

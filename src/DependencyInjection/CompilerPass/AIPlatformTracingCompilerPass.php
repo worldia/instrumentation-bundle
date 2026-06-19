@@ -9,7 +9,9 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection\CompilerPass;
 
+use Instrumentation\Semantics\Attribute\PlatformAttributeProviderInterface;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
+use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -26,7 +28,12 @@ final class AIPlatformTracingCompilerPass implements CompilerPassInterface
             // so the span covers the full call including any inner decorators (retry, cache, etc.).
             $definition = (new Definition(TracingPlatform::class))
                 ->setDecoratedService($platformId, priority: -512)
-                ->setArguments([new Reference('.inner'), $system]);
+                ->setArguments([
+                    new Reference('.inner'),
+                    new Reference(TracerProviderInterface::class),
+                    new Reference(PlatformAttributeProviderInterface::class),
+                    $system,
+                ]);
 
             $container->setDefinition('instrumentation.tracing.ai.platform.'.$system, $definition);
         }

@@ -15,6 +15,8 @@ use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProvider;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\MessageAttributeProvider;
 use Instrumentation\Semantics\Attribute\MessageAttributeProviderInterface;
+use Instrumentation\Semantics\Attribute\PlatformAttributeProvider;
+use Instrumentation\Semantics\Attribute\PlatformAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProvider;
@@ -63,6 +65,7 @@ return static function (ContainerConfigurator $container) {
             param('tracing.http.attributes.request_headers'),
         ])
         ->set(DoctrineConnectionAttributeProviderInterface::class, DoctrineConnectionAttributeProvider::class)
+        ->set(PlatformAttributeProviderInterface::class, PlatformAttributeProvider::class)
         ->set(AgentAttributeProviderInterface::class, AgentAttributeProvider::class)
         ->set(ToolAttributeProviderInterface::class, ToolAttributeProvider::class)
 
