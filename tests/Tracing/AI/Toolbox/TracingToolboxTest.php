@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace Tests\Instrumentation\Tracing\AI\Toolbox;
 
+use Instrumentation\Semantics\Attribute\ToolAttributeProvider;
 use Instrumentation\Tracing\AI\Toolbox\TracingToolbox;
-use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
@@ -24,12 +24,12 @@ use Symfony\AI\Platform\Result\ToolCall;
 class TracingToolboxTest extends TestCase
 {
     private \ArrayObject $spans;
+    private TracerProvider $tracerProvider;
 
     protected function setUp(): void
     {
         $this->spans = new \ArrayObject();
-        $tracerProvider = new TracerProvider(new SimpleSpanProcessor(new InMemoryExporter($this->spans)));
-        Tracing::setProvider($tracerProvider);
+        $this->tracerProvider = new TracerProvider(new SimpleSpanProcessor(new InMemoryExporter($this->spans)));
     }
 
     public function testItCreatesAnExecuteToolSpan(): void
@@ -75,7 +75,7 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('execute')->willThrowException($exception);
 
-        $toolbox = new TracingToolbox($inner);
+        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolAttributeProvider());
 
         try {
             $toolbox->execute($toolCall);
@@ -94,7 +94,7 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('getTools')->willReturn([]);
 
-        $toolbox = new TracingToolbox($inner);
+        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolAttributeProvider());
 
         $this->assertSame([], $toolbox->getTools());
     }
@@ -104,6 +104,6 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('execute')->with($expected)->willReturn($result);
 
-        return new TracingToolbox($inner);
+        return new TracingToolbox($inner, $this->tracerProvider, new ToolAttributeProvider());
     }
 }

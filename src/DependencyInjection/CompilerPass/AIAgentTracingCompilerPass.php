@@ -9,8 +9,11 @@ declare(strict_types=1);
 
 namespace Instrumentation\DependencyInjection\CompilerPass;
 
+use Instrumentation\Semantics\Attribute\AgentAttributeProviderInterface;
+use Instrumentation\Semantics\Attribute\ToolAttributeProviderInterface;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Toolbox\TracingToolbox;
+use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -28,7 +31,11 @@ final class AIAgentTracingCompilerPass implements CompilerPassInterface
 
             $definition = (new Definition(TracingAgent::class))
                 ->setDecoratedService($agentId, priority: -512)
-                ->setArguments([new Reference('.inner')]);
+                ->setArguments([
+                    new Reference('.inner'),
+                    new Reference(TracerProviderInterface::class),
+                    new Reference(AgentAttributeProviderInterface::class),
+                ]);
 
             $container->setDefinition('instrumentation.tracing.ai.agent.'.$name, $definition);
         }
@@ -38,7 +45,11 @@ final class AIAgentTracingCompilerPass implements CompilerPassInterface
 
             $definition = (new Definition(TracingToolbox::class))
                 ->setDecoratedService($toolboxId, priority: -512)
-                ->setArguments([new Reference('.inner')]);
+                ->setArguments([
+                    new Reference('.inner'),
+                    new Reference(TracerProviderInterface::class),
+                    new Reference(ToolAttributeProviderInterface::class),
+                ]);
 
             $container->setDefinition('instrumentation.tracing.ai.toolbox.'.$name, $definition);
         }
