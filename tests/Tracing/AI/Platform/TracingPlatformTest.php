@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace Tests\Instrumentation\Tracing\AI\Platform;
 
+use Instrumentation\Semantics\Attribute\PlatformAttributeProvider;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
-use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
@@ -28,12 +28,12 @@ use Symfony\AI\Platform\TokenUsage\TokenUsageExtractorInterface;
 class TracingPlatformTest extends TestCase
 {
     private \ArrayObject $spans;
+    private TracerProvider $tracerProvider;
 
     protected function setUp(): void
     {
         $this->spans = new \ArrayObject();
-        $tracerProvider = new TracerProvider(new SimpleSpanProcessor(new InMemoryExporter($this->spans)));
-        Tracing::setProvider($tracerProvider);
+        $this->tracerProvider = new TracerProvider(new SimpleSpanProcessor(new InMemoryExporter($this->spans)));
     }
 
     public function testItCreatesASpanWithCorrectNameAndKind(): void
@@ -125,7 +125,7 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willThrowException(new \RuntimeException('API unreachable'));
 
-        $platform = new TracingPlatform($inner, 'gemini');
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformAttributeProvider(), 'gemini');
 
         try {
             $platform->invoke('gemini-2.5-pro', 'Hello');
@@ -146,7 +146,7 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
-        $platform = new TracingPlatform($inner, 'gemini');
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformAttributeProvider(), 'gemini');
 
         try {
             $platform->invoke('gemini-2.5-pro', 'Hello')->asText();
@@ -158,7 +158,7 @@ class TracingPlatformTest extends TestCase
         $this->assertSame(StatusCode::STATUS_ERROR, $this->spans[0]->getStatus()->getCode());
     }
 
-    private function buildPlatform(string $system, ?TokenUsageExtractorInterface $extractor = null): TracingPlatform
+    private function buildPlatform(string $system, TokenUsageExtractorInterface|null $extractor = null): TracingPlatform
     {
         $converter = $this->createMock(ResultConverterInterface::class);
         $converter->method('convert')->willReturn(new TextResult('response'));
@@ -167,6 +167,6 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
-        return new TracingPlatform($inner, $system);
+        return new TracingPlatform($inner, $this->tracerProvider, new PlatformAttributeProvider(), $system);
     }
 }

@@ -47,7 +47,7 @@ final class TracingResultConverter implements ResultConverterInterface
         // On success, span is ended by TracingTokenUsageExtractor after token extraction.
     }
 
-    public function getTokenUsageExtractor(): ?TokenUsageExtractorInterface
+    public function getTokenUsageExtractor(): TokenUsageExtractorInterface
     {
         return new TracingTokenUsageExtractor($this->inner->getTokenUsageExtractor(), $this->span);
     }
