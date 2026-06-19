@@ -7,9 +7,11 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
+use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return static function (ContainerConfigurator $container) {
-    $container->parameters()
-        ->set('tracing.ai.enabled', true);
+    $container->services()
+        ->set(TracingPlatform::class)
+        ->abstract();
 };

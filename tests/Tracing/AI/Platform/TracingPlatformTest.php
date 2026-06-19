@@ -43,7 +43,7 @@ class TracingPlatformTest extends TestCase
         $platform->invoke('gemini-2.5-pro', 'Hello')->asText();
 
         $this->assertCount(1, $this->spans);
-        $this->assertSame('chat gemini', $this->spans[0]->getName());
+        $this->assertSame('symfony_ai', $this->spans[0]->getName());
         $this->assertSame(SpanKind::KIND_CLIENT, $this->spans[0]->getKind());
     }
 
@@ -54,7 +54,7 @@ class TracingPlatformTest extends TestCase
         $platform->invoke('sonar', 'Hello')->asText();
 
         $attributes = $this->spans[0]->getAttributes()->toArray();
-        $this->assertSame('chat', $attributes['gen_ai.operation.name']);
+        $this->assertSame('symfony_ai', $attributes['gen_ai.operation.name']);
         $this->assertSame('perplexity', $attributes['gen_ai.system']);
         $this->assertSame('sonar', $attributes['gen_ai.request.model']);
     }

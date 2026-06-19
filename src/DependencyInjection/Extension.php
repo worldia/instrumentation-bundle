@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\DependencyInjection;
 
 use Instrumentation\DependencyInjection\CompilerPass\AIPlatformTracingCompilerPass;
+use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\Middleware as InstrumentationMiddleware;
@@ -73,7 +74,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
     public function process(ContainerBuilder $container): void
     {
-        if ($container->hasParameter('tracing.ai.enabled') && $container->getParameter('tracing.ai.enabled')) {
+        if ($container->hasDefinition(TracingPlatform::class)) {
             (new AIPlatformTracingCompilerPass())->process($container);
         }
 
