@@ -80,6 +80,40 @@ class MeteringPlatformTest extends TestCase
         $this->assertSame([], $this->collectHistogramDataPoints('gen_ai.client.token.usage'));
     }
 
+    public function testItRecordsTheOperationDurationHistogram(): void
+    {
+        $platform = $this->buildPlatform('openai', null);
+        $platform->invoke('gpt-4o', 'Hello')->asText();
+
+        $dataPoints = $this->collectHistogramDataPoints('gen_ai.client.operation.duration');
+        $this->assertCount(1, $dataPoints);
+
+        $attributes = $dataPoints[0]->attributes->toArray();
+        $this->assertSame('chat', $attributes['gen_ai.operation.name']);
+        $this->assertSame('openai', $attributes['gen_ai.system']);
+        $this->assertSame('gpt-4o', $attributes['gen_ai.request.model']);
+        $this->assertArrayNotHasKey('error.type', $attributes);
+        $this->assertGreaterThanOrEqual(0, $dataPoints[0]->sum);
+    }
+
+    public function testItRecordsDurationWithErrorTypeWhenInvokeThrows(): void
+    {
+        $inner = $this->createMock(PlatformInterface::class);
+        $inner->method('invoke')->willThrowException(new \RuntimeException('boom'));
+
+        $platform = new MeteringPlatform($inner, $this->meterProvider, 'openai');
+
+        try {
+            $platform->invoke('gpt-4o', 'Hello');
+            $this->fail('Exception should have been rethrown');
+        } catch (\RuntimeException) {
+        }
+
+        $dataPoints = $this->collectHistogramDataPoints('gen_ai.client.operation.duration');
+        $this->assertCount(1, $dataPoints);
+        $this->assertSame(\RuntimeException::class, $dataPoints[0]->attributes->toArray()['error.type']);
+    }
+
     /**
      * @return list<\OpenTelemetry\SDK\Metrics\Data\HistogramDataPoint>
      */

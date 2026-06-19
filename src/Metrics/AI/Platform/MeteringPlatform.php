@@ -15,8 +15,8 @@ use Symfony\AI\Platform\PlatformInterface;
 use Symfony\AI\Platform\Result\DeferredResult;
 
 /**
- * Decorates a platform to record the `gen_ai.client.token.usage` histogram
- * (OTel gen_ai metric semconv) from the token usage of each model call.
+ * Decorates a platform to record the OTel gen_ai client metrics (semconv):
+ * the token usage and operation duration histograms.
  *
  * Independent from {@see \Instrumentation\Tracing\AI\Platform\TracingPlatform}:
  * metrics and tracing are separate, separately-toggled concerns, so each wraps
@@ -24,19 +24,30 @@ use Symfony\AI\Platform\Result\DeferredResult;
  */
 final class MeteringPlatform implements PlatformInterface
 {
+    private readonly AiMetricRecorder $recorder;
+
     public function __construct(
         private readonly PlatformInterface $platform,
-        private readonly MeterProviderInterface $meterProvider,
-        private readonly string $system,
+        MeterProviderInterface $meterProvider,
+        string $system,
     ) {
+        $this->recorder = new AiMetricRecorder($meterProvider, $system);
     }
 
     public function invoke(string $model, array|string|object $input, array $options = []): DeferredResult
     {
-        $deferredResult = $this->platform->invoke($model, $input, $options);
+        $start = hrtime(true);
+
+        try {
+            $deferredResult = $this->platform->invoke($model, $input, $options);
+        } catch (\Throwable $e) {
+            $this->recorder->recordDuration($model, (hrtime(true) - $start) / 1e9, $e);
+
+            throw $e;
+        }
 
         return new DeferredResult(
-            new MeteringResultConverter($deferredResult->getResultConverter(), $this->meterProvider, $this->system, $model),
+            new MeteringResultConverter($deferredResult->getResultConverter(), $this->recorder, $model, $start),
             $deferredResult->getRawResult(),
             $options,
         );
