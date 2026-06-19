@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Instrumentation\Metrics\AI\Platform;
 
-use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\Result\RawResultInterface;
 use Symfony\AI\Platform\Result\ResultInterface;
@@ -18,11 +17,16 @@ use Symfony\AI\Platform\TokenUsage\TokenUsageExtractorInterface;
 
 final class MeteringResultConverter implements ResultConverterInterface
 {
+    private bool $durationRecorded = false;
+
+    /**
+     * @param int $start the hrtime(true) nanosecond timestamp captured when the platform was invoked
+     */
     public function __construct(
         private readonly ResultConverterInterface $inner,
-        private readonly MeterProviderInterface $meterProvider,
-        private readonly string $system,
+        private readonly AiMetricRecorder $recorder,
         private readonly string $model,
+        private readonly int $start,
     ) {
     }
 
@@ -33,7 +37,17 @@ final class MeteringResultConverter implements ResultConverterInterface
 
     public function convert(RawResultInterface $result, array $options = []): ResultInterface
     {
-        return $this->inner->convert($result, $options);
+        try {
+            $converted = $this->inner->convert($result, $options);
+        } catch (\Throwable $e) {
+            $this->recordDuration($e);
+
+            throw $e;
+        }
+
+        $this->recordDuration(null);
+
+        return $converted;
     }
 
     public function getTokenUsageExtractor(): TokenUsageExtractorInterface|null
@@ -44,6 +58,16 @@ final class MeteringResultConverter implements ResultConverterInterface
             return null;
         }
 
-        return new MeteringTokenUsageExtractor($inner, $this->meterProvider, $this->system, $this->model);
+        return new MeteringTokenUsageExtractor($inner, $this->recorder, $this->model);
+    }
+
+    private function recordDuration(\Throwable|null $error): void
+    {
+        if ($this->durationRecorded) {
+            return;
+        }
+
+        $this->durationRecorded = true;
+        $this->recorder->recordDuration($this->model, (hrtime(true) - $this->start) / 1e9, $error);
     }
 }
