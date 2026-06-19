@@ -26,12 +26,14 @@ final class TracingPlatform implements PlatformInterface
 
     public function invoke(string $model, array|string|object $input, array $options = []): DeferredResult
     {
+        $operationName = $options['extra']['operation_name'] ?? 'symfony_ai';
+
         $span = Tracing::getTracer()
-            ->spanBuilder('chat '.$this->system)
+            ->spanBuilder($operationName)
             ->setSpanKind(SpanKind::KIND_CLIENT)
             ->startSpan();
 
-        $span->setAttribute('gen_ai.operation.name', 'chat');
+        $span->setAttribute('gen_ai.operation.name', $operationName);
         $span->setAttribute('gen_ai.system', $this->system);
         $span->setAttribute('gen_ai.request.model', $model);
 
@@ -49,6 +51,7 @@ final class TracingPlatform implements PlatformInterface
             $deferredResult->getRawResult(),
             $options,
         );
+
     }
 
     public function getModelCatalog(): ModelCatalogInterface
