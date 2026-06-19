@@ -9,11 +9,11 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\AI\Toolbox;
 
-use Instrumentation\Tracing\Tracing;
+use Instrumentation\Semantics\Attribute\ToolAttributeProviderInterface;
+use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
-use OpenTelemetry\SemConv\TraceAttributes;
-use OpenTelemetry\SemConv\TraceAttributeValues;
+use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\AI\Agent\Toolbox\ToolboxInterface;
 use Symfony\AI\Agent\Toolbox\ToolResult;
 use Symfony\AI\Platform\Result\ToolCall;
@@ -27,9 +27,14 @@ use Symfony\AI\Platform\Tool\Tool;
  */
 final class TracingToolbox implements ToolboxInterface
 {
+    use TracerAwareTrait;
+
     public function __construct(
         private readonly ToolboxInterface $toolbox,
+        TracerProviderInterface $tracerProvider,
+        private readonly ToolAttributeProviderInterface $attributeProvider,
     ) {
+        $this->tracerProvider = $tracerProvider;
     }
 
     /**
@@ -42,14 +47,11 @@ final class TracingToolbox implements ToolboxInterface
 
     public function execute(ToolCall $toolCall): ToolResult
     {
-        $span = Tracing::getTracer()
+        $span = $this->getTracer()
             ->spanBuilder('execute_tool '.$toolCall->getName())
             ->setSpanKind(SpanKind::KIND_INTERNAL)
+            ->setAttributes($this->attributeProvider->getAttributes($toolCall))
             ->startSpan();
-
-        $span->setAttribute(TraceAttributes::GEN_AI_OPERATION_NAME, TraceAttributeValues::GEN_AI_OPERATION_NAME_EXECUTE_TOOL);
-        $span->setAttribute(TraceAttributes::GEN_AI_TOOL_NAME, $toolCall->getName());
-        $span->setAttribute(TraceAttributes::GEN_AI_TOOL_CALL_ID, $toolCall->getId());
 
         try {
             $result = $this->toolbox->execute($toolCall);

@@ -7,6 +7,8 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
+use Instrumentation\Semantics\Attribute\AgentAttributeProvider;
+use Instrumentation\Semantics\Attribute\AgentAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ClientRequestAttributeProvider;
 use Instrumentation\Semantics\Attribute\ClientRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProvider;
@@ -17,6 +19,8 @@ use Instrumentation\Semantics\Attribute\ServerRequestAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
+use Instrumentation\Semantics\Attribute\ToolAttributeProvider;
+use Instrumentation\Semantics\Attribute\ToolAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverInterface;
 use Instrumentation\Semantics\OperationName\CommandOperationNameResolver;
@@ -59,6 +63,8 @@ return static function (ContainerConfigurator $container) {
             param('tracing.http.attributes.request_headers'),
         ])
         ->set(DoctrineConnectionAttributeProviderInterface::class, DoctrineConnectionAttributeProvider::class)
+        ->set(AgentAttributeProviderInterface::class, AgentAttributeProvider::class)
+        ->set(ToolAttributeProviderInterface::class, ToolAttributeProvider::class)
 
         ->set(ClientRequestOperationNameResolverInterface::class, ClientRequestOperationNameResolver::class)
         ->set(MessageOperationNameResolverInterface::class, MessageOperationNameResolver::class)

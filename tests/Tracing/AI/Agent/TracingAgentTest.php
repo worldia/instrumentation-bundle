@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace Tests\Instrumentation\Tracing\AI\Agent;
 
+use Instrumentation\Semantics\Attribute\AgentAttributeProvider;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
-use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
@@ -25,12 +25,12 @@ use Symfony\AI\Platform\Result\TextResult;
 class TracingAgentTest extends TestCase
 {
     private \ArrayObject $spans;
+    private TracerProvider $tracerProvider;
 
     protected function setUp(): void
     {
         $this->spans = new \ArrayObject();
-        $tracerProvider = new TracerProvider(new SimpleSpanProcessor(new InMemoryExporter($this->spans)));
-        Tracing::setProvider($tracerProvider);
+        $this->tracerProvider = new TracerProvider(new SimpleSpanProcessor(new InMemoryExporter($this->spans)));
     }
 
     public function testItCreatesAnInvokeAgentSpan(): void
@@ -71,7 +71,7 @@ class TracingAgentTest extends TestCase
         $inner->method('getName')->willReturn('my_agent');
         $inner->method('call')->willThrowException($exception);
 
-        $agent = new TracingAgent($inner);
+        $agent = new TracingAgent($inner, $this->tracerProvider, new AgentAttributeProvider());
 
         try {
             $agent->call(new MessageBag());
@@ -98,6 +98,6 @@ class TracingAgentTest extends TestCase
         $inner->method('getName')->willReturn($name);
         $inner->method('call')->willReturn($result);
 
-        return new TracingAgent($inner);
+        return new TracingAgent($inner, $this->tracerProvider, new AgentAttributeProvider());
     }
 }

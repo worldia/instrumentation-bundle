@@ -9,11 +9,11 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\AI\Agent;
 
-use Instrumentation\Tracing\Tracing;
+use Instrumentation\Semantics\Attribute\AgentAttributeProviderInterface;
+use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
-use OpenTelemetry\SemConv\TraceAttributes;
-use OpenTelemetry\SemConv\TraceAttributeValues;
+use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\AI\Agent\AgentInterface;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\Result\ResultInterface;
@@ -28,22 +28,23 @@ use Symfony\AI\Platform\Result\ResultInterface;
  */
 final class TracingAgent implements AgentInterface
 {
+    use TracerAwareTrait;
+
     public function __construct(
         private readonly AgentInterface $agent,
+        TracerProviderInterface $tracerProvider,
+        private readonly AgentAttributeProviderInterface $attributeProvider,
     ) {
+        $this->tracerProvider = $tracerProvider;
     }
 
     public function call(MessageBag $messages, array $options = []): ResultInterface
     {
-        $name = $this->agent->getName();
-
-        $span = Tracing::getTracer()
-            ->spanBuilder('invoke_agent '.$name)
+        $span = $this->getTracer()
+            ->spanBuilder('invoke_agent '.$this->agent->getName())
             ->setSpanKind(SpanKind::KIND_INTERNAL)
+            ->setAttributes($this->attributeProvider->getAttributes($this->agent))
             ->startSpan();
-
-        $span->setAttribute(TraceAttributes::GEN_AI_OPERATION_NAME, TraceAttributeValues::GEN_AI_OPERATION_NAME_INVOKE_AGENT);
-        $span->setAttribute(TraceAttributes::GEN_AI_AGENT_NAME, $name);
 
         try {
             $result = $this->agent->call($messages, $options);
