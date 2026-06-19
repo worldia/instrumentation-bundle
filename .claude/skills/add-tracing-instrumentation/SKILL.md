@@ -10,7 +10,11 @@ Every tracing instrumentation in this bundle is built from the same five parts. 
 ## Pick the seam first
 
 - **Decorator** when the thing you trace is a service with an interface you can wrap, and the span must outlive the call (async/deferred result). Models: `src/Tracing/HttpClient/TracingHttpClient.php`, `src/Tracing/Doctrine/`. For deferred results, **end the span when the result is consumed AND add a `__destruct()` backstop that ends it if it never is** — see `TracedResponse` (`src/Tracing/HttpClient/TracedResponse.php`). A span that only ends in a downstream callback leaks.
-- **EventSubscriber** when there's a Symfony event marking start/end. Models: Request, Command, Messenger (`src/Tracing/Messenger/EventListener/MessageEventSubscriber.php`). Get the tracer via `service(TracerProviderInterface::class)`, not a static facade, in the listener.
+- **EventSubscriber** when there's a Symfony event marking start/end. Models: Request, Command, Messenger (`src/Tracing/Messenger/EventListener/MessageEventSubscriber.php`).
+
+### Get the tracer by injection, never the static facade
+
+Inside the bundle, **inject `OpenTelemetry\API\Trace\TracerProviderInterface` via the constructor and use `TracerAwareTrait`'s `getTracer()`** (the trait declares the `$tracerProvider` property; assign the constructor arg to it). Do **not** call `Instrumentation\Tracing\Tracing::getTracer()` from bundle code — that static facade exists for _application_ code outside the bundle, where DI isn't convenient. Every in-bundle listener/decorator (e.g. `MessageEventSubscriber`, `TracingAgent`) injects the provider. For decorators built in a compiler pass, add `new Reference(TracerProviderInterface::class)` to the decorator's arguments.
 
 ## The five parts
 
