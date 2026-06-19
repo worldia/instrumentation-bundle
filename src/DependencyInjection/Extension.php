@@ -10,8 +10,10 @@ declare(strict_types=1);
 namespace Instrumentation\DependencyInjection;
 
 use Instrumentation\DependencyInjection\CompilerPass\AIAgentTracingCompilerPass;
+use Instrumentation\DependencyInjection\CompilerPass\AIPlatformMetricsCompilerPass;
 use Instrumentation\DependencyInjection\CompilerPass\AIPlatformTracingCompilerPass;
 use Instrumentation\DependencyInjection\CompilerPass\DoctrineTracingCompilerPass;
+use Instrumentation\Metrics\AI\Platform\MeteringPlatform;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
@@ -82,6 +84,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         if ($container->hasDefinition(TracingAgent::class)) {
             (new AIAgentTracingCompilerPass())->process($container);
+        }
+
+        if ($container->hasDefinition(MeteringPlatform::class)) {
+            (new AIPlatformMetricsCompilerPass())->process($container);
         }
     }
 
@@ -193,6 +199,9 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         if ($this->isConfigEnabled($container, $config['request'])) {
             $container->setParameter('metrics.request.blacklist', $config['request']['blacklist']);
             $loader->load('request.php');
+        }
+        if ($this->isConfigEnabled($container, $config['ai'])) {
+            $loader->load('ai.php');
         }
     }
 
