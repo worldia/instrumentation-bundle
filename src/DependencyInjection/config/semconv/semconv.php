@@ -23,17 +23,23 @@ use Instrumentation\Semantics\Attribute\ServerResponseAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ToolAttributeProvider;
 use Instrumentation\Semantics\Attribute\ToolAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\AgentOperationNameResolver;
+use Instrumentation\Semantics\OperationName\AgentOperationNameResolverInterface;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverInterface;
 use Instrumentation\Semantics\OperationName\CommandOperationNameResolver;
 use Instrumentation\Semantics\OperationName\CommandOperationNameResolverInterface;
 use Instrumentation\Semantics\OperationName\MessageOperationNameResolver;
 use Instrumentation\Semantics\OperationName\MessageOperationNameResolverInterface;
+use Instrumentation\Semantics\OperationName\PlatformOperationNameResolver;
+use Instrumentation\Semantics\OperationName\PlatformOperationNameResolverInterface;
 use Instrumentation\Semantics\OperationName\RoutePath\RouteCacheWarmer;
 use Instrumentation\Semantics\OperationName\RoutePath\RoutePathResolver;
 use Instrumentation\Semantics\OperationName\RoutePath\RoutePathResolverInterface;
 use Instrumentation\Semantics\OperationName\RoutePathServerRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ServerRequestOperationNameResolverInterface;
+use Instrumentation\Semantics\OperationName\ToolOperationNameResolver;
+use Instrumentation\Semantics\OperationName\ToolOperationNameResolverInterface;
 use Instrumentation\Semantics\ResourceInfoProvider;
 use Instrumentation\Semantics\ResourceInfoProviderInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
@@ -72,6 +78,9 @@ return static function (ContainerConfigurator $container) {
         ->set(ClientRequestOperationNameResolverInterface::class, ClientRequestOperationNameResolver::class)
         ->set(MessageOperationNameResolverInterface::class, MessageOperationNameResolver::class)
         ->set(CommandOperationNameResolverInterface::class, CommandOperationNameResolver::class)
+        ->set(PlatformOperationNameResolverInterface::class, PlatformOperationNameResolver::class)
+        ->set(AgentOperationNameResolverInterface::class, AgentOperationNameResolver::class)
+        ->set(ToolOperationNameResolverInterface::class, ToolOperationNameResolver::class)
         ->set(ServerRequestOperationNameResolverInterface::class, RoutePathServerRequestOperationNameResolver::class)
         ->args([
             service(RoutePathResolverInterface::class),

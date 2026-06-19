@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Tracing\AI\Agent;
 
 use Instrumentation\Semantics\Attribute\AgentAttributeProviderInterface;
+use Instrumentation\Semantics\OperationName\AgentOperationNameResolverInterface;
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -33,6 +34,7 @@ final class TracingAgent implements AgentInterface
     public function __construct(
         private readonly AgentInterface $agent,
         TracerProviderInterface $tracerProvider,
+        private readonly AgentOperationNameResolverInterface $operationNameResolver,
         private readonly AgentAttributeProviderInterface $attributeProvider,
     ) {
         $this->tracerProvider = $tracerProvider;
@@ -41,7 +43,7 @@ final class TracingAgent implements AgentInterface
     public function call(MessageBag $messages, array $options = []): ResultInterface
     {
         $span = $this->getTracer()
-            ->spanBuilder('invoke_agent '.$this->agent->getName())
+            ->spanBuilder($this->operationNameResolver->getOperationName($this->agent))
             ->setSpanKind(SpanKind::KIND_INTERNAL)
             ->setAttributes($this->attributeProvider->getAttributes($this->agent))
             ->startSpan();

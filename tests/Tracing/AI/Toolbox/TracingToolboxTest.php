@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Tests\Instrumentation\Tracing\AI\Toolbox;
 
 use Instrumentation\Semantics\Attribute\ToolAttributeProvider;
+use Instrumentation\Semantics\OperationName\ToolOperationNameResolver;
 use Instrumentation\Tracing\AI\Toolbox\TracingToolbox;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -75,7 +76,7 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('execute')->willThrowException($exception);
 
-        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolAttributeProvider());
+        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider());
 
         try {
             $toolbox->execute($toolCall);
@@ -94,7 +95,7 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('getTools')->willReturn([]);
 
-        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolAttributeProvider());
+        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider());
 
         $this->assertSame([], $toolbox->getTools());
     }
@@ -104,6 +105,6 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('execute')->with($expected)->willReturn($result);
 
-        return new TracingToolbox($inner, $this->tracerProvider, new ToolAttributeProvider());
+        return new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider());
     }
 }

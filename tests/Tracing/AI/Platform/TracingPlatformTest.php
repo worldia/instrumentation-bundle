@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Tests\Instrumentation\Tracing\AI\Platform;
 
 use Instrumentation\Semantics\Attribute\PlatformAttributeProvider;
+use Instrumentation\Semantics\OperationName\PlatformOperationNameResolver;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -125,7 +126,7 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willThrowException(new \RuntimeException('API unreachable'));
 
-        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformAttributeProvider(), 'gemini');
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini');
 
         try {
             $platform->invoke('gemini-2.5-pro', 'Hello');
@@ -146,7 +147,7 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
-        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformAttributeProvider(), 'gemini');
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini');
 
         try {
             $platform->invoke('gemini-2.5-pro', 'Hello')->asText();
@@ -167,6 +168,6 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
-        return new TracingPlatform($inner, $this->tracerProvider, new PlatformAttributeProvider(), $system);
+        return new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), $system);
     }
 }
