@@ -158,6 +158,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
             }
         }
 
+        $container->setParameter('tracing.ai.platform.blacklist', $config['ai']['platform']['blacklist']);
+        $container->setParameter('tracing.ai.agent.blacklist', $config['ai']['agent']['blacklist']);
+        $container->setParameter('tracing.ai.tool.blacklist', $config['ai']['tool']['blacklist']);
+
         $container->setParameter('tracing.doctrine.connections', $config['doctrine']['connections']);
         $container->setParameter('tracing.doctrine.log_queries', $config['doctrine']['log_queries']);
         $container->setParameter('tracing.doctrine.propagation', $config['doctrine']['propagation']);

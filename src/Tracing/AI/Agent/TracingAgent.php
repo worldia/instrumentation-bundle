@@ -11,6 +11,7 @@ namespace Instrumentation\Tracing\AI\Agent;
 
 use Instrumentation\Semantics\Attribute\AgentAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\AgentOperationNameResolverInterface;
+use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -36,12 +37,17 @@ final class TracingAgent implements AgentInterface
         TracerProviderInterface $tracerProvider,
         private readonly AgentOperationNameResolverInterface $operationNameResolver,
         private readonly AgentAttributeProviderInterface $attributeProvider,
+        private readonly OperationNameVoter $voter,
     ) {
         $this->tracerProvider = $tracerProvider;
     }
 
     public function call(MessageBag $messages, array $options = []): ResultInterface
     {
+        if (!$this->voter->shouldTrace($this->agent->getName())) {
+            return $this->agent->call($messages, $options);
+        }
+
         $span = $this->getTracer()
             ->spanBuilder($this->operationNameResolver->getOperationName($this->agent))
             ->setSpanKind(SpanKind::KIND_INTERNAL)

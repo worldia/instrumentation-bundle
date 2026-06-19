@@ -12,6 +12,7 @@ namespace Tests\Instrumentation\Tracing\AI\Platform;
 use Instrumentation\Semantics\Attribute\PlatformAttributeProvider;
 use Instrumentation\Semantics\OperationName\PlatformOperationNameResolver;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
+use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
@@ -126,7 +127,7 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willThrowException(new \RuntimeException('API unreachable'));
 
-        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini');
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini', new OperationNameVoter([]));
 
         try {
             $platform->invoke('gemini-2.5-pro', 'Hello');
@@ -147,7 +148,7 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
-        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini');
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini', new OperationNameVoter([]));
 
         try {
             $platform->invoke('gemini-2.5-pro', 'Hello')->asText();
@@ -159,6 +160,22 @@ class TracingPlatformTest extends TestCase
         $this->assertSame(StatusCode::STATUS_ERROR, $this->spans[0]->getStatus()->getCode());
     }
 
+    public function testItDoesNotTraceBlacklistedModels(): void
+    {
+        $converter = $this->createMock(ResultConverterInterface::class);
+        $converter->method('convert')->willReturn(new TextResult('response'));
+        $converter->method('getTokenUsageExtractor')->willReturn(null);
+
+        $inner = $this->createMock(PlatformInterface::class);
+        $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
+
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'openai', new OperationNameVoter(['-mini$']));
+
+        $platform->invoke('gpt-4o-mini', 'Hello')->asText();
+
+        $this->assertCount(0, $this->spans);
+    }
+
     private function buildPlatform(string $system, TokenUsageExtractorInterface|null $extractor = null): TracingPlatform
     {
         $converter = $this->createMock(ResultConverterInterface::class);
@@ -168,6 +185,6 @@ class TracingPlatformTest extends TestCase
         $inner = $this->createMock(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
-        return new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), $system);
+        return new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), $system, new OperationNameVoter([]));
     }
 }

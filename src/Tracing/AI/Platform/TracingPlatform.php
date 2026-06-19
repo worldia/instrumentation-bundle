@@ -11,6 +11,7 @@ namespace Instrumentation\Tracing\AI\Platform;
 
 use Instrumentation\Semantics\Attribute\PlatformAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\PlatformOperationNameResolverInterface;
+use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
 use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -29,12 +30,17 @@ final class TracingPlatform implements PlatformInterface
         private readonly PlatformOperationNameResolverInterface $operationNameResolver,
         private readonly PlatformAttributeProviderInterface $attributeProvider,
         private readonly string $system,
+        private readonly OperationNameVoter $voter,
     ) {
         $this->tracerProvider = $tracerProvider;
     }
 
     public function invoke(string $model, array|string|object $input, array $options = []): DeferredResult
     {
+        if (!$this->voter->shouldTrace($model)) {
+            return $this->platform->invoke($model, $input, $options);
+        }
+
         $operationName = $this->operationNameResolver->getOperationName($model, $options);
 
         $span = $this->getTracer()

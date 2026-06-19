@@ -11,6 +11,7 @@ namespace Tests\Instrumentation\Tracing\AI\Toolbox;
 
 use Instrumentation\Semantics\Attribute\ToolAttributeProvider;
 use Instrumentation\Semantics\OperationName\ToolOperationNameResolver;
+use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
 use Instrumentation\Tracing\AI\Toolbox\TracingToolbox;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -76,7 +77,7 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('execute')->willThrowException($exception);
 
-        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider());
+        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter([]));
 
         try {
             $toolbox->execute($toolCall);
@@ -90,12 +91,25 @@ class TracingToolboxTest extends TestCase
         $this->assertSame('exception', $this->spans[0]->getEvents()[0]->getName());
     }
 
+    public function testItDoesNotTraceBlacklistedTools(): void
+    {
+        $toolCall = new ToolCall('call_1', 'debug_dump');
+        $inner = $this->createMock(ToolboxInterface::class);
+        $inner->method('execute')->willReturn(new ToolResult($toolCall, 'ok'));
+
+        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter(['^debug_']));
+
+        $toolbox->execute($toolCall);
+
+        $this->assertCount(0, $this->spans);
+    }
+
     public function testItDelegatesGetTools(): void
     {
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('getTools')->willReturn([]);
 
-        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider());
+        $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter([]));
 
         $this->assertSame([], $toolbox->getTools());
     }
@@ -105,6 +119,6 @@ class TracingToolboxTest extends TestCase
         $inner = $this->createMock(ToolboxInterface::class);
         $inner->method('execute')->with($expected)->willReturn($result);
 
-        return new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider());
+        return new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter([]));
     }
 }
