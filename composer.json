@@ -28,6 +28,7 @@
     "open-telemetry/gen-otlp-protobuf": "^1.0",
     "phpstan/phpstan": "^2.0",
     "phpunit/phpunit": "^10.5",
+    "symfony/ai-platform": "^0.6",
     "symfony/framework-bundle": "^7.4 || ^8.0",
     "symfony/http-client": "^7.4 || ^8.0",
     "symfony/messenger": "^7.4 || ^8.0",
@@ -39,6 +40,7 @@
   },
   "suggest": {
     "open-telemetry/exporter-otlp": "To export telemetry data to an OTLP compatible ingester (Jaeger, Tempo, Loki, etc.)",
+    "symfony/ai-platform": "To enable OpenTelemetry tracing for Symfony AI platform calls (gen_ai.* attributes, token usage)",
     "symfony/monolog-bundle": "To enable open-telemetry logging"
   },
   "autoload": {

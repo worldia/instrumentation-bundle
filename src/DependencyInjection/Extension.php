@@ -10,12 +10,14 @@ declare(strict_types=1);
 namespace Instrumentation\DependencyInjection;
 
 use Instrumentation\DependencyInjection\CompilerPass\DoctrineTracingCompilerPass;
+use Instrumentation\DependencyInjection\CompilerPass\AIPlatformTracingCompilerPass;
 use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
 use Instrumentation\Tracing\Bridge\TraceUrlGeneratorInterface;
 use Instrumentation\Tracing\Request\EventListener\AddUserEventSubscriber;
 use OpenTelemetry\SDK\Trace\SpanLimitsBuilder;
 use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Component\Config\FileLocator;
+use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension as BaseExtension;
@@ -71,6 +73,52 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
     public function process(ContainerBuilder $container): void
     {
         (new DoctrineTracingCompilerPass())->process($container);
+        if ($container->hasParameter('tracing.ai.enabled') && $container->getParameter('tracing.ai.enabled')) {
+            (new AIPlatformTracingCompilerPass())->process($container);
+        }
+
+        if ($container->hasParameter('tracing.doctrine.connections') && $container->hasParameter('doctrine.connections')) {
+            /** @var array<string> $connectionsToTrace */
+            $connectionsToTrace = $container->getParameter('tracing.doctrine.connections');
+
+            /** @var array<string,string> $connections */
+            $connections = $container->getParameter('doctrine.connections');
+
+            if (empty($connectionsToTrace)) {
+                $connectionsToTrace = array_keys($connections);
+            }
+
+            foreach ($connectionsToTrace as $connection) {
+                $serviceId = \sprintf('doctrine.dbal.%s_connection', $connection);
+
+                if (!\in_array($serviceId, $connections, true)) {
+                    throw new \InvalidArgumentException(\sprintf('No such connection: "%s".', $connection));
+                }
+
+                $configDef = $container->getDefinition(\sprintf('%s.configuration', $serviceId));
+
+                $middlewares = [];
+                foreach ($configDef->getMethodCalls() as $call) {
+                    [$method, $arguments] = $call;
+                    if ('setMiddlewares' === $method) {
+                        $middlewares = array_merge($middlewares, $arguments[0]);
+                    }
+                }
+
+                $addedMiddlewares = [];
+
+                if ($container->getParameter('tracing.doctrine.instrumentation')) {
+                    $addedMiddlewares[] = new Reference(InstrumentationMiddleware::class);
+                }
+                if ($container->getParameter('tracing.doctrine.propagation')) {
+                    $addedMiddlewares[] = new Reference(PropagationMiddleware::class);
+                }
+
+                $configDef
+                    ->removeMethodCall('setMiddlewares')
+                    ->addMethodCall('setMiddlewares', [array_merge($middlewares, $addedMiddlewares)]);
+            }
+        }
     }
 
     /**
@@ -125,6 +173,8 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         }
 
         $config['doctrine']['enabled'] = $config['doctrine']['instrumentation'] || $config['doctrine']['propagation'];
+
+        $container->setParameter('tracing.ai.enabled', $this->isConfigEnabled($container, $config['ai']) && interface_exists(PlatformInterface::class));
 
         foreach (['request', 'command', 'message', 'doctrine'] as $feature) {
             if (!$this->isConfigEnabled($container, $config[$feature])) {
