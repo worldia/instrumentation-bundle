@@ -16,6 +16,7 @@ use Instrumentation\Tracing\TracerAwareTrait;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\ModelCatalog\ModelCatalogInterface;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\AI\Platform\Result\DeferredResult;
@@ -35,19 +36,28 @@ final class TracingPlatform implements PlatformInterface
         $this->tracerProvider = $tracerProvider;
     }
 
-    public function invoke(string $model, array|string|object $input, array $options = []): DeferredResult
+    public function invoke(string|Model $model, array|string|object $input, array $options = []): DeferredResult
     {
-        if (!$this->voter->shouldTrace($model)) {
+        $modelName = $model instanceof Model ? $model->getName() : $model;
+
+        if (!$this->voter->shouldTrace($modelName)) {
             return $this->platform->invoke($model, $input, $options);
         }
 
-        $operationName = $this->operationNameResolver->getOperationName($model, $options);
+        $operationName = $this->operationNameResolver->getOperationName($modelName, $options);
 
         $span = $this->getTracer()
             ->spanBuilder($operationName)
             ->setSpanKind(SpanKind::KIND_CLIENT)
-            ->setAttributes($this->attributeProvider->getAttributes($this->system, $model, $operationName))
+            ->setAttributes($this->attributeProvider->getAttributes($this->system, $modelName, $operationName))
             ->startSpan();
+
+        // Activate the span for the inner invocation so the platform's own work — notably the outbound
+        // HTTP request to the model provider — is recorded as a child of this span rather than a sibling.
+        // The model client issues that request synchronously within invoke(), so this window covers it;
+        // the span itself stays open past here (ended once the deferred result is consumed) via
+        // TracingResultConverter.
+        $scope = $span->activate();
 
         try {
             $deferredResult = $this->platform->invoke($model, $input, $options);
@@ -56,6 +66,8 @@ final class TracingPlatform implements PlatformInterface
             $span->setStatus(StatusCode::STATUS_ERROR);
             $span->end();
             throw $e;
+        } finally {
+            $scope->detach();
         }
 
         return new DeferredResult(

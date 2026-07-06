@@ -16,6 +16,7 @@ use OpenTelemetry\SDK\Metrics\MeterProviderBuilder;
 use OpenTelemetry\SDK\Metrics\MetricExporter\InMemoryExporter;
 use OpenTelemetry\SDK\Metrics\MetricReader\ExportingReader;
 use PHPUnit\Framework\TestCase;
+use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\AI\Platform\Result\DeferredResult;
 use Symfony\AI\Platform\Result\InMemoryRawResult;
@@ -59,6 +60,19 @@ class MeteringPlatformTest extends TestCase
         $this->assertSame('chat', $byType['input']['attributes']['gen_ai.operation.name']);
         $this->assertSame('openai', $byType['input']['attributes']['gen_ai.system']);
         $this->assertSame('gpt-4o', $byType['input']['attributes']['gen_ai.request.model']);
+    }
+
+    public function testItAcceptsAModelInstance(): void
+    {
+        $extractor = $this->createMock(TokenUsageExtractorInterface::class);
+        $extractor->method('extract')->willReturn(new TokenUsage(promptTokens: 10, completionTokens: 5));
+
+        $platform = $this->buildPlatform('openai', $extractor);
+        $platform->invoke(new Model('gpt-4o'), 'Hello')->asText();
+
+        $dataPoints = $this->collectHistogramDataPoints('gen_ai.client.token.usage');
+        $this->assertNotEmpty($dataPoints);
+        $this->assertSame('gpt-4o', $dataPoints[0]->attributes->toArray()['gen_ai.request.model']);
     }
 
     public function testItRecordsNothingWhenNoExtractorIsAvailable(): void
