@@ -13,12 +13,14 @@ use Instrumentation\Semantics\Attribute\PlatformAttributeProvider;
 use Instrumentation\Semantics\OperationName\PlatformOperationNameResolver;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
+use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
 use OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
 use OpenTelemetry\SDK\Trace\TracerProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\AI\Platform\Result\DeferredResult;
 use Symfony\AI\Platform\Result\InMemoryRawResult;
@@ -59,6 +61,41 @@ class TracingPlatformTest extends TestCase
         $this->assertSame('symfony_ai', $attributes['gen_ai.operation.name']);
         $this->assertSame('perplexity', $attributes['gen_ai.system']);
         $this->assertSame('sonar', $attributes['gen_ai.request.model']);
+    }
+
+    public function testItAcceptsAModelInstance(): void
+    {
+        $platform = $this->buildPlatform('openai');
+
+        $platform->invoke(new Model('gpt-4o'), 'Hello')->asText();
+
+        $attributes = $this->spans[0]->getAttributes()->toArray();
+        $this->assertSame('gpt-4o', $attributes['gen_ai.request.model']);
+    }
+
+    public function testItActivatesTheSpanSoInnerWorkNestsUnderIt(): void
+    {
+        $capturedSpanId = null;
+
+        $converter = $this->createMock(ResultConverterInterface::class);
+        $converter->method('convert')->willReturn(new TextResult('response'));
+        $converter->method('getTokenUsageExtractor')->willReturn(null);
+        $deferred = new DeferredResult($converter, new InMemoryRawResult());
+
+        $inner = $this->createMock(PlatformInterface::class);
+        // Whatever the wrapped platform does (e.g. the outbound HTTP request to the provider) must see the
+        // gen_ai span as the active span, so its own spans nest under it.
+        $inner->method('invoke')->willReturnCallback(static function () use (&$capturedSpanId, $deferred): DeferredResult {
+            $capturedSpanId = Span::getCurrent()->getContext()->getSpanId();
+
+            return $deferred;
+        });
+
+        $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'openai', new OperationNameVoter([]));
+
+        $platform->invoke('gpt-4o', 'Hello')->asText();
+
+        $this->assertSame($this->spans[0]->getContext()->getSpanId(), $capturedSpanId, 'Inner invocation must run with the gen_ai span active');
     }
 
     public function testSpanEndsOnlyAfterResultIsConsumed(): void

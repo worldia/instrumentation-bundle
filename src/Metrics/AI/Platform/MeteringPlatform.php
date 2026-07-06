@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Instrumentation\Metrics\AI\Platform;
 
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
+use Symfony\AI\Platform\Model;
 use Symfony\AI\Platform\ModelCatalog\ModelCatalogInterface;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\AI\Platform\Result\DeferredResult;
@@ -34,20 +35,21 @@ final class MeteringPlatform implements PlatformInterface
         $this->recorder = new AiMetricRecorder($meterProvider, $system);
     }
 
-    public function invoke(string $model, array|string|object $input, array $options = []): DeferredResult
+    public function invoke(string|Model $model, array|string|object $input, array $options = []): DeferredResult
     {
+        $modelName = $model instanceof Model ? $model->getName() : $model;
         $start = hrtime(true);
 
         try {
             $deferredResult = $this->platform->invoke($model, $input, $options);
         } catch (\Throwable $e) {
-            $this->recorder->recordDuration($model, (hrtime(true) - $start) / 1e9, $e);
+            $this->recorder->recordDuration($modelName, (hrtime(true) - $start) / 1e9, $e);
 
             throw $e;
         }
 
         return new DeferredResult(
-            new MeteringResultConverter($deferredResult->getResultConverter(), $this->recorder, $model, $start),
+            new MeteringResultConverter($deferredResult->getResultConverter(), $this->recorder, $modelName, $start),
             $deferredResult->getRawResult(),
             $options,
         );
