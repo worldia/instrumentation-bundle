@@ -75,12 +75,6 @@ final class AddUserEventSubscriber implements EventSubscriberInterface
 
     private function getUser(TokenInterface $token): UserInterface|null
     {
-        if (method_exists($token, 'isAuthenticated') && !$token->isAuthenticated(false)) {
-            dump('it exists');
-
-            return null;
-        }
-
         return $token->getUser();
     }
 }
