@@ -172,7 +172,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
     private function closeRequestScope(Request $request): void
     {
-        if ($this->scopes->contains($request)) {
+        if ($this->scopes->offsetExists($request)) {
             $this->scopes[$request]->detach();
         }
     }
