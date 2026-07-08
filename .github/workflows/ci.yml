@@ -7,7 +7,8 @@ jobs:
     name: PHPStan
     strategy:
       matrix:
-        php-version: ["8.4"]
+        # PHP 8.2 resolves to Symfony 7.4 (Symfony 8 requires PHP 8.4+); PHP 8.4 resolves to Symfony 8.
+        php-version: ["8.2", "8.4"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +34,7 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      # Analysis runs against the highest set (doctrine/dbal 4 + Symfony 8).
+      # Analysis runs against doctrine/dbal 4 (Symfony 8 on PHP 8.4, Symfony 7.4 on PHP 8.2).
       # The doctrine/dbal 3 only DBAL3\Connection decorator is excluded in
       # phpstan.neon (its bool transaction methods are not covariant with the
       # dbal 4 parent); it is exercised on dbal 3 by the PHPUnit job below.
@@ -83,7 +84,7 @@ jobs:
     name: PHPUnit
     strategy:
       matrix:
-        php-version: ["8.4"]
+        php-version: ["8.2", "8.4"]
         dbal: ["^3.6", "^4.0"]
       fail-fast: false
     runs-on: ubuntu-latest
@@ -112,10 +113,10 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      # Pin the doctrine/dbal major up front so the whole graph resolves
-      # consistently: dbal 4 pulls Symfony 8, dbal 3 keeps Symfony on 7.4
-      # (symfony/http-foundation 8 conflicts with dbal 3). This gives runtime
-      # coverage of both Symfony majors across the matrix.
+      # The PHP version selects the Symfony major: Symfony 8 requires PHP 8.4+,
+      # so PHP 8.2 resolves to Symfony 7.4 while PHP 8.4 resolves to Symfony 8.
+      # The doctrine/dbal major is pinned so both the DBAL 3 and DBAL 4 connection
+      # decorators are exercised on each Symfony major.
       - name: Pin doctrine/dbal version
         run: composer require --dev --no-update "doctrine/dbal:${{ matrix.dbal }}"
 
