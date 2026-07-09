@@ -20,7 +20,10 @@ final class Tracing
 {
     public const NAME = 'io.opentelemetry.contrib.php.worldia';
 
-    private static TracerProviderInterface|null $tracerProvider = null;
+    /**
+     * @var \Closure():TracerProviderInterface|TracerProviderInterface|null
+     */
+    private static \Closure|TracerProviderInterface|null $tracerProvider = null;
 
     /**
      * @param non-empty-string     $spanName
@@ -41,13 +44,23 @@ final class Tracing
         return new Tracer(self::getProvider()->getTracer($name ?: self::NAME));
     }
 
-    public static function setProvider(TracerProviderInterface $tracerProvider): void
+    /**
+     * @param \Closure():TracerProviderInterface|TracerProviderInterface $tracerProvider
+     */
+    public static function setProvider(\Closure|TracerProviderInterface $tracerProvider): void
     {
         self::$tracerProvider = $tracerProvider;
     }
 
     private static function getProvider(): TracerProviderInterface
     {
-        return self::$tracerProvider ?: new NoopTracerProvider();
+        $provider = self::$tracerProvider;
+
+        if ($provider instanceof \Closure) {
+            $provider = $provider();
+            self::$tracerProvider = $provider;
+        }
+
+        return $provider ?: new NoopTracerProvider();
     }
 }
