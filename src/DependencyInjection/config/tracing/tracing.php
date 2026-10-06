@@ -7,7 +7,6 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
-use Instrumentation\Tracing\Bridge\Exporter\ResetSpanExporter;
 use Instrumentation\Tracing\Bridge\MainSpanContext;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use Instrumentation\Tracing\Bridge\Profiler\DataCollector\TraceContextDataCollector;
@@ -63,11 +62,6 @@ return static function (ContainerConfigurator $container) {
 
         ->set(SpanExporterInterface::class)
         ->factory([service(ExporterFactory::class), 'create'])
-
-        ->set(ResetSpanExporter::class)
-        ->args([
-            service(SpanExporterInterface::class),
-        ])
 
         ->set(SpanProcessorInterface::class)
         ->factory([service(SpanProcessorFactory::class), 'create'])

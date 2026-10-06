@@ -49,7 +49,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $this->loadSemConv($config['resource'], $container);
 
         if ($this->isConfigEnabled($container, $config['logging'])) {
-            $this->loadLogging($config['baggage'], $container);
+            $this->loadLogging($config['logging'], $container);
         }
         if ($this->isConfigEnabled($container, $config['baggage'])) {
             $this->loadBaggage($config['baggage'], $container);
@@ -128,6 +128,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $container->setParameter('tracing.request.attributes.server_name', $config['request']['attributes']['server_name']);
         $container->setParameter('tracing.request.attributes.request_headers', array_map(static fn (string $value): string => strtolower($value), $config['request']['attributes']['request_headers']));
+        $container->setParameter('tracing.request.flush_spans_after_terminate', $config['request']['flush_spans_after_terminate']);
         $container->setParameter('tracing.message.flush_spans_after_handling', $config['message']['flush_spans_after_handling']);
         $container->setParameter('tracing.http.propagate_by_default', $config['http']['propagate_by_default']);
         $container->setParameter('tracing.http.attributes.request_headers', array_map(static fn (string $value): string => strtolower($value), $config['http']['attributes']['request_headers']));
@@ -186,6 +187,10 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $loader = $this->getLoader('logging', $container);
 
         $loader->load('logging.php');
+
+        if ($config['flush_after_request']) {
+            $loader->load('request.php');
+        }
     }
 
     /**
@@ -202,6 +207,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         }
         if ($this->isConfigEnabled($container, $config['request'])) {
             $container->setParameter('metrics.request.blacklist', $config['request']['blacklist']);
+            $container->setParameter('metrics.request.flush_interval', $config['request']['flush_interval']);
             $loader->load('request.php');
         }
         if ($this->isConfigEnabled($container, $config['ai'])) {

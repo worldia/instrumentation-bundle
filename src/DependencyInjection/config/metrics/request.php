@@ -23,6 +23,7 @@ return static function (ContainerConfigurator $container) {
             service(MeterProviderInterface::class),
             param('metrics.request.blacklist'),
             service(MainSpanContextInterface::class)->nullOnInvalid(),
+            param('metrics.request.flush_interval'),
         ])
     ;
 };

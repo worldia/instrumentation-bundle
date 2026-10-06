@@ -28,6 +28,7 @@ return static function (ContainerConfigurator $container) {
             service(Semantics\OperationName\ServerRequestOperationNameResolverInterface::class),
             service(Semantics\Attribute\ServerRequestAttributeProviderInterface::class),
             service(Semantics\Attribute\ServerResponseAttributeProviderInterface::class),
+            param('tracing.request.flush_spans_after_terminate'),
         ])
         ->autoconfigure()
 
