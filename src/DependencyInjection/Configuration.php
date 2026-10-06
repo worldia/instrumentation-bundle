@@ -46,6 +46,10 @@ class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
+                        ->booleanNode('flush_after_request')
+                            ->info('Whether log records should be exported after each request (kernel.terminate)')
+                            ->defaultTrue()
+                        ->end()
                     ->end()
                 ->end()
 
@@ -61,6 +65,10 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultTrue()->end()
+                                ->booleanNode('flush_spans_after_terminate')
+                                    ->info('Whether exporter should be flushed after each request (kernel.terminate)')
+                                    ->defaultTrue()
+                                ->end()
                                 ->arrayNode('attributes')
                                     ->addDefaultsIfNotSet()
                                     ->children()
@@ -221,6 +229,11 @@ class Configuration implements ConfigurationInterface
                             ->addDefaultsIfNotSet()
                             ->children()
                                 ->booleanNode('enabled')->defaultFalse()->end()
+                                ->integerNode('flush_interval')
+                                    ->info('Minimum seconds between two metrics exports at the end of a request (kernel.terminate), 0 to export after every request')
+                                    ->defaultValue(10)
+                                    ->min(0)
+                                ->end()
                                 ->arrayNode('blacklist')
                                     ->defaultValue([
                                         '^/_fragment',

@@ -14,8 +14,10 @@ use Instrumentation\Semantics\Attribute\ServerResponseAttributeProviderInterface
 use Instrumentation\Semantics\OperationName\ServerRequestOperationNameResolverInterface;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use Instrumentation\Tracing\Request\EventListener\RequestEventSubscriber;
+use OpenTelemetry\API\Common\Time\Clock;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
+use OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
 use OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
 use OpenTelemetry\SDK\Trace\TracerProvider;
 use PHPUnit\Framework\TestCase;
@@ -55,11 +57,11 @@ class RequestEventSubscriberTest extends TestCase
         }
     }
 
-    protected function expect(): array
+    protected function expect(bool $batch = false, bool $flushAfterTerminate = true): array
     {
         $spans = new \ArrayObject();
         $exporter = new InMemoryExporter($spans);
-        $spanProcessor = new SimpleSpanProcessor($exporter);
+        $spanProcessor = $batch ? new BatchSpanProcessor($exporter, Clock::getDefault()) : new SimpleSpanProcessor($exporter);
         $tracerProvider = new TracerProvider($spanProcessor);
 
         $mainSpanContext = $this->createMock(MainSpanContextInterface::class);
@@ -84,7 +86,8 @@ class RequestEventSubscriberTest extends TestCase
                 $mainSpanContext,
                 $serverRequestOperationNameResolver,
                 $serverRequestAttributeProvider,
-                $serverResponseAttributeProvider
+                $serverResponseAttributeProvider,
+                $flushAfterTerminate,
             ),
 
             ServerRequestOperationNameResolverInterface::class => $serverRequestOperationNameResolver,
@@ -260,5 +263,67 @@ class RequestEventSubscriberTest extends TestCase
 
         $this->assertEquals('Unset', $spans[1]->getStatus()->getCode());
         $this->assertEquals('http.error 404', $spans[1]->getName());
+    }
+
+    public function testItFlushesBatchedSpansOnTerminate(): void
+    {
+        [
+            'spans' => $spans,
+            RequestEventSubscriber::class => $subscriber,
+
+            RequestEvent::class => $requestEvent,
+            FinishRequestEvent::class => $finishRequestEvent,
+            TerminateEvent::class => $terminateEvent,
+        ] = $this->expect(batch: true);
+
+        $subscriber->onRequestEvent($requestEvent);
+        $subscriber->onFinishRequestEvent($finishRequestEvent);
+
+        $this->assertCount(0, $spans);
+
+        $subscriber->onTerminate($terminateEvent);
+
+        $this->assertCount(2, $spans);
+        $this->assertEquals(SpanKind::KIND_SERVER, $spans[1]->getKind());
+    }
+
+    public function testItDoesNotFlushOnTerminateWhenDisabled(): void
+    {
+        [
+            'spans' => $spans,
+            RequestEventSubscriber::class => $subscriber,
+
+            RequestEvent::class => $requestEvent,
+            FinishRequestEvent::class => $finishRequestEvent,
+            TerminateEvent::class => $terminateEvent,
+        ] = $this->expect(batch: true, flushAfterTerminate: false);
+
+        $subscriber->onRequestEvent($requestEvent);
+        $subscriber->onFinishRequestEvent($finishRequestEvent);
+        $subscriber->onTerminate($terminateEvent);
+
+        $this->assertCount(0, $spans);
+    }
+
+    public function testItStartsEachRequestWithAFreshServerSpan(): void
+    {
+        [
+            'spans' => $spans,
+            RequestEventSubscriber::class => $subscriber,
+
+            RequestEvent::class => $requestEvent,
+            FinishRequestEvent::class => $finishRequestEvent,
+            TerminateEvent::class => $terminateEvent,
+        ] = $this->expect();
+
+        foreach ([1, 2] as $ignored) {
+            $subscriber->onRequestEvent($requestEvent);
+            $subscriber->onFinishRequestEvent($finishRequestEvent);
+            $subscriber->onTerminate($terminateEvent);
+        }
+
+        $this->assertCount(4, $spans);
+        $this->assertNotSame($spans[1]->getSpanId(), $spans[3]->getSpanId());
+        $this->assertNotSame($spans[1]->getTraceId(), $spans[3]->getTraceId());
     }
 }

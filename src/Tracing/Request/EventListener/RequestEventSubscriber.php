@@ -64,6 +64,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         protected ServerRequestOperationNameResolverInterface $operationNameResolver,
         protected ServerRequestAttributeProviderInterface $requestAttributeProvider,
         protected ServerResponseAttributeProviderInterface $responseAttributeProvider,
+        protected bool $flushAfterTerminate = true,
     ) {
         $this->spans = new \SplObjectStorage();
         $this->scopes = new \SplObjectStorage();
@@ -142,6 +143,18 @@ class RequestEventSubscriber implements EventSubscriberInterface
         $this->serverScope?->detach();
         $this->serverSpan?->end();
         $this->propagationScope?->detach();
+
+        // Long-running workers (FrankenPHP, RoadRunner) serve many requests per process: drop the
+        // per-request state, and export now rather than when the batch fills or the process exits.
+        $this->serverScope = null;
+        $this->serverSpan = null;
+        $this->propagationScope = null;
+        $this->spans = new \SplObjectStorage();
+        $this->scopes = new \SplObjectStorage();
+
+        if ($this->flushAfterTerminate && method_exists($this->tracerProvider, 'forceFlush')) {
+            $this->tracerProvider->forceFlush();
+        }
     }
 
     public function onExceptionEvent(Event\ExceptionEvent $event): void
@@ -174,6 +187,8 @@ class RequestEventSubscriber implements EventSubscriberInterface
     {
         if ($this->scopes->offsetExists($request)) {
             $this->scopes[$request]->detach();
+            // An exception closes the scope before FINISH_REQUEST does: detach only once.
+            $this->scopes->offsetUnset($request);
         }
     }
 }

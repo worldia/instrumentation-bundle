@@ -1,84 +1,95 @@
 # Configuration reference
 
-As output by ```bin/console config:dump-reference instrumentation```.
+As output by `bin/console config:dump-reference instrumentation`.
 
 ```yaml
 # Default configuration for extension with alias: "instrumentation"
 instrumentation:
+  # Use semantic tags defined in the OpenTelemetry specification (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md)
+  resource:
+    # Default:
+    service.name: %env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%
 
-    # Use semantic tags defined in the OpenTelemetry specification (https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md)
-    resource:
+    # Examples:
+    # service.name:        my_instrumented_app
+    # service.version:     1.2.3
+  baggage:
+    enabled: false
+  logging:
+    enabled: true
 
-        # Default:
-        service.name:        %env(default:instrumentation.default_service_name:OTEL_SERVICE_NAME)%
+    # Whether log records should be exported after each request (kernel.terminate)
+    flush_after_request: true
+  tracing:
+    enabled: true
 
-        # Examples:
-        # service.name:        my_instrumented_app
-        # service.version:     1.2.3
-    baggage:
-        enabled:              false
-    logging:
-        enabled:              true
-    tracing:
-        enabled:              true
+    # Allows you to have links to your traces generated in error messages and twig.
+    trace_url: ~ # Example: 'http://localhost:16682/trace/{traceId}'
+    request:
+      enabled: true
 
-        # Allows you to have links to your traces generated in error messages and twig.
-        trace_url:            ~ # Example: 'http://localhost:16682/trace/{traceId}'
-        request:
-            enabled:              true
-            attributes:
+      # Whether exporter should be flushed after each request (kernel.terminate)
+      flush_spans_after_terminate: true
+      attributes:
+        # Use the primary server name of the matched virtual host
+        server_name: null # Example: example.com
+        headers: []
 
-                # Use the primary server name of the matched virtual host
-                server_name:          null # Example: example.com
-                headers:              []
+          # Examples:
+          # - accept
+          # - accept-encoding
+      blacklist:
+        # Defaults:
+        - ^/_fragment
+        - ^/_profiler
+        - ^/_wdt
+      methods:
+        # Defaults:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+    command:
+      enabled: true
+      blacklist:
+        # Defaults:
+        - ^cache:clear$
+        - ^assets:install$
+    message:
+      enabled: true
+      flush_spans_after_handling: true
+      blacklist: []
+    http:
+      enabled: true
+      propagate_by_default: true
+    doctrine:
+      instrumentation: false
+      propagation: false
+      log_queries: false
+      connections: []
+  metrics:
+    enabled: true
+    message:
+      enabled: false
+    request:
+      enabled: false
 
-                    # Examples:
-                    # - accept
-                    # - accept-encoding
-            blacklist:
-
-                # Defaults:
-                - ^/_fragment
-                - ^/_profiler
-                - ^/_wdt
-            methods:
-
-                # Defaults:
-                - GET
-                - POST
-                - PUT
-                - DELETE
-                - PATCH
-        command:
-            enabled:              true
-            blacklist:
-
-                # Defaults:
-                - ^cache:clear$
-                - ^assets:install$
-        message:
-            enabled:              true
-            flush_spans_after_handling: true
-            blacklist:            []
-        http:
-            enabled:              true
-            propagate_by_default: true
-        doctrine:
-            instrumentation:      false
-            propagation:          false
-            log_queries:          false
-            connections:          []
-    metrics:
-        enabled:              true
-        message:
-            enabled:              false
-        request:
-            enabled:              false
-            blacklist:
-
-                # Defaults:
-                - ^/_fragment
-                - ^/_profiler
-                - ^/_wdt
-
+      # Minimum seconds between two metrics exports at the end of a request (kernel.terminate), 0 to export after every request
+      flush_interval: 10
+      blacklist:
+        # Defaults:
+        - ^/_fragment
+        - ^/_profiler
+        - ^/_wdt
 ```
+
+## Long-running workers
+
+Under FrankenPHP worker mode, RoadRunner or any runtime that serves many requests per process, the
+batch processors would hold a request's telemetry until the batch fills or the process exits. At
+`kernel.terminate` the bundle therefore flushes the tracer provider (`tracing.request.flush_spans_after_terminate`)
+and the logger provider (`logging.flush_after_request`). Metrics are throttled instead, since an export
+per request would be one OTLP call per request: the meter provider is flushed on the first request,
+then at most once per `metrics.request.flush_interval` seconds (requires `metrics.request.enabled`).
+An idle worker keeps its last metrics until its next request or its shutdown.
