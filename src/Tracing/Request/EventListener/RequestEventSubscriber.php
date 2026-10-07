@@ -44,6 +44,11 @@ class RequestEventSubscriber implements EventSubscriberInterface
      */
     private \SplObjectStorage $scopes;
 
+    /**
+     * @var \Closure(): bool
+     */
+    private \Closure $isConnectionAborted;
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -65,9 +70,11 @@ class RequestEventSubscriber implements EventSubscriberInterface
         protected ServerRequestAttributeProviderInterface $requestAttributeProvider,
         protected ServerResponseAttributeProviderInterface $responseAttributeProvider,
         protected bool $flushAfterTerminate = true,
+        \Closure|null $isConnectionAborted = null,
     ) {
         $this->spans = new \SplObjectStorage();
         $this->scopes = new \SplObjectStorage();
+        $this->isConnectionAborted = $isConnectionAborted ?? static fn (): bool => 1 === connection_aborted();
     }
 
     public function onRequestEvent(Event\RequestEvent $event): void
@@ -142,6 +149,12 @@ class RequestEventSubscriber implements EventSubscriberInterface
     public function onTerminate(): void
     {
         $this->serverScope?->detach();
+        // The client went away before the response was fully sent. Only observable when PHP keeps running
+        // after a disconnect (ignore_user_abort=On): otherwise the request is aborted at the next write and
+        // never reaches kernel.terminate, so this span is never ended nor exported.
+        if (($this->isConnectionAborted)()) {
+            $this->serverSpan?->setAttribute('http.client_aborted', true);
+        }
         $this->serverSpan?->end();
         $this->propagationScope?->detach();
 
