@@ -40,6 +40,9 @@
     "symfony/twig-bundle": "^7.4 || ^8.0",
     "worldia/coding-standards": "^1.0"
   },
+  "conflict": {
+    "symfony/ai-agent": "0.13.*"
+  },
   "suggest": {
     "open-telemetry/exporter-otlp": "To export telemetry data to an OTLP compatible ingester (Jaeger, Tempo, Loki, etc.)",
     "symfony/ai-agent": "To enable OpenTelemetry tracing for Symfony AI agents (gen_ai.* invoke_agent and execute_tool spans)",

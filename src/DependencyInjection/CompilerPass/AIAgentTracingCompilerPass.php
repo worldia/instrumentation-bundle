@@ -13,10 +13,12 @@ use Instrumentation\Semantics\Attribute\AgentAttributeProviderInterface;
 use Instrumentation\Semantics\Attribute\ToolAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\AgentOperationNameResolverInterface;
 use Instrumentation\Semantics\OperationName\ToolOperationNameResolverInterface;
+use Instrumentation\Tracing\AI\Agent\Legacy\TracingAgent as LegacyTracingAgent;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Sampling\OperationNameVoter;
 use Instrumentation\Tracing\AI\Toolbox\TracingToolbox;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use Symfony\AI\Agent\Execution\Execution;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -31,13 +33,17 @@ final class AIAgentTracingCompilerPass implements CompilerPassInterface
         /** @var array<string> $toolBlacklist */
         $toolBlacklist = $container->hasParameter('tracing.ai.tool.blacklist') ? $container->getParameter('tracing.ai.tool.blacklist') : [];
 
+        // symfony/ai-agent 0.13 made AgentInterface::call() return a lazy Execution: pick the
+        // decorator matching the installed version once, at container compilation time.
+        $agentDecorator = class_exists(Execution::class) ? TracingAgent::class : LegacyTracingAgent::class;
+
         // Low priority ensures the tracing decorator is the outermost one, so the
         // span covers the full call including any inner decorators (e.g. the
         // profiler's traceable decorators registered at -1024).
         foreach ($container->findTaggedServiceIds('ai.agent') as $agentId => $tags) {
             $name = $tags[0]['name'] ?? $agentId;
 
-            $definition = (new Definition(TracingAgent::class))
+            $definition = (new Definition($agentDecorator))
                 ->setDecoratedService($agentId, priority: -512)
                 ->setArguments([
                     new Reference('.inner'),
