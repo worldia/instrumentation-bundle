@@ -35,6 +35,7 @@ return static function (ContainerConfigurator $container) {
         ->args(['$resource' => service(ResourceInfo::class)])
         ->lazy(false)
         ->public()
+        ->tag('kernel.reset', ['method' => 'forceFlush', 'on_invalid' => 'ignore'])
 
         ->set(Logging\OtelHandler::class)
         ->args([

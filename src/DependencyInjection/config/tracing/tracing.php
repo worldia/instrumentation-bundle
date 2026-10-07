@@ -59,6 +59,7 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service('.inner'),
         ])
+        ->tag('kernel.reset', ['method' => 'reset'])
 
         ->set(SpanExporterInterface::class)
         ->factory([service(ExporterFactory::class), 'create'])
@@ -93,8 +94,10 @@ return static function (ContainerConfigurator $container) {
             service(InstrumentationScopeFactoryInterface::class),
         ])
         ->public()
+        ->tag('kernel.reset', ['method' => 'forceFlush', 'on_invalid' => 'ignore'])
 
         ->set(MainSpanContextInterface::class, MainSpanContext::class)
+        ->tag('kernel.reset', ['method' => 'reset'])
     ;
 
     if ('dev' === $container->env()) {
