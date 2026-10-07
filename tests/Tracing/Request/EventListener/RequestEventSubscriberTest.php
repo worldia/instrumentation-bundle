@@ -57,7 +57,7 @@ class RequestEventSubscriberTest extends TestCase
         }
     }
 
-    protected function expect(bool $batch = false, bool $flushAfterTerminate = true): array
+    protected function expect(bool $batch = false, bool $flushAfterTerminate = true, bool $connectionAborted = false): array
     {
         $spans = new \ArrayObject();
         $exporter = new InMemoryExporter($spans);
@@ -88,6 +88,7 @@ class RequestEventSubscriberTest extends TestCase
                 $serverRequestAttributeProvider,
                 $serverResponseAttributeProvider,
                 $flushAfterTerminate,
+                static fn (): bool => $connectionAborted,
             ),
 
             ServerRequestOperationNameResolverInterface::class => $serverRequestOperationNameResolver,
@@ -159,6 +160,42 @@ class RequestEventSubscriberTest extends TestCase
 
         $this->assertEquals('sf.controller.main', $spans[0]->getName());
         $this->assertEquals(SpanKind::KIND_INTERNAL, $spans[0]->getKind());
+    }
+
+    public function testItFlagsTheServerSpanWhenTheClientAborted(): void
+    {
+        [
+            'spans' => $spans,
+            RequestEventSubscriber::class => $subscriber,
+
+            RequestEvent::class => $requestEvent,
+            FinishRequestEvent::class => $finishRequestEvent,
+            TerminateEvent::class => $terminateEvent,
+        ] = $this->expect(connectionAborted: true);
+
+        $subscriber->onRequestEvent($requestEvent);
+        $subscriber->onFinishRequestEvent($finishRequestEvent);
+        $subscriber->onTerminate($terminateEvent);
+
+        $this->assertTrue($spans[1]->getAttributes()->get('http.client_aborted'));
+    }
+
+    public function testItDoesNotFlagTheServerSpanWhenTheClientIsConnected(): void
+    {
+        [
+            'spans' => $spans,
+            RequestEventSubscriber::class => $subscriber,
+
+            RequestEvent::class => $requestEvent,
+            FinishRequestEvent::class => $finishRequestEvent,
+            TerminateEvent::class => $terminateEvent,
+        ] = $this->expect();
+
+        $subscriber->onRequestEvent($requestEvent);
+        $subscriber->onFinishRequestEvent($finishRequestEvent);
+        $subscriber->onTerminate($terminateEvent);
+
+        $this->assertArrayNotHasKey('http.client_aborted', $spans[1]->getAttributes()->toArray());
     }
 
     public function testItGetsResponseAttributes(): void

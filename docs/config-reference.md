@@ -96,3 +96,13 @@ An idle worker keeps its last metrics until its next request or its shutdown.
 
 The tracer and logger providers are also flushed on `kernel.reset` (between two requests of a worker,
 after each Messenger message and when a test kernel shuts down).
+
+### Client disconnects
+
+With PHP's default `ignore_user_abort=Off`, a request whose client disconnects is aborted at its next
+write: no `finally` block runs and `kernel.terminate` is never dispatched, so the server span and every
+span still open are never ended nor exported (and the other terminate listeners are skipped too). This
+mostly bites streamed responses (`StreamedResponse`, server-sent events). For complete traces, set
+`ignore_user_abort = On` in the runtime's php.ini: the request then runs to `kernel.terminate`, where
+the server span is flagged `http.client_aborted=true`. Streaming code should check `connection_aborted()`
+after each flush to stop producing output nobody reads.
