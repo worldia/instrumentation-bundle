@@ -11,8 +11,9 @@ namespace Instrumentation\Tracing\Bridge;
 
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\SDK\Trace\Span;
+use Symfony\Contracts\Service\ResetInterface;
 
-final class MainSpanContext implements MainSpanContextInterface
+final class MainSpanContext implements MainSpanContextInterface, ResetInterface
 {
     private SpanInterface|null $mainSpan = null;
     private string|null $operationName = null;
@@ -44,5 +45,11 @@ final class MainSpanContext implements MainSpanContextInterface
     public function setOperationName(string|null $name): void
     {
         $this->operationName = $name;
+    }
+
+    public function reset(): void
+    {
+        $this->mainSpan = null;
+        $this->operationName = null;
     }
 }

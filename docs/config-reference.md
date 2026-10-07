@@ -93,3 +93,6 @@ and the logger provider (`logging.flush_after_request`). Metrics are throttled i
 per request would be one OTLP call per request: the meter provider is flushed on the first request,
 then at most once per `metrics.request.flush_interval` seconds (requires `metrics.request.enabled`).
 An idle worker keeps its last metrics until its next request or its shutdown.
+
+The tracer and logger providers are also flushed on `kernel.reset` (between two requests of a worker,
+after each Messenger message and when a test kernel shuts down).

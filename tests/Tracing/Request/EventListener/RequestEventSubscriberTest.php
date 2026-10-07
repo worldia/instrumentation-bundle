@@ -216,6 +216,36 @@ class RequestEventSubscriberTest extends TestCase
         $this->assertEquals('Error', $spans[0]->getStatus()->getCode());
     }
 
+    public function testItDetachesTheRequestScopeOnceWhenAnExceptionPrecedesFinishRequest(): void
+    {
+        [
+            RequestEventSubscriber::class => $subscriber,
+
+            RequestEvent::class => $requestEvent,
+            ExceptionEvent::class => $exceptionEvent,
+            FinishRequestEvent::class => $finishRequestEvent,
+            TerminateEvent::class => $terminateEvent,
+        ] = $this->expect();
+
+        $notices = [];
+        set_error_handler(static function (int $type, string $message) use (&$notices): bool {
+            $notices[] = $message;
+
+            return true;
+        }, \E_USER_NOTICE);
+
+        try {
+            $subscriber->onRequestEvent($requestEvent);
+            $subscriber->onExceptionEvent($exceptionEvent);
+            $subscriber->onFinishRequestEvent($finishRequestEvent);
+            $subscriber->onTerminate($terminateEvent);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $notices);
+    }
+
     public function testItSetsSpanError(): void
     {
         [

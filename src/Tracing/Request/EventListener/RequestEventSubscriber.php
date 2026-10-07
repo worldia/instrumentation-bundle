@@ -136,6 +136,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
     {
         $this->closeRequestScope($event->getRequest());
         $this->getSpanForRequest($event->getRequest())->end();
+        unset($this->spans[$event->getRequest()]); // Free memory
     }
 
     public function onTerminate(): void
@@ -144,14 +145,8 @@ class RequestEventSubscriber implements EventSubscriberInterface
         $this->serverSpan?->end();
         $this->propagationScope?->detach();
 
-        // Long-running workers (FrankenPHP, RoadRunner) serve many requests per process: drop the
-        // per-request state, and export now rather than when the batch fills or the process exits.
-        $this->serverScope = null;
-        $this->serverSpan = null;
-        $this->propagationScope = null;
-        $this->spans = new \SplObjectStorage();
-        $this->scopes = new \SplObjectStorage();
-
+        // Long-running workers (FrankenPHP, RoadRunner) serve many requests per process: export now
+        // rather than when the batch fills or the process exits.
         if ($this->flushAfterTerminate && method_exists($this->tracerProvider, 'forceFlush')) {
             $this->tracerProvider->forceFlush();
         }
