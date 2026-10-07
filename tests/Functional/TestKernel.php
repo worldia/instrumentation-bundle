@@ -11,6 +11,7 @@ namespace Tests\Instrumentation\Functional;
 
 use Instrumentation\InstrumentationBundle;
 use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcherInterface;
+use Symfony\AI\Agent\Agent;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -23,6 +24,8 @@ use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface as ContractsEventDispatcherInterface;
 use Tests\Instrumentation\Functional\Stub\DummyPlatform;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 /**
  * Minimal kernel that boots FrameworkBundle + InstrumentationBundle so we can
@@ -113,6 +116,14 @@ final class TestKernel extends Kernel
             ->set('app.platform.openai', DummyPlatform::class)
             ->public()
             ->tag('ai.platform', ['name' => 'openai']);
+
+        // A real agent tagged `ai.agent`, so the agent tracing decorator matching the installed
+        // symfony/ai-agent (lazy Execution API or not) is compiled and instantiated.
+        $container->services()
+            ->set('app.agent.default', Agent::class)
+            ->args([service('app.platform.openai'), 'gpt-4o', [], [], 'test_agent'])
+            ->public()
+            ->tag('ai.agent', ['name' => 'test_agent']);
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void

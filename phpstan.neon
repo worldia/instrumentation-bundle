@@ -11,3 +11,6 @@ parameters:
     # non-ignorable error). That class is only ever loaded under doctrine/dbal 3;
     # the dbal 4 Connection and the shared ConnectionTrait are analysed normally.
     - src/Tracing/Doctrine/Instrumentation/DBAL/DBAL3/Connection.php
+    # Analysis runs against the latest symfony/ai-agent, whose AgentInterface::call() returns a lazy
+    # Execution (>= 0.13). The pre-0.13 decorator is only ever used with an older symfony/ai-agent.
+    - src/Tracing/AI/Agent/Legacy/TracingAgent.php

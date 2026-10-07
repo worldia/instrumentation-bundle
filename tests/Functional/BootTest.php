@@ -10,9 +10,12 @@ declare(strict_types=1);
 namespace Tests\Instrumentation\Functional;
 
 use Instrumentation\Metrics\AI\Platform\MeteringPlatform;
+use Instrumentation\Tracing\AI\Agent\Legacy\TracingAgent as LegacyTracingAgent;
+use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use OpenTelemetry\API\Metrics\MeterProviderInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
+use Symfony\AI\Agent\Execution\Execution;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Filesystem\Filesystem;
@@ -20,7 +23,7 @@ use Tests\Instrumentation\Functional\Stub\DummyPlatform;
 
 /**
  * Confirms the bundle boots inside a real Symfony kernel (container compiles,
- * services resolve, AI platform decoration is applied). Runs against whichever
+ * services resolve, AI platform and agent decoration is applied). Runs against whichever
  * Symfony major is installed, so it validates both the 7.4 and 8.x legs.
  */
 final class BootTest extends KernelTestCase
@@ -60,6 +63,19 @@ final class BootTest extends KernelTestCase
         );
     }
 
+    public function testAiAgentServiceIsDecoratedForTheInstalledAgentApi(): void
+    {
+        self::bootKernel();
+
+        $agent = self::getContainer()->get('app.agent.default');
+
+        $this->assertInstanceOf(
+            class_exists(Execution::class) ? TracingAgent::class : LegacyTracingAgent::class,
+            $agent,
+        );
+        $this->assertSame('test_agent', $agent->getName());
+    }
+
     /**
      * Booting + compiling + instantiating the bundle's services must not trigger
      * any deprecation originating from this package's own source (PHP or Symfony,
@@ -93,6 +109,7 @@ final class BootTest extends KernelTestCase
             $container->get(TracerProviderInterface::class);
             $container->get(MeterProviderInterface::class);
             $container->get('app.platform.openai');
+            $container->get('app.agent.default');
         } finally {
             restore_error_handler();
         }
