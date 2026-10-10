@@ -21,6 +21,7 @@ use Instrumentation\Tracing\Messenger\Stamp\PropagationStrategyStamp;
 use Instrumentation\Tracing\Messenger\Stamp\SentAtStamp;
 use Instrumentation\Tracing\Messenger\Stamp\TraceContextStamp;
 use Instrumentation\Tracing\TracerAwareTrait;
+use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanInterface;
 use OpenTelemetry\API\Trace\SpanKind;
 use OpenTelemetry\API\Trace\StatusCode;
@@ -70,10 +71,18 @@ class MessageEventSubscriber implements EventSubscriberInterface
 
     public function onSend(SendMessageToTransportsEvent $event): void
     {
+        $span = $this->getTracer()
+            ->spanBuilder('Send message to transport')
+            ->setSpanKind(SpanKind::KIND_PRODUCER)
+            ->setAttributes($this->getAttributes($event->getEnvelope()))
+            ->startSpan();
+        $this->scopes[$span] = $span->activate();
+
         $event->setEnvelope($event->getEnvelope()
             ->with(new TraceContextStamp())
             ->with(new SentAtStamp())
         );
+        $span->end();
     }
 
     public function onConsume(WorkerMessageReceivedEvent $event): void
