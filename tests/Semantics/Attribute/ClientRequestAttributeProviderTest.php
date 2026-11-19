@@ -60,6 +60,15 @@ class ClientRequestAttributeProviderTest extends TestCase
         $this->assertEquals('bar,baz', $attributes['http.request.header.x_foo']);
     }
 
+    public function testItRedactsCredentials(): void
+    {
+        $provider = new ClientRequestAttributeProvider();
+
+        $attributes = $provider->getAttributes('GET', 'https://login:s3cret@www.example.com/some/url?key=abc&q=1');
+
+        $this->assertEquals('https://REDACTED:REDACTED@www.example.com/some/url?key=REDACTED&q=1', $attributes['url.full']);
+    }
+
     public function testItDoesntThrowOnInvalidUrl(): void
     {
         $provider = new ClientRequestAttributeProvider();

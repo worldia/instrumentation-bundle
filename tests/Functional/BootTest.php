@@ -49,6 +49,17 @@ final class BootTest extends KernelTestCase
         $this->assertInstanceOf(MeterProviderInterface::class, $container->get(MeterProviderInterface::class));
     }
 
+    public function testTheConfiguredQueryParametersAreRedactedOnTopOfTheDefaults(): void
+    {
+        self::bootKernel();
+
+        $redacted = self::getContainer()->getParameter('tracing.redacted_query_parameters');
+
+        $this->assertIsArray($redacted);
+        $this->assertContains('appid', $redacted);
+        $this->assertContains('key', $redacted);
+    }
+
     public function testAiPlatformServiceIsDecorated(): void
     {
         self::bootKernel();

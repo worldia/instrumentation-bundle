@@ -13,6 +13,7 @@ use Instrumentation\Semantics\Attribute\ClientRequestAttributeProvider;
 use Instrumentation\Semantics\Attribute\ClientRequestAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverInterface;
+use Instrumentation\Semantics\Url\UrlSanitizer;
 use Instrumentation\Tracing\HttpClient\Propagation\PropagationHeadersProvider;
 use Instrumentation\Tracing\Tracing;
 use OpenTelemetry\API\Trace\SpanInterface;
@@ -35,6 +36,7 @@ final class TracingHttpClient implements HttpClientInterface
 
     private ClientRequestOperationNameResolverInterface $operationNameResolver;
     private ClientRequestAttributeProviderInterface $attributeProvider;
+    private UrlSanitizer $urlSanitizer;
 
     /**
      * @param HttpClientInterface|array<mixed>|null $client
@@ -44,6 +46,7 @@ final class TracingHttpClient implements HttpClientInterface
         private readonly bool $propagateByDefault = true,
         int $maxHostConnections = 6,
         int $maxPendingPushes = 50,
+        UrlSanitizer|null $urlSanitizer = null,
     ) {
         if (null === $client) {
             $this->client = HttpClient::create([], $maxHostConnections, $maxPendingPushes);
@@ -54,7 +57,8 @@ final class TracingHttpClient implements HttpClientInterface
         }
 
         $this->operationNameResolver = $operationNameResolver ?: new ClientRequestOperationNameResolver();
-        $this->attributeProvider = $attributeProvider ?: new ClientRequestAttributeProvider();
+        $this->urlSanitizer = $urlSanitizer ?: new UrlSanitizer();
+        $this->attributeProvider = $attributeProvider ?: new ClientRequestAttributeProvider([], $this->urlSanitizer);
     }
 
     /**
@@ -67,6 +71,7 @@ final class TracingHttpClient implements HttpClientInterface
      *         extra_attributes?: array<non-empty-string, string>,
      *         on_request?: callable(array<string,array<string>|string>, string|resource|null, SpanInterface): void,
      *         on_response?: callable(array<string,array<string>|string>, string|resource|null, SpanInterface): void,
+     *         redacted_query_parameters?: list<string>,
      *     }
      * } $options
      */
@@ -89,7 +94,10 @@ final class TracingHttpClient implements HttpClientInterface
             $options['headers'] ?? []
         );
 
-        $attributes = $this->attributeProvider->getAttributes($method, $url, $headers);
+        // Credentials never reach a span: the URL's userinfo, and the values of the sensitive query parameters (the
+        // configured ones, and this request's own `redacted_query_parameters`).
+        $redacted = array_values(array_filter((array) ($options['extra']['redacted_query_parameters'] ?? []), \is_string(...)));
+        $attributes = $this->attributeProvider->getAttributes($method, $this->urlSanitizer->sanitize($url, $redacted), $headers);
         $attributes += $options['extra']['extra_attributes'] ?? [];
         $span->setAttributes($attributes);
 
@@ -104,7 +112,7 @@ final class TracingHttpClient implements HttpClientInterface
         }
 
         $options = array_merge($options, [
-            'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span, $options) {
+            'on_progress' => function ($dlNow, $dlSize, $info) use ($onProgress, $span, $options, $redacted) {
                 static $dlStarted = false;
 
                 if (null !== $onProgress) {
@@ -120,7 +128,8 @@ final class TracingHttpClient implements HttpClientInterface
                     }
 
                     $span->setAttribute(HttpAttributes::HTTP_RESPONSE_STATUS_CODE, $info['http_code']);
-                    $span->setAttribute(UrlAttributes::URL_FULL, $info['url']);
+                    // The URL as sent, its query options merged in: sanitized again, or its credentials would leak.
+                    $span->setAttribute(UrlAttributes::URL_FULL, $this->urlSanitizer->sanitize($info['url'], $redacted));
 
                     if ($info['http_code'] >= 400) {
                         $span->setStatus(StatusCode::STATUS_ERROR);
@@ -147,7 +156,7 @@ final class TracingHttpClient implements HttpClientInterface
      */
     public function withOptions(array $options): static
     {
-        return new static($this->client->withOptions($options));
+        return new static($this->client->withOptions($options), $this->operationNameResolver, $this->attributeProvider, $this->propagateByDefault, urlSanitizer: $this->urlSanitizer);
     }
 
     /**

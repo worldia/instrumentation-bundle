@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Instrumentation\Semantics\Attribute\ClientRequestAttributeProviderInterface;
 use Instrumentation\Semantics\OperationName\ClientRequestOperationNameResolverInterface;
+use Instrumentation\Semantics\Url\UrlSanitizer;
 use Instrumentation\Tracing\HttpClient\Propagation\TraceParentHeaderProvider;
 use Instrumentation\Tracing\HttpClient\Propagation\TraceStateHeaderProvider;
 use Instrumentation\Tracing\HttpClient\TracingHttpClient;
@@ -34,6 +35,7 @@ return static function (ContainerConfigurator $container) {
                 service(ClientRequestAttributeProviderInterface::class),
                 param('tracing.http.propagate_by_default'),
             ])
+            ->arg('$urlSanitizer', service(UrlSanitizer::class))
         ;
     }
 };
