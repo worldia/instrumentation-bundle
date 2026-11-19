@@ -39,7 +39,7 @@ class DoctrineConnectionAttributeProviderTest extends TestCase
             Platforms\OraclePlatform::class => 'oracle.db',
             Platforms\DB2Platform::class => 'ibm.db2',
         ] as $class => $name) {
-            $attributes = $provider->getAttributes($this->createMock($class), []);
+            $attributes = $provider->getAttributes($this->createStub($class), []);
             $this->assertEquals($name, $attributes['db.system.name']);
         }
     }
@@ -53,7 +53,7 @@ class DoctrineConnectionAttributeProviderTest extends TestCase
         ];
 
         $provider = new DoctrineConnectionAttributeProvider();
-        $attributes = $provider->getAttributes($this->createMock(Platforms\MariaDBPlatform::class), $params);
+        $attributes = $provider->getAttributes($this->createStub(Platforms\MariaDBPlatform::class), $params);
 
         $this->assertEquals('app', $attributes['db.namespace']);
         $this->assertEquals('client', $attributes['db.user']);

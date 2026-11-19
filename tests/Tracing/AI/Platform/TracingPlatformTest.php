@@ -77,12 +77,12 @@ class TracingPlatformTest extends TestCase
     {
         $capturedSpanId = null;
 
-        $converter = $this->createMock(ResultConverterInterface::class);
+        $converter = $this->createStub(ResultConverterInterface::class);
         $converter->method('convert')->willReturn(new TextResult('response'));
         $converter->method('getTokenUsageExtractor')->willReturn(null);
         $deferred = new DeferredResult($converter, new InMemoryRawResult());
 
-        $inner = $this->createMock(PlatformInterface::class);
+        $inner = $this->createStub(PlatformInterface::class);
         // Whatever the wrapped platform does (e.g. the outbound HTTP request to the provider) must see the
         // gen_ai span as the active span, so its own spans nest under it.
         $inner->method('invoke')->willReturnCallback(static function () use (&$capturedSpanId, $deferred): DeferredResult {
@@ -137,7 +137,7 @@ class TracingPlatformTest extends TestCase
 
     public function testItAddsTokenUsageAttributesFromExtractor(): void
     {
-        $extractor = $this->createMock(TokenUsageExtractorInterface::class);
+        $extractor = $this->createStub(TokenUsageExtractorInterface::class);
         $extractor->method('extract')->willReturn(new TokenUsage(promptTokens: 150, completionTokens: 42));
 
         $platform = $this->buildPlatform('gemini', $extractor);
@@ -151,7 +151,7 @@ class TracingPlatformTest extends TestCase
 
     public function testItDoesNotSetTokenAttributesWhenExtractorReturnsNull(): void
     {
-        $extractor = $this->createMock(TokenUsageExtractorInterface::class);
+        $extractor = $this->createStub(TokenUsageExtractorInterface::class);
         $extractor->method('extract')->willReturn(null);
 
         $platform = $this->buildPlatform('gemini', $extractor);
@@ -176,7 +176,7 @@ class TracingPlatformTest extends TestCase
 
     public function testItEndsSpanWithErrorStatusWhenPlatformThrows(): void
     {
-        $inner = $this->createMock(PlatformInterface::class);
+        $inner = $this->createStub(PlatformInterface::class);
         $inner->method('invoke')->willThrowException(new \RuntimeException('API unreachable'));
 
         $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini', new OperationNameVoter([]));
@@ -193,11 +193,11 @@ class TracingPlatformTest extends TestCase
 
     public function testItEndsSpanWithErrorStatusWhenConverterThrows(): void
     {
-        $converter = $this->createMock(ResultConverterInterface::class);
+        $converter = $this->createStub(ResultConverterInterface::class);
         $converter->method('convert')->willThrowException(new \RuntimeException('Bad response'));
         $converter->method('getTokenUsageExtractor')->willReturn(null);
 
-        $inner = $this->createMock(PlatformInterface::class);
+        $inner = $this->createStub(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
         $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'gemini', new OperationNameVoter([]));
@@ -214,11 +214,11 @@ class TracingPlatformTest extends TestCase
 
     public function testItDoesNotTraceBlacklistedModels(): void
     {
-        $converter = $this->createMock(ResultConverterInterface::class);
+        $converter = $this->createStub(ResultConverterInterface::class);
         $converter->method('convert')->willReturn(new TextResult('response'));
         $converter->method('getTokenUsageExtractor')->willReturn(null);
 
-        $inner = $this->createMock(PlatformInterface::class);
+        $inner = $this->createStub(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
         $platform = new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), 'openai', new OperationNameVoter(['-mini$']));
@@ -230,11 +230,11 @@ class TracingPlatformTest extends TestCase
 
     private function buildPlatform(string $system, TokenUsageExtractorInterface|null $extractor = null): TracingPlatform
     {
-        $converter = $this->createMock(ResultConverterInterface::class);
+        $converter = $this->createStub(ResultConverterInterface::class);
         $converter->method('convert')->willReturn(new TextResult('response'));
         $converter->method('getTokenUsageExtractor')->willReturn($extractor);
 
-        $inner = $this->createMock(PlatformInterface::class);
+        $inner = $this->createStub(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult()));
 
         return new TracingPlatform($inner, $this->tracerProvider, new PlatformOperationNameResolver(), new PlatformAttributeProvider(), $system, new OperationNameVoter([]));

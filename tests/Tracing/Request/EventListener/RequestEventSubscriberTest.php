@@ -20,13 +20,11 @@ use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
 use OpenTelemetry\SDK\Trace\SpanProcessor\BatchSpanProcessor;
 use OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
 use OpenTelemetry\SDK\Trace\TracerProvider;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpFoundation\HeaderBag;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\ServerBag;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\FinishRequestEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -35,6 +33,8 @@ use Symfony\Component\HttpKernel\Event\TerminateEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 
+// The fixture helper builds every collaborator as a mock; each test sets expectations on the ones it checks.
+#[AllowMockObjectsWithoutExpectations]
 class RequestEventSubscriberTest extends TestCase
 {
     public function testItImplementsEventSubscriberInterface(): void
@@ -64,20 +64,17 @@ class RequestEventSubscriberTest extends TestCase
         $spanProcessor = $batch ? new BatchSpanProcessor($exporter, Clock::getDefault()) : new SimpleSpanProcessor($exporter);
         $tracerProvider = new TracerProvider($spanProcessor);
 
-        $mainSpanContext = $this->createMock(MainSpanContextInterface::class);
+        $mainSpanContext = $this->createStub(MainSpanContextInterface::class);
 
         $serverRequestOperationNameResolver = $this->createMock(ServerRequestOperationNameResolverInterface::class);
-        $serverRequestAttributeProvider = $this->createMock(ServerRequestAttributeProviderInterface::class);
+        $serverRequestAttributeProvider = $this->createStub(ServerRequestAttributeProviderInterface::class);
         $serverResponseAttributeProvider = $this->createMock(ServerResponseAttributeProviderInterface::class);
 
-        $request = $this->createMock(Request::class);
-        $request->attributes = $this->createMock(ParameterBag::class);
-        $request->server = $this->createMock(ServerBag::class);
-        $request->headers = $this->createMock(HeaderBag::class);
+        $request = Request::create('/');
 
-        $kernel = $this->createMock(HttpKernelInterface::class);
-        $response = $this->createMock(Response::class);
-        $exception = $this->createMock(\RuntimeException::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
+        $response = $this->createStub(Response::class);
+        $exception = $this->createStub(\RuntimeException::class);
 
         return [
             'spans' => $spans,
@@ -242,7 +239,7 @@ class RequestEventSubscriberTest extends TestCase
             TerminateEvent::class => $terminateEvent,
         ] = $this->expect();
 
-        $response->expects($this->any())->method('getStatusCode')->willReturn(500);
+        $response->method('getStatusCode')->willReturn(500);
 
         $subscriber->onRequestEvent($requestEvent);
         $subscriber->onExceptionEvent($exceptionEvent);
@@ -297,7 +294,7 @@ class RequestEventSubscriberTest extends TestCase
             TerminateEvent::class => $terminateEvent,
         ] = $this->expect();
 
-        $response->expects($this->any())->method('getStatusCode')->willReturn(500);
+        $response->method('getStatusCode')->willReturn(500);
 
         $subscriber->onRequestEvent($requestEvent);
         $subscriber->onResponseEvent($responseEvent);
@@ -321,7 +318,7 @@ class RequestEventSubscriberTest extends TestCase
             TerminateEvent::class => $terminateEvent,
         ] = $this->expect();
 
-        $response->expects($this->any())->method('getStatusCode')->willReturn(404);
+        $response->method('getStatusCode')->willReturn(404);
 
         $subscriber->onRequestEvent($requestEvent);
         $subscriber->onResponseEvent($responseEvent);

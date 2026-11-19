@@ -23,7 +23,7 @@ class AgentAttributeProviderTest extends TestCase
 
     public function testItSetsGenAiAgentAttributes(): void
     {
-        $agent = $this->createMock(AgentInterface::class);
+        $agent = $this->createStub(AgentInterface::class);
         $agent->method('getName')->willReturn('my_agent');
 
         $provider = new AgentAttributeProvider();

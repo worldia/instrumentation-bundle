@@ -83,7 +83,7 @@ class MessageAttributeProviderTest extends TestCase
             return;
         }
 
-        $amqpEnvelope = $this->createMock(\AMQPEnvelope::class);
+        $amqpEnvelope = $this->createStub(\AMQPEnvelope::class);
 
         $provider = new MessageAttributeProvider();
 

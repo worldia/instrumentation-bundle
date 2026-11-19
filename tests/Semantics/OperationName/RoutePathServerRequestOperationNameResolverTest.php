@@ -13,7 +13,6 @@ use Instrumentation\Semantics\OperationName\RoutePath\RoutePathResolverInterface
 use Instrumentation\Semantics\OperationName\RoutePathServerRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ServerRequestOperationNameResolverInterface;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 
 class RoutePathServerRequestOperationNameResolverTest extends TestCase
@@ -28,10 +27,8 @@ class RoutePathServerRequestOperationNameResolverTest extends TestCase
         $routePathResolver = $this->createMock(RoutePathResolverInterface::class);
         $routePathResolver->expects($this->once())->method('resolve')->with('some_route_name')->willReturn('/some/route/path');
 
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('GET');
-        $request->attributes = $this->createMock(ParameterBag::class);
-        $request->attributes->expects($this->once())->method('get')->with('_route')->willReturn('some_route_name');
+        $request = Request::create('/some/path', 'GET');
+        $request->attributes->set('_route', 'some_route_name');
 
         $resolver = new RoutePathServerRequestOperationNameResolver($routePathResolver);
         $operation = $resolver->getOperationName($request);
@@ -44,11 +41,8 @@ class RoutePathServerRequestOperationNameResolverTest extends TestCase
         $routePathResolver = $this->createMock(RoutePathResolverInterface::class);
         $routePathResolver->expects($this->once())->method('resolve')->with('some_route_name')->willReturn(null);
 
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('POST');
-        $request->attributes = $this->createMock(ParameterBag::class);
-        $request->attributes->expects($this->once())->method('get')->with('_route')->willReturn('some_route_name');
-        $request->expects($this->once())->method('getPathInfo')->willReturn('/some/path');
+        $request = Request::create('/some/path', 'POST');
+        $request->attributes->set('_route', 'some_route_name');
 
         $resolver = new RoutePathServerRequestOperationNameResolver($routePathResolver);
         $operation = $resolver->getOperationName($request);

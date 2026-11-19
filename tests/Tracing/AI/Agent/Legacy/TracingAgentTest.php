@@ -74,7 +74,7 @@ class TracingAgentTest extends TestCase
     public function testItRecordsExceptionsAndEndsTheSpan(): void
     {
         $exception = new \RuntimeException('boom');
-        $inner = $this->createMock(AgentInterface::class);
+        $inner = $this->createStub(AgentInterface::class);
         $inner->method('getName')->willReturn('my_agent');
         $inner->method('call')->willThrowException($exception);
 
@@ -94,7 +94,7 @@ class TracingAgentTest extends TestCase
 
     public function testItDoesNotTraceBlacklistedAgents(): void
     {
-        $inner = $this->createMock(AgentInterface::class);
+        $inner = $this->createStub(AgentInterface::class);
         $inner->method('getName')->willReturn('internal_agent');
         $inner->method('call')->willReturn(new TextResult('Hello'));
 
@@ -114,7 +114,7 @@ class TracingAgentTest extends TestCase
 
     private function buildAgent(string $name, ResultInterface $result): TracingAgent
     {
-        $inner = $this->createMock(AgentInterface::class);
+        $inner = $this->createStub(AgentInterface::class);
         $inner->method('getName')->willReturn($name);
         $inner->method('call')->willReturn($result);
 
