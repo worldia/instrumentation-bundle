@@ -17,8 +17,9 @@ interface MessageAttributeProviderInterface
      * @return array{
      *           'messenger.message':class-string,
      *           'messenger.bus'?:string,
+     *           'messaging.system.name'?:'rabbitmq'|'redis',
      *           'messaging.system'?:'rabbitmq'|'redis',
-     *           'messaging.message_id'?:string
+     *           'messaging.message.id'?:string
      *         }
      */
     public function getAttributes(Envelope $envelope): array;

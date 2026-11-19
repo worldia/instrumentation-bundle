@@ -166,9 +166,10 @@ class MessageEventSubscriber implements EventSubscriberInterface
      *           'messenger.message':class-string,
      *           'messenger.bus'?:string,
      *           'messaging.destination_kind':'queue'|'topic',
+     *           'messaging.system.name'?:'rabbitmq'|'redis',
      *           'messaging.system'?:'rabbitmq'|'redis',
      *           'messaging.protocol'?:'AMQP',
-     *           'messaging.message_id'?:string
+     *           'messaging.message.id'?:string
      *         }
      */
     private function getAttributes(Envelope $envelope): array
