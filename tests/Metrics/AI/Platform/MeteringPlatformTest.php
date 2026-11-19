@@ -40,7 +40,7 @@ class MeteringPlatformTest extends TestCase
 
     public function testItRecordsTheTokenUsageHistogram(): void
     {
-        $extractor = $this->createMock(TokenUsageExtractorInterface::class);
+        $extractor = $this->createStub(TokenUsageExtractorInterface::class);
         $extractor->method('extract')->willReturn(new TokenUsage(promptTokens: 150, completionTokens: 42));
 
         $platform = $this->buildPlatform('openai', $extractor);
@@ -64,7 +64,7 @@ class MeteringPlatformTest extends TestCase
 
     public function testItAcceptsAModelInstance(): void
     {
-        $extractor = $this->createMock(TokenUsageExtractorInterface::class);
+        $extractor = $this->createStub(TokenUsageExtractorInterface::class);
         $extractor->method('extract')->willReturn(new TokenUsage(promptTokens: 10, completionTokens: 5));
 
         $platform = $this->buildPlatform('openai', $extractor);
@@ -85,7 +85,7 @@ class MeteringPlatformTest extends TestCase
 
     public function testItRecordsNothingWhenExtractorReturnsNull(): void
     {
-        $extractor = $this->createMock(TokenUsageExtractorInterface::class);
+        $extractor = $this->createStub(TokenUsageExtractorInterface::class);
         $extractor->method('extract')->willReturn(null);
 
         $platform = $this->buildPlatform('openai', $extractor);
@@ -112,7 +112,7 @@ class MeteringPlatformTest extends TestCase
 
     public function testItRecordsDurationWithErrorTypeWhenInvokeThrows(): void
     {
-        $inner = $this->createMock(PlatformInterface::class);
+        $inner = $this->createStub(PlatformInterface::class);
         $inner->method('invoke')->willThrowException(new \RuntimeException('boom'));
 
         $platform = new MeteringPlatform($inner, $this->meterProvider, 'openai');
@@ -146,11 +146,11 @@ class MeteringPlatformTest extends TestCase
 
     private function buildPlatform(string $system, TokenUsageExtractorInterface|null $extractor): MeteringPlatform
     {
-        $converter = $this->createMock(ResultConverterInterface::class);
+        $converter = $this->createStub(ResultConverterInterface::class);
         $converter->method('convert')->willReturn(new TextResult('Hello'));
         $converter->method('getTokenUsageExtractor')->willReturn($extractor);
 
-        $inner = $this->createMock(PlatformInterface::class);
+        $inner = $this->createStub(PlatformInterface::class);
         $inner->method('invoke')->willReturn(new DeferredResult($converter, new InMemoryRawResult([])));
 
         return new MeteringPlatform($inner, $this->meterProvider, $system);

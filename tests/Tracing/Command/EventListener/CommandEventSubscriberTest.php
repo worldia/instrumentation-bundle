@@ -18,6 +18,7 @@ use OpenTelemetry\API\Trace\StatusCode;
 use OpenTelemetry\API\Trace\TracerInterface;
 use OpenTelemetry\API\Trace\TracerProviderInterface;
 use OpenTelemetry\Context\ScopeInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
@@ -28,6 +29,8 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
+// The fixture helper builds every collaborator as a mock; each test sets expectations on the ones it checks.
+#[AllowMockObjectsWithoutExpectations]
 class CommandEventSubscriberTest extends TestCase
 {
     protected function expect(string|null $spanName = null): array
@@ -40,7 +43,7 @@ class CommandEventSubscriberTest extends TestCase
 
         $spanBuilder = $this->createMock(SpanBuilderInterface::class);
         $spanBuilder->expects($this->once())->method('startSpan')->willReturn($span);
-        $spanBuilder->expects($this->any())->method($this->anything())->willReturn($spanBuilder);
+        $spanBuilder->method($this->anything())->willReturn($spanBuilder);
 
         $tracer = $this->createMock(TracerInterface::class);
         $tracer->expects($this->once())->method('spanBuilder')->with($spanName ?: $this->anything())->willReturn($spanBuilder);
@@ -48,7 +51,7 @@ class CommandEventSubscriberTest extends TestCase
         $tracerProvider = $this->createMock(TracerProviderInterface::class);
         $tracerProvider->expects($this->once())->method('getTracer')->willReturn($tracer);
 
-        $mainSpanContext = $this->createMock(MainSpanContextInterface::class);
+        $mainSpanContext = $this->createStub(MainSpanContextInterface::class);
 
         $commandOperationNameResolver = $this->createMock(CommandOperationNameResolverInterface::class);
 

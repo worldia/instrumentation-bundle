@@ -23,7 +23,7 @@ class RequestEventSubscriberTest extends TestCase
     public function testItFlushesOnTheFirstRequestThenAtMostOncePerInterval(): void
     {
         $clock = new TestClock();
-        $meterProvider = $this->createMock(MeterProviderInterface::class);
+        $meterProvider = $this->createStub(MeterProviderInterface::class);
         $subscriber = new RequestEventSubscriber($meterProvider, [], null, 10, $clock);
 
         $flushes = 0;
@@ -69,6 +69,6 @@ class RequestEventSubscriberTest extends TestCase
 
     private function terminateEvent(string $path = '/'): TerminateEvent
     {
-        return new TerminateEvent($this->createMock(HttpKernelInterface::class), Request::create($path), new Response());
+        return new TerminateEvent($this->createStub(HttpKernelInterface::class), Request::create($path), new Response());
     }
 }

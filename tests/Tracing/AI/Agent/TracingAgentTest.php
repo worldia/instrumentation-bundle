@@ -130,7 +130,7 @@ class TracingAgentTest extends TestCase
     public function testItRecordsExceptionsRaisedByTheCall(): void
     {
         $exception = new \InvalidArgumentException('bad input');
-        $inner = $this->createMock(AgentInterface::class);
+        $inner = $this->createStub(AgentInterface::class);
         $inner->method('getName')->willReturn('my_agent');
         $inner->method('call')->willThrowException($exception);
 
@@ -160,7 +160,7 @@ class TracingAgentTest extends TestCase
             yield new Result(new TextResult('Hello'));
         });
         $innerExecution = $inner->call(new MessageBag());
-        $inner = $this->createMock(AgentInterface::class);
+        $inner = $this->createStub(AgentInterface::class);
         $inner->method('getName')->willReturn('internal_agent');
         $inner->method('call')->willReturn($innerExecution);
 
@@ -188,7 +188,7 @@ class TracingAgentTest extends TestCase
      */
     private function inner(string $name, \Closure $updates, bool $streamed = false): AgentInterface
     {
-        $inner = $this->createMock(AgentInterface::class);
+        $inner = $this->createStub(AgentInterface::class);
         $inner->method('getName')->willReturn($name);
         $inner->method('call')->willReturnCallback(static fn (): Execution => new Execution($updates, $streamed));
 

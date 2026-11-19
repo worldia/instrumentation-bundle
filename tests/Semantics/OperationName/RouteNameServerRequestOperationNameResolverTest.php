@@ -12,7 +12,6 @@ namespace Tests\Instrumentation\Semantics\OperationName;
 use Instrumentation\Semantics\OperationName\RouteNameServerRequestOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ServerRequestOperationNameResolverInterface;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 
 class RouteNameServerRequestOperationNameResolverTest extends TestCase
@@ -24,10 +23,8 @@ class RouteNameServerRequestOperationNameResolverTest extends TestCase
 
     public function testItResolvesOperationName(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('GET');
-        $request->attributes = $this->createMock(ParameterBag::class);
-        $request->attributes->expects($this->once())->method('get')->with('_route')->willReturn('some_route_name');
+        $request = Request::create('/some/path', 'GET');
+        $request->attributes->set('_route', 'some_route_name');
 
         $resolver = new RouteNameServerRequestOperationNameResolver();
         $operation = $resolver->getOperationName($request);
@@ -37,11 +34,7 @@ class RouteNameServerRequestOperationNameResolverTest extends TestCase
 
     public function testItFallsBackToPathInfo(): void
     {
-        $request = $this->createMock(Request::class);
-        $request->expects($this->once())->method('getMethod')->willReturn('POST');
-        $request->attributes = $this->createMock(ParameterBag::class);
-        $request->attributes->expects($this->once())->method('get')->with('_route')->willReturn(null);
-        $request->expects($this->once())->method('getPathInfo')->willReturn('/some/path');
+        $request = Request::create('/some/path', 'POST');
 
         $resolver = new RouteNameServerRequestOperationNameResolver();
         $operation = $resolver->getOperationName($request);

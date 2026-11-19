@@ -74,7 +74,7 @@ class TracingToolboxTest extends TestCase
         $toolCall = new ToolCall('call_123', 'get_weather');
         $exception = new \RuntimeException('boom');
 
-        $inner = $this->createMock(ToolboxInterface::class);
+        $inner = $this->createStub(ToolboxInterface::class);
         $inner->method('execute')->willThrowException($exception);
 
         $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter([]));
@@ -94,7 +94,7 @@ class TracingToolboxTest extends TestCase
     public function testItDoesNotTraceBlacklistedTools(): void
     {
         $toolCall = new ToolCall('call_1', 'debug_dump');
-        $inner = $this->createMock(ToolboxInterface::class);
+        $inner = $this->createStub(ToolboxInterface::class);
         $inner->method('execute')->willReturn(new ToolResult($toolCall, 'ok'));
 
         $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter(['^debug_']));
@@ -106,7 +106,7 @@ class TracingToolboxTest extends TestCase
 
     public function testItDelegatesGetTools(): void
     {
-        $inner = $this->createMock(ToolboxInterface::class);
+        $inner = $this->createStub(ToolboxInterface::class);
         $inner->method('getTools')->willReturn([]);
 
         $toolbox = new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter([]));
@@ -117,7 +117,7 @@ class TracingToolboxTest extends TestCase
     private function buildToolbox(ToolCall $expected, ToolResult $result): TracingToolbox
     {
         $inner = $this->createMock(ToolboxInterface::class);
-        $inner->method('execute')->with($expected)->willReturn($result);
+        $inner->expects($this->once())->method('execute')->with($expected)->willReturn($result);
 
         return new TracingToolbox($inner, $this->tracerProvider, new ToolOperationNameResolver(), new ToolAttributeProvider(), new OperationNameVoter([]));
     }

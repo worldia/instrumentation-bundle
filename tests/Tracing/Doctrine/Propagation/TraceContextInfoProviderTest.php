@@ -17,7 +17,6 @@ use OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SemConv\Attributes\ServiceAttributes;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Kernel;
@@ -60,22 +59,12 @@ class TraceContextInfoProviderTest extends TestCase
 
     public function testItGetsControllerAndRoute(): void
     {
-        $parameters = $this->createMock(ParameterBag::class);
-        $parameters->method('get')->willReturnCallback(static function (string $param) {
-            return match ($param) {
-                '_controller' => 'Some\Controller',
-                '_route' => 'some_route',
-            };
-        });
+        $request = Request::create('/');
+        $request->attributes->add(['_controller' => 'Some\Controller', '_route' => 'some_route']);
+        $requestStack = new RequestStack();
+        $requestStack->push($request);
 
-        $request = $this->createMock(Request::class);
-        $request->attributes = $parameters;
-
-        $requestStack = $this->createMock(RequestStack::class);
-        $requestStack->expects($this->once())->method('getCurrentRequest')->willReturn($request);
-
-        $attributes = $this->createMock(AttributesInterface::class);
-        $provider = new TraceContextInfoProvider(ResourceInfo::create($attributes), null, $requestStack);
+        $provider = new TraceContextInfoProvider(ResourceInfo::create($this->createStub(AttributesInterface::class)), null, $requestStack);
 
         $this->assertEquals(array_merge($this->getMinimalInfo(), [
             'route' => 'some_route',

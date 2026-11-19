@@ -23,7 +23,7 @@ class AgentOperationNameResolverTest extends TestCase
 
     public function testItResolvesInvokeAgentOperationName(): void
     {
-        $agent = $this->createMock(AgentInterface::class);
+        $agent = $this->createStub(AgentInterface::class);
         $agent->method('getName')->willReturn('my_agent');
 
         $resolver = new AgentOperationNameResolver();

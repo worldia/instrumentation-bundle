@@ -35,7 +35,7 @@ class RequestEventSubscriberTest extends TestCase
 
     public function testItInitializesContext(): void
     {
-        $kernel = $this->createMock(KernelInterface::class);
+        $kernel = $this->createStub(KernelInterface::class);
         $request = new Request(server: ['HTTP_BAGGAGE' => 'foo=bar']);
 
         $subscriber = new RequestEventSubscriber();

@@ -36,7 +36,7 @@ class AddUserEventSubscriberTest extends TestCase
     public function testItAddsUserAttributes(): void
     {
         $user = $this->createMock(UserInterface::class);
-        $user->expects($this->any())->method('getUserIdentifier')->willReturn('customer@example.com');
+        $user->method('getUserIdentifier')->willReturn('customer@example.com');
         $user->expects($this->once())->method('getRoles')->willReturn(['ROLE_CUSTOMER']);
 
         $token = $this->createMock(TokenInterface::class);
@@ -74,7 +74,7 @@ class AddUserEventSubscriberTest extends TestCase
     ): RequestEvent {
         $request = Request::create($path, $method);
 
-        $kernel = $this->createMock(KernelInterface::class);
+        $kernel = $this->createStub(KernelInterface::class);
 
         return new RequestEvent($kernel, $request, HttpKernelInterface::MAIN_REQUEST);
     }
