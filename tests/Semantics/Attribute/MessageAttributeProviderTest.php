@@ -72,7 +72,8 @@ class MessageAttributeProviderTest extends TestCase
 
         $envelope = new Envelope($message, [new RedisReceivedStamp('some-id')]);
         $attributes = $provider->getAttributes($envelope);
-        $this->assertEquals('redis', $attributes['messaging.system']);
+        $this->assertEquals('redis', $attributes['messaging.system.name']);
+        $this->assertEquals('redis', $attributes['messaging.system'], 'the deprecated name, still emitted for one release');
     }
 
     public function testItSetsMessagingSystemIfAmqp(): void
@@ -90,6 +91,7 @@ class MessageAttributeProviderTest extends TestCase
         $message = new \stdClass();
         $envelope = new Envelope($message, [new AmqpReceivedStamp($amqpEnvelope, 'jobs')]);
         $attributes = $provider->getAttributes($envelope);
-        $this->assertEquals('rabbitmq', $attributes['messaging.system']);
+        $this->assertEquals('rabbitmq', $attributes['messaging.system.name']);
+        $this->assertEquals('rabbitmq', $attributes['messaging.system'], 'the deprecated name, still emitted for one release');
     }
 }
