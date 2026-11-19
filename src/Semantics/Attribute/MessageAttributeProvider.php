@@ -18,6 +18,11 @@ use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 
 class MessageAttributeProvider implements MessageAttributeProviderInterface
 {
+    /**
+     * `messaging.system`, by name: open-telemetry/sem-conv dropped its constant from the incubating attributes.
+     */
+    private const MESSAGING_SYSTEM = 'messaging.system';
+
     public function getAttributes(Envelope $envelope): array
     {
         $attributes = [
@@ -25,9 +30,9 @@ class MessageAttributeProvider implements MessageAttributeProviderInterface
         ];
 
         if ($envelope->last(RedisReceivedStamp::class)) { // @phpstan-ignore-line
-            $attributes[MessagingIncubatingAttributes::MESSAGING_SYSTEM] = 'redis';
+            $attributes[self::MESSAGING_SYSTEM] = 'redis';
         } elseif ($envelope->last(AmqpReceivedStamp::class)) { // @phpstan-ignore-line
-            $attributes[MessagingIncubatingAttributes::MESSAGING_SYSTEM] = 'rabbitmq';
+            $attributes[self::MESSAGING_SYSTEM] = 'rabbitmq';
         }
 
         /** @var TransportMessageIdStamp|null $stamp */
