@@ -11,6 +11,7 @@ namespace Tests\Instrumentation\Semantics\Attribute;
 
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProvider;
 use Instrumentation\Semantics\Attribute\ServerRequestAttributeProviderInterface;
+use Instrumentation\Semantics\Url\UrlSanitizer;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\HeaderBag;
 use Symfony\Component\HttpFoundation\ParameterBag;
@@ -212,5 +213,14 @@ class ServerRequestAttributeProviderTest extends TestCase
         $attributes = $provider->getAttributes($request);
 
         $this->assertEquals(['bar'], $attributes['http.request.header.x_foo']);
+    }
+
+    public function testItRedactsSensitiveQueryValues(): void
+    {
+        $provider = new ServerRequestAttributeProvider(null, [], new UrlSanitizer(['code']));
+
+        $attributes = $provider->getAttributes(Request::create('https://www.example.com/callback?code=abc&state=1'));
+
+        $this->assertEquals('code=REDACTED&state=1', $attributes['url.query']);
     }
 }

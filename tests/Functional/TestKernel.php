@@ -102,6 +102,7 @@ final class TestKernel extends Kernel
             'logging' => ['enabled' => false],
             'tracing' => [
                 'enabled' => true,
+                'redacted_query_parameters' => ['appid'],
                 'ai' => ['enabled' => true],
             ],
             'metrics' => [

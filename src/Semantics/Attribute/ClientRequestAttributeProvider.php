@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Semantics\Attribute;
 
+use Instrumentation\Semantics\Url\UrlSanitizer;
 use OpenTelemetry\SemConv\Attributes\HttpAttributes;
 use OpenTelemetry\SemConv\Attributes\ServerAttributes;
 use OpenTelemetry\SemConv\Attributes\UrlAttributes;
@@ -18,7 +19,7 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
     /**
      * @param array<string> $capturedHeaders
      */
-    public function __construct(private array $capturedHeaders = [])
+    public function __construct(private array $capturedHeaders = [], private UrlSanitizer $urlSanitizer = new UrlSanitizer())
     {
     }
 
@@ -26,7 +27,7 @@ class ClientRequestAttributeProvider implements ClientRequestAttributeProviderIn
     {
         $attributes = [
             HttpAttributes::HTTP_REQUEST_METHOD => strtoupper($method),
-            UrlAttributes::URL_FULL => preg_replace('|(^https?://(?:.*):)(?:.*)(@.*)|', '$1<redacted>$2', $url) ?: $url,
+            UrlAttributes::URL_FULL => $this->urlSanitizer->sanitize($url),
         ];
 
         foreach ($this->capturedHeaders as $header) {

@@ -51,5 +51,6 @@ monolog:
 - [Simple tracing example](./docs/tracing/simple-trace.md)
 - [Add Urls to your traces in error messages](./docs/tracing/add-urls-to-your-traces.md)
 - [Customize operation (span) name for a message](./docs/tracing/custom-operation-name-for-message.md)
-- [Link strategy for a message](./docs/tracing/link-strategy-for-message.md)    
+- [Link strategy for a message](./docs/tracing/link-strategy-for-message.md)
+- [Redact credentials in URLs](./docs/tracing/redact-credentials-in-urls.md)    
 

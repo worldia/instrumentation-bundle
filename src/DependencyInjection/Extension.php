@@ -14,6 +14,7 @@ use Instrumentation\DependencyInjection\CompilerPass\AIPlatformMetricsCompilerPa
 use Instrumentation\DependencyInjection\CompilerPass\AIPlatformTracingCompilerPass;
 use Instrumentation\DependencyInjection\CompilerPass\DoctrineTracingCompilerPass;
 use Instrumentation\Metrics\AI\Platform\MeteringPlatform;
+use Instrumentation\Semantics\Url\UrlSanitizer;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
 use Instrumentation\Tracing\Bridge\TraceUrlGenerator;
@@ -105,6 +106,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('tracing.request.attributes.server_name', null);
         $container->setParameter('tracing.request.attributes.request_headers', []);
         $container->setParameter('tracing.http.attributes.request_headers', []);
+        $container->setParameter('tracing.redacted_query_parameters', UrlSanitizer::DEFAULT_QUERY_PARAMETERS);
     }
 
     /**
@@ -132,6 +134,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('tracing.message.flush_spans_after_handling', $config['message']['flush_spans_after_handling']);
         $container->setParameter('tracing.http.propagate_by_default', $config['http']['propagate_by_default']);
         $container->setParameter('tracing.http.attributes.request_headers', array_map(static fn (string $value): string => strtolower($value), $config['http']['attributes']['request_headers']));
+        $container->setParameter('tracing.redacted_query_parameters', array_values(array_unique([...UrlSanitizer::DEFAULT_QUERY_PARAMETERS, ...$config['redacted_query_parameters']])));
 
         $loader->load('tracing.php');
         $loader->load('http.php');

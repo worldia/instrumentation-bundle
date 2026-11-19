@@ -25,6 +25,15 @@ instrumentation:
 
     # Allows you to have links to your traces generated in error messages and twig.
     trace_url: ~ # Example: 'http://localhost:16682/trace/{traceId}'
+
+    # Query parameters whose values are redacted from span URLs (outgoing `url.full`, incoming `url.query`),
+    # case-insensitively, on top of the defaults (key, api_key, token, sig, X-Goog-Signature...).
+    # Per outgoing request: the `redacted_query_parameters` extra option.
+    redacted_query_parameters: []
+
+      # Examples:
+      # - appid
+      # - session
     request:
       enabled: true
 

@@ -42,6 +42,7 @@ use Instrumentation\Semantics\OperationName\ToolOperationNameResolver;
 use Instrumentation\Semantics\OperationName\ToolOperationNameResolverInterface;
 use Instrumentation\Semantics\ResourceInfoProvider;
 use Instrumentation\Semantics\ResourceInfoProviderInterface;
+use Instrumentation\Semantics\Url\UrlSanitizer;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Routing\RouterInterface;
@@ -59,16 +60,23 @@ return static function (ContainerConfigurator $container) {
         ->set(ResourceInfo::class)
         ->factory([service(ResourceInfoProviderInterface::class), 'getInfo'])
 
+        ->set(UrlSanitizer::class)
+        ->args([
+            param('tracing.redacted_query_parameters'),
+        ])
+
         ->set(ServerRequestAttributeProviderInterface::class, ServerRequestAttributeProvider::class)
         ->args([
             param('tracing.request.attributes.server_name'),
             param('tracing.request.attributes.request_headers'),
+            service(UrlSanitizer::class),
         ])
         ->set(ServerResponseAttributeProviderInterface::class, ServerResponseAttributeProvider::class)
         ->set(MessageAttributeProviderInterface::class, MessageAttributeProvider::class)
         ->set(ClientRequestAttributeProviderInterface::class, ClientRequestAttributeProvider::class)
         ->args([
             param('tracing.http.attributes.request_headers'),
+            service(UrlSanitizer::class),
         ])
         ->set(DoctrineConnectionAttributeProviderInterface::class, DoctrineConnectionAttributeProvider::class)
         ->set(PlatformAttributeProviderInterface::class, PlatformAttributeProvider::class)
