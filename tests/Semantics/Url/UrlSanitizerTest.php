@@ -22,6 +22,9 @@ class UrlSanitizerTest extends TestCase
     {
         yield 'nothing to redact' => ['https://api.example.com/search?q=kyoto&page=2#top', 'https://api.example.com/search?q=kyoto&page=2#top'];
         yield 'user and password' => ['https://login:s3cret@api.example.com/v1', 'https://REDACTED:REDACTED@api.example.com/v1'];
+        yield 'a raw @ in the password' => ['https://user:p@ssw0rd@api.example.com/v1?q=a@b', 'https://REDACTED:REDACTED@api.example.com/v1?q=a@b'];
+        yield 'a scheme-relative URL' => ['//user:s3cret@api.example.com/v1', '//REDACTED:REDACTED@api.example.com/v1'];
+        yield 'array-style names' => ['https://api.example.com/?api_key[]=a&token%5B0%5D=b&q=1', 'https://api.example.com/?api_key[]=REDACTED&token%5B0%5D=REDACTED&q=1'];
         yield 'password only' => ['https://:s3cret@api.example.com/v1', 'https://REDACTED:REDACTED@api.example.com/v1'];
         yield 'an @ in the query is not userinfo' => ['https://api.example.com/v1?email=a%40b.com&to=x@y.com', 'https://api.example.com/v1?email=a%40b.com&to=x@y.com'];
         yield 'a key in the query' => ['https://pixabay.com/api/?key=12345-abc&q=kyoto+temple', 'https://pixabay.com/api/?key=REDACTED&q=kyoto+temple'];
