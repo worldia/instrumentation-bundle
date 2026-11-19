@@ -60,8 +60,9 @@ final class UrlSanitizer
      */
     public function sanitize(string $url, array $extraQueryParameters = []): string
     {
-        // The userinfo is whatever precedes an `@` within the authority: never past the first `/`, `?` or `#`.
-        $url = preg_replace('~^([a-z][a-z0-9+.\-]*://)[^/?#@]*@~i', '$1'.self::REDACTED.':'.self::REDACTED.'@', $url) ?? $url;
+        // The userinfo is whatever precedes the authority's last `@` (a raw `@` in a password included), the authority
+        // ending at the first `/`, `?` or `#`; a scheme-relative URL (`//user:secret@host`) has one too.
+        $url = preg_replace('~^((?:[a-z][a-z0-9+.\-]*:)?//)[^/?#]*@~i', '$1'.self::REDACTED.':'.self::REDACTED.'@', $url) ?? $url;
 
         $queryStart = strpos($url, '?');
         if (false === $queryStart) {
@@ -91,7 +92,8 @@ final class UrlSanitizer
             if (false === $separator) {
                 continue;
             }
-            $name = strtolower(urldecode(substr($pair, 0, $separator)));
+            // `key[]=…` and `key[0]=…` are `key`'s values too.
+            $name = strtolower((string) preg_replace('/\[.*$/', '', urldecode(substr($pair, 0, $separator))));
             if (isset($parameters[$name])) {
                 $pairs[$i] = substr($pair, 0, $separator + 1).self::REDACTED;
             }
@@ -101,7 +103,7 @@ final class UrlSanitizer
     }
 
     /**
-     * @param list<string> $names
+     * @param list<string|int|float|bool> $names as configured: a scalar is taken as its string
      *
      * @return array<string, true>
      */
@@ -109,7 +111,7 @@ final class UrlSanitizer
     {
         $index = [];
         foreach ($names as $name) {
-            $index[strtolower($name)] = true;
+            $index[strtolower((string) $name)] = true;
         }
 
         return $index;
