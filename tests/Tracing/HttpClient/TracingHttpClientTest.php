@@ -20,6 +20,7 @@ use OpenTelemetry\SDK\Trace\TracerProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class TracingHttpClientTest extends TestCase
 {
@@ -66,6 +67,44 @@ class TracingHttpClientTest extends TestCase
         $client->request('GET', '/search', ['query' => ['appid' => 'abc']])->getContent();
 
         $this->assertSame('https://api.example.com/search?appid=REDACTED', $this->urlFull());
+    }
+
+    public function testAnIdleTickOfTheStreamDoesNotEndTheSpanOfAResponseStillComing(): void
+    {
+        // An empty string in a mock body is an idle chunk: the loop's poll tick, with the response not yet complete.
+        $body = static function (): \Generator {
+            yield '';
+            yield '{"offers":[]}';
+        };
+        $client = new TracingHttpClient(new MockHttpClient(new MockResponse($body(), ['http_code' => 200])));
+        $response = $client->request('POST', 'https://api.example.com/search');
+
+        $endedAtTick = null;
+        foreach ($client->stream($response, 0.01) as $chunk) {
+            if ($chunk->isTimeout()) {
+                $endedAtTick = \count($this->spans);
+            }
+        }
+
+        $this->assertSame(0, $endedAtTick, 'the poll tick of the loop is not the end of the call');
+
+        $response->cancel();
+        $this->assertCount(1, $this->spans, 'a response given up on ends its span');
+    }
+
+    public function testATransportErrorOfTheStreamEndsTheSpan(): void
+    {
+        $client = new TracingHttpClient(new MockHttpClient(new MockResponse('', ['error' => 'connection refused'])));
+        $response = $client->request('GET', 'https://api.example.com/search');
+
+        try {
+            foreach ($client->stream($response, 0.01) as $chunk) {
+                $chunk->isLast();
+            }
+            $this->fail('the transport error is not swallowed');
+        } catch (TransportExceptionInterface) {
+            $this->assertCount(1, $this->spans);
+        }
     }
 
     private function urlFull(int $index = 0): mixed

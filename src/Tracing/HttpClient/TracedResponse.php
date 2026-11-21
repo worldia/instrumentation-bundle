@@ -137,7 +137,11 @@ class TracedResponse implements ResponseInterface, StreamableInterface, SpanAwar
 
         foreach ($client->stream($wrappedResponses, $timeout) as $r => $chunk) {
             try {
-                if ($chunk->isLast() || $chunk->isTimeout()) {
+                // An idle chunk is the caller's poll tick (it passed `stream()` a timeout to look at something else
+                // now and then), not the end of the call: the response is still coming, and a span ended here would
+                // lose its status, its body and the real duration. A response never read to its end ends its span
+                // when it is destroyed or cancelled.
+                if (!$chunk->isTimeout() && $chunk->isLast()) {
                     $traceableMap[$r]->endTracing();
                 }
             } catch (TransportExceptionInterface) {
