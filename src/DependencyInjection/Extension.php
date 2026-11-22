@@ -168,6 +168,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
 
         $container->setParameter('tracing.doctrine.connections', $config['doctrine']['connections']);
         $container->setParameter('tracing.doctrine.log_queries', $config['doctrine']['log_queries']);
+        $container->setParameter('tracing.doctrine.min_duration_ms', $config['doctrine']['min_duration_ms']);
         $container->setParameter('tracing.doctrine.propagation', $config['doctrine']['propagation']);
         $container->setParameter('tracing.doctrine.instrumentation', $config['doctrine']['instrumentation']);
 

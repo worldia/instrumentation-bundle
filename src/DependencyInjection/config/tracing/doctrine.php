@@ -28,6 +28,12 @@ return static function (ContainerConfigurator $container) {
         : Doctrine\Instrumentation\DBAL\DBAL3\Connection::class;
 
     $container->services()
+        ->set(Doctrine\Instrumentation\DBAL\QueryTally::class)
+        ->args([
+            service(MainSpanContextInterface::class),
+            param('tracing.doctrine.min_duration_ms'),
+        ])
+
         ->set(Doctrine\Instrumentation\DBAL\Middleware::class)
         ->args([
             service(TracerProviderInterface::class),
@@ -35,6 +41,7 @@ return static function (ContainerConfigurator $container) {
             service(MainSpanContextInterface::class),
             param('tracing.doctrine.log_queries'),
             $connectionClass,
+            service(Doctrine\Instrumentation\DBAL\QueryTally::class),
         ])
 
         ->set(Doctrine\Propagation\DBAL\Middleware::class)

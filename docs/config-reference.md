@@ -76,6 +76,9 @@ instrumentation:
       instrumentation: false
       propagation: false
       log_queries: false
+      # The shortest statement (ms) that is a span of its own, 0: every statement is one. Every statement is counted onto the
+      # request, command or message either way: db.statements.count, db.statements.total_ms, db.statements.spans.
+      min_duration_ms: 0
       connections: []
   metrics:
     enabled: true

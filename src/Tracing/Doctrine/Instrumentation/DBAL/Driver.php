@@ -24,7 +24,7 @@ final class Driver extends AbstractDriverMiddleware
      * @param class-string<DriverConnection> $connectionClass The connection decorator to use, picked at compile
      *                                                        time depending on the installed doctrine/dbal major version
      */
-    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, DriverInterface $decorated, private MainSpanContextInterface $mainSpanContext, private bool $logQueries, private string $connectionClass = Connection::class)
+    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, DriverInterface $decorated, private MainSpanContextInterface $mainSpanContext, private bool $logQueries, private string $connectionClass = Connection::class, private QueryTally|null $tally = null)
     {
         parent::__construct($decorated);
     }
@@ -36,7 +36,7 @@ final class Driver extends AbstractDriverMiddleware
 
         $connectionClass = $this->connectionClass;
 
-        return new $connectionClass($this->tracerProvider, $connection, $this->mainSpanContext, $attributes, $this->logQueries);
+        return new $connectionClass($this->tracerProvider, $connection, $this->mainSpanContext, $attributes, $this->logQueries, $this->tally);
     }
 
     private function getPlatform(DriverConnection $connection): AbstractPlatform
