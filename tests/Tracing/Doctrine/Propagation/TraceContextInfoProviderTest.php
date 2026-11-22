@@ -10,11 +10,13 @@ declare(strict_types=1);
 namespace Tests\Instrumentation\Tracing\Doctrine\Propagation;
 
 use Composer\InstalledVersions;
+use Instrumentation\Tracing\Bridge\MainSpanContext;
 use Instrumentation\Tracing\Doctrine\Propagation\TraceContextInfoProvider;
 use Instrumentation\Tracing\Doctrine\Propagation\TraceContextInfoProviderInterface;
 use OpenTelemetry\SDK\Common\Attribute\AttributesFactory;
 use OpenTelemetry\SDK\Common\Attribute\AttributesInterface;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
+use OpenTelemetry\SDK\Trace\TracerProvider;
 use OpenTelemetry\SemConv\Attributes\ServiceAttributes;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -70,6 +72,30 @@ class TraceContextInfoProviderTest extends TestCase
             'route' => 'some_route',
             'controller' => 'Some\\\\Controller',
         ]), $provider->getTraceContext());
+    }
+
+    public function testItRefreshesTheTraceContextWhenTheMainSpanChanges(): void
+    {
+        $provider = new TraceContextInfoProvider($this->getInfo(), $mainSpanContext = new MainSpanContext());
+        $tracer = (new TracerProvider())->getTracer('test');
+
+        $traceparents = [];
+        foreach (['request 1', 'request 2'] as $name) {
+            $span = $tracer->spanBuilder($name)->startSpan();
+            $scope = $span->activate();
+            $mainSpanContext->setMainSpan($span);
+
+            // Two queries of the same request share the context; a later request gets its own.
+            $traceparents[$name] = $provider->getTraceContext()['traceparent'];
+            $this->assertSame($traceparents[$name], $provider->getTraceContext()['traceparent']);
+            $this->assertStringContainsString($span->getContext()->getTraceId(), $traceparents[$name]);
+
+            $scope->detach();
+            $span->end();
+            $mainSpanContext->reset();
+        }
+
+        $this->assertNotSame($traceparents['request 1'], $traceparents['request 2']);
     }
 
     // public function it_gets_controller_and_route(ResourceInfo $info, AttributesInterface $attributes, RequestStack $requestStack, Request $request, ParameterBag $requestParameters): void

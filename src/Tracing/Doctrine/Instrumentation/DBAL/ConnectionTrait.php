@@ -38,7 +38,8 @@ trait ConnectionTrait
     private const OP_TRANSACTION_ROLLBACK = 'db.transaction.rollback';
 
     private ContextInterface $doctrineSpanContext;
-    private bool $createdDoctrineSpanContext = false;
+    /** Span id of the main span (request, command, message) the `db.orm` span was created under. */
+    private string|null $doctrineSpanMainSpanId = null;
 
     /**
      * @param array<string,string> $attributes
@@ -104,19 +105,26 @@ trait ConnectionTrait
         }
     }
 
+    /**
+     * Creates the `db.orm` span the query spans hang under, once per main span. A connection outlives a request
+     * in a long-lived worker (FrankenPHP, messenger:consume): remembering the span for good would parent the
+     * queries of every later request or message to the first one, merging their traces into it.
+     */
     private function ensureMainSpan(): void
     {
-        if ($this->createdDoctrineSpanContext) {
+        $mainSpan = $this->mainSpanContext->getMainSpan();
+        $mainSpanId = $mainSpan->getContext()->getSpanId();
+
+        if ($this->doctrineSpanMainSpanId === $mainSpanId) {
             return;
         }
 
-        $mainSpan = $this->mainSpanContext->getMainSpan();
         $parentContext = Context::getCurrent()->with(ContextKeys::span(), $mainSpan);
 
         $doctrineSpan = $this->getTracer()->spanBuilder('db.orm')->setParent($parentContext)->setSpanKind(SpanKind::KIND_CLIENT)->setAttributes($this->attributes)->startSpan();
         $this->doctrineSpanContext = Context::getCurrent()->with(ContextKeys::span(), $doctrineSpan);
         $doctrineSpan->end();
 
-        $this->createdDoctrineSpanContext = true;
+        $this->doctrineSpanMainSpanId = $mainSpanId;
     }
 }

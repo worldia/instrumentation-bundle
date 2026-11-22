@@ -106,6 +106,10 @@ An idle worker keeps its last metrics until its next request or its shutdown.
 The tracer and logger providers are also flushed on `kernel.reset` (between two requests of a worker,
 after each Messenger message and when a test kernel shuts down).
 
+The Doctrine instrumentation follows the same rule: a connection lives as long as the worker, but the `db.orm`
+span its query spans hang under, and the sqlcommenter `traceparent` it propagates, are rebuilt for each request,
+command or message (each main span), so a query always belongs to the trace of the work that ran it.
+
 ### Client disconnects
 
 With PHP's default `ignore_user_abort=Off`, a request whose client disconnects is aborted at its next
