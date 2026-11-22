@@ -12,6 +12,7 @@ namespace Instrumentation\Tracing\Doctrine\Propagation;
 use Composer\InstalledVersions;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use OpenTelemetry\API\Trace\Propagation\TraceContextPropagator;
+use OpenTelemetry\API\Trace\Span;
 use OpenTelemetry\SDK\Resource\ResourceInfo;
 use OpenTelemetry\SemConv\Attributes\ServiceAttributes;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -24,13 +25,21 @@ class TraceContextInfoProvider implements TraceContextInfoProviderInterface
      */
     private array|null $info = null;
 
+    /** The trace and main span the cached `$info` was built for. */
+    private string|null $infoKey = null;
+
     public function __construct(private ResourceInfo $resourceInfo, private MainSpanContextInterface|null $mainSpanContext = null, private RequestStack|null $requestStack = null)
     {
     }
 
     public function getTraceContext(): array
     {
-        if (!$this->info) {
+        // Cached per trace and main span, not for the life of the process: a worker serves many requests or
+        // messages, and each query must carry its own traceparent, not the first one's.
+        $key = Span::getCurrent()->getContext()->getTraceId().'/'.$this->mainSpanContext?->getMainSpan()->getContext()->getSpanId();
+
+        if (!$this->info || $key !== $this->infoKey) {
+            $this->infoKey = $key;
             $info = [];
 
             $traceContext = TraceContextPropagator::getInstance();
