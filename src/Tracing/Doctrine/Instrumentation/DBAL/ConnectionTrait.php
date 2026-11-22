@@ -44,7 +44,7 @@ trait ConnectionTrait
     /**
      * @param array<string,string> $attributes
      */
-    public function __construct(TracerProviderInterface $tracerProvider, ConnectionInterface $decorated, private MainSpanContextInterface $mainSpanContext, private array $attributes, private bool $logQueries)
+    public function __construct(TracerProviderInterface $tracerProvider, ConnectionInterface $decorated, private MainSpanContextInterface $mainSpanContext, private array $attributes, private bool $logQueries, private QueryTally|null $tally = null)
     {
         parent::__construct($decorated);
 
@@ -55,7 +55,9 @@ trait ConnectionTrait
     {
         $statement = $this->trace(self::OP_CONN_PREPARE, $sql, fn (): StatementInterface => parent::prepare($sql));
 
-        return new Statement($this->tracerProvider, $this->doctrineSpanContext, $statement, $sql, $this->attributes, $this->logQueries);
+        // The parent context is asked for when the statement runs, not fixed now: a statement can outlive the main span it
+        // was prepared under, and with a minimum duration the `db.orm` span is only made for the first statement to need it.
+        return new Statement($this->tracerProvider, $this->doctrineContext(...), $statement, $sql, $this->attributes, $this->logQueries, $this->tally);
     }
 
     public function query(string $sql): Result
@@ -85,6 +87,10 @@ trait ConnectionTrait
 
     protected function trace(string $operation, string $sql, callable $callback): mixed
     {
+        if (true === $this->tally?->bounded()) {
+            return $this->traceBounded($operation, $sql, $callback);
+        }
+
         $this->ensureMainSpan();
 
         $span = $this->getTracer()
@@ -103,6 +109,50 @@ trait ConnectionTrait
         } finally {
             $span->end();
         }
+    }
+
+    /**
+     * With a minimum duration: the statement is timed, counted on the main span, and only made a span, started when it
+     * did, when it was slow enough. The cheap ones leave nothing in the trace but their share of the totals.
+     */
+    private function traceBounded(string $operation, string $sql, callable $callback): mixed
+    {
+        \assert(null !== $this->tally);
+        $startedAtNs = (int) (microtime(true) * 1e9);
+        $startedAt = hrtime(true);
+
+        try {
+            return $callback();
+        } finally {
+            $durationNs = hrtime(true) - $startedAt;
+            $counted = self::OP_CONN_QUERY === $operation || self::OP_CONN_EXEC === $operation;
+            $spanned = $this->tally->worthASpan($durationNs);
+
+            if ($counted) {
+                $this->tally->record($durationNs, $spanned);
+            }
+            if ($spanned) {
+                $span = $this->getTracer()
+                    ->spanBuilder($operation) // @phpstan-ignore-line
+                    ->setSpanKind(SpanKind::KIND_CLIENT)
+                    ->setParent($this->doctrineContext())
+                    ->setAttributes($this->attributes)
+                    ->setStartTimestamp($startedAtNs)
+                    ->startSpan();
+                if ($this->logQueries) {
+                    $span->addEvent($sql);
+                }
+                $span->end($startedAtNs + $durationNs);
+            }
+        }
+    }
+
+    /** The context query spans hang under: this main span's `db.orm` span, made if it is not yet. */
+    private function doctrineContext(): ContextInterface
+    {
+        $this->ensureMainSpan();
+
+        return $this->doctrineSpanContext;
     }
 
     /**

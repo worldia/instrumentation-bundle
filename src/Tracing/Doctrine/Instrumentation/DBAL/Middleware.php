@@ -22,12 +22,12 @@ final class Middleware implements MiddlewareInterface
      *                                                             compile time depending on the installed
      *                                                             doctrine/dbal major version
      */
-    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private MainSpanContextInterface $mainSpanContext, private bool $logQueries = false, private string $connectionClass = Connection::class)
+    public function __construct(private TracerProviderInterface $tracerProvider, private DoctrineConnectionAttributeProviderInterface $attributeProvider, private MainSpanContextInterface $mainSpanContext, private bool $logQueries = false, private string $connectionClass = Connection::class, private QueryTally|null $tally = null)
     {
     }
 
     public function wrap(BaseDriver $driver): BaseDriver
     {
-        return new Driver($this->tracerProvider, $this->attributeProvider, $driver, $this->mainSpanContext, $this->logQueries, $this->connectionClass);
+        return new Driver($this->tracerProvider, $this->attributeProvider, $driver, $this->mainSpanContext, $this->logQueries, $this->connectionClass, $this->tally);
     }
 }
