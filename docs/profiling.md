@@ -44,10 +44,13 @@ With `on_demand.statements: true` (and Doctrine tracing on) the request that car
 events of its main span (`db.statement`, in order: `db.statement.text`, `db.statement.duration_ms`, `db.namespace`, `db.statement.index`).
 A trace of that one request then says which statements a page runs and which cost the most (an N+1, a statement to merge or lighten) while
 the trace of any other request keeps what `tracing.doctrine.min_duration_ms` leaves of it: the counts and totals on the main span, and a
-span for the slow statements. At most 100 are captured (`db.statements.capture_dropped` on the main span counts the rest). A prepared
-statement is kept as its text (its values are bound, never in it); a statement run as it is (`Connection::query()` or `exec()`) has its
-literals masked, and the comment the trace propagation adds is dropped. The sampled traffic never has its statements captured, only the
-request that carries the token. Off by default.
+span for the slow statements. At most 100 are captured (`db.statements.capture_dropped` on the main span counts the rest; other events of
+the span count against the SDK's limit of 128). Quoted literals are masked in every statement (`'...'`, `E'...'`, `$$...$$`, a quote never
+closed), and the numbers of a statement run as it is (`Connection::query()` or `exec()`) too; a prepared statement keeps its placeholders
+and its numbers. A statement of more than 64 KB is not kept (only its size), and the comment the trace propagation adds is dropped.
+It is the SQL the application wrote: for the one request an operator asked for, never traffic. The sampled traffic never has its
+statements captured, only the request that carries the token; it needs `profiling.active` and a request the tracer samples (the main
+span recording), not Excimer. Off by default.
 
 ## What a profile is
 

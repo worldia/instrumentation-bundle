@@ -40,6 +40,7 @@ use Symfony\Contracts\Service\ResetInterface;
 final class RequestProfilingSubscriber implements EventSubscriberInterface, ResetInterface
 {
     private readonly bool $enabled;
+    private readonly bool $active;
     private readonly LoggerInterface $logger;
     private readonly int $frequency;
     private readonly float $requestRate;
@@ -87,7 +88,8 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->onDemandHeader = $onDemandHeader ?: 'X-Profile-Token';
         $this->spanAttribute = $spanAttribute ?? '';
         $this->onDemandStatements = $onDemandStatements ?? false;
-        $this->enabled = (bool) $active && $this->frequency > 0 && \extension_loaded('excimer');
+        $this->active = (bool) $active;
+        $this->enabled = $this->active && $this->frequency > 0 && \extension_loaded('excimer');
     }
 
     public static function getSubscribedEvents(): array
@@ -101,14 +103,22 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
 
     public function onRequest(Event\RequestEvent $event): void
     {
-        if (!$this->enabled || !$event->isMainRequest()) {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+        // The statements of the request that carries the token, when asked to: only that one, never the sampled traffic, and
+        // whether or not the sampler (Excimer) is there.
+        $this->statementTally?->capture(false);
+        if ($this->active && $this->onDemandStatements && $this->carriesToken($event->getRequest())) {
+            $this->statementTally?->capture(true);
+        }
+        if (!$this->enabled) {
             return;
         }
         $this->shipper->reap();
         $this->abandon();
 
-        $supplied = $event->getRequest()->headers->get($this->onDemandHeader);
-        $onDemand = '' !== $this->onDemandToken && \is_string($supplied) && hash_equals($this->onDemandToken, $supplied);
+        $onDemand = $this->carriesToken($event->getRequest());
         if (!$onDemand && $this->requestRate < 1.0 && mt_rand() / mt_getrandmax() >= $this->requestRate) {
             return;
         }
@@ -120,10 +130,13 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->startedAt = microtime(true);
         $profiler->start();
         $this->profiler = $profiler;
-        // The statements of the request that carries the token, when asked to: only that one, never the sampled traffic.
-        if ($onDemand && $this->onDemandStatements) {
-            $this->statementTally?->capture(true);
-        }
+    }
+
+    private function carriesToken(Request $request): bool
+    {
+        $supplied = $request->headers->get($this->onDemandHeader);
+
+        return '' !== $this->onDemandToken && \is_string($supplied) && hash_equals($this->onDemandToken, $supplied);
     }
 
     public function onResponse(Event\ResponseEvent $event): void
@@ -144,6 +157,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
 
     public function onTerminate(Event\TerminateEvent $event): void
     {
+        $this->statementTally?->capture(false);
         if (null === $this->profiler) {
             return;
         }
@@ -151,8 +165,6 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $startedAt = $this->startedAt;
         $spanId = $this->spanId;
         $this->profiler = $this->spanId = null;
-        $this->statementTally?->capture(false);
-
         try {
             $profiler->stop();
             $pprof = $this->encoder->encode(
@@ -187,6 +199,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
     /** kernel.reset, between two requests of a worker: a profile still running belongs to a request that never terminated. */
     public function reset(): void
     {
+        $this->statementTally?->capture(false);
         $this->abandon();
         $this->shipper->reap();
     }

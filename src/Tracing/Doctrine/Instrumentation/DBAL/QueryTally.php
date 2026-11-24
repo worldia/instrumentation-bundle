@@ -22,8 +22,10 @@ use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
  *
  * A request that is being profiled (see the profiling subscriber) also has its statements captured: each one, in order, is
  * an event of the main span (`db.statement`: its text, its duration, its database), up to {@see self::CAPTURE_MAX}, so a trace
- * of that request says which statements it ran and which cost the most, with no span per statement. The text of a prepared
- * statement is kept as it is (its values are bound, never in it); a statement run as it is has its literals masked.
+ * of that request says which statements it ran and which cost the most, with no span per statement. Quoted literals are masked in
+ * every statement (`'...'`, `E'...'`, `$$...$$`, an unterminated one included), and the numbers of a statement run as it is (a
+ * prepared statement keeps its numbers: its placeholders are `$1` or `?`, and a `LIMIT 10` is no secret). It is the SQL the
+ * application wrote, so it is for the one request an operator asked for, not for traffic.
  *
  * One tally serves every connection of the container: a request spanning several stores has one total. It follows the
  * main span, so a connection that outlives a request in a long-lived worker starts a new count for the next one.
@@ -122,40 +124,56 @@ final class QueryTally
         if (!$this->capturing) {
             return;
         }
-        $main = $this->mainSpanContext->getMainSpan();
-        if (!$main->isRecording()) {
-            return;
-        }
-        $id = $main->getContext()->getSpanId();
-        if ($id !== $this->captureSpanId) {
-            $this->captureSpanId = $id;
-            $this->captured = $this->captureDropped = 0;
-        }
-        if ($this->captured >= self::CAPTURE_MAX) {
-            ++$this->captureDropped;
-            $main->setAttribute('db.statements.capture_dropped', $this->captureDropped);
+        // It runs in the `finally` of a statement: whatever it does, it never replaces the error of the statement.
+        try {
+            $main = $this->mainSpanContext->getMainSpan();
+            if (!$main->isRecording()) {
+                return;
+            }
+            $id = $main->getContext()->getSpanId();
+            if ($id !== $this->captureSpanId) {
+                $this->captureSpanId = $id;
+                $this->captured = $this->captureDropped = 0;
+            }
+            if ($this->captured >= self::CAPTURE_MAX) {
+                ++$this->captureDropped;
+                $main->setAttribute('db.statements.capture_dropped', $this->captureDropped);
 
-            return;
-        }
+                return;
+            }
 
-        $database = $attributes['db.namespace'] ?? '';
-        $main->addEvent('db.statement', [
-            'db.statement.index' => ++$this->captured,
-            'db.statement.text' => self::text($sql, $prepared),
-            'db.statement.duration_ms' => round($durationNs / 1e6, 2),
-            'db.namespace' => \is_string($database) ? $database : '',
-        ]);
+            $database = $attributes['db.namespace'] ?? '';
+            $main->addEvent('db.statement', [
+                'db.statement.index' => ++$this->captured,
+                'db.statement.text' => self::text($sql, $prepared),
+                'db.statement.duration_ms' => round($durationNs / 1e6, 2),
+                'db.namespace' => \is_string($database) ? $database : '',
+            ]);
+        } catch (\Throwable) {
+            // a statement left out of the capture
+        }
     }
+
+    /** Statements longer than this are not read for literals: their text is not kept. */
+    private const CAPTURE_PARSE_MAX = 65536;
 
     private static function text(string $sql, bool $prepared): string
     {
-        // A bounded prefix: a bulk statement of megabytes is not worth reading, nor processing.
-        $sql = mb_strcut($sql, 0, self::CAPTURE_TEXT_MAX * 4);
+        if (\strlen($sql) > self::CAPTURE_PARSE_MAX) {
+            return \sprintf('[a statement of %d bytes]', \strlen($sql));
+        }
+        // The quoted literals first, before anything else is cut or collapsed: a string with a quote escaped by a backslash, an
+        // `E'...'` one, a dollar-quoted one, and a quote that is never closed (all that follows it is the literal).
+        $sql = (string) preg_replace(
+            ["~'(?:[^'\\\\]|\\\\.|'')*(?:'|$)~s", '~\$([A-Za-z_]*)\$.*?(?:\$\1\$|$)~s'],
+            ["'?'", "'?'"],
+            $sql,
+        );
         if (!$prepared) {
-            $sql = (string) preg_replace(["~'(?:[^']|'')*'~", '~\b\d+(?:\.\d+)?\b~'], ["'?'", '?'], $sql);
+            $sql = (string) preg_replace('~\b\d+(?:\.\d+)?\b~', '?', $sql);
         }
         // The comment the trace propagation adds is no part of the statement.
-        $sql = trim((string) preg_replace(['~/\*.*?\*/~s', '~\s+~'], ['', ' '], $sql));
+        $sql = trim((string) preg_replace(['~/\*.*?(?:\*/|$)~s', '~\s+~'], ['', ' '], $sql));
 
         return mb_strimwidth($sql, 0, self::CAPTURE_TEXT_MAX, '...');
     }

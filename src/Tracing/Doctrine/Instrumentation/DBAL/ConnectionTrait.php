@@ -135,7 +135,9 @@ trait ConnectionTrait
 
             if ($counted) {
                 $this->tally->record($durationNs, $spanned);
-                $this->tally->captureStatement($sql, $this->attributes, $durationNs, false);
+                if ($this->tally->capturing()) {
+                    $this->tally->captureStatement($sql, $this->attributes, $durationNs, false);
+                }
             }
             if ($spanned) {
                 $span = $this->getTracer()

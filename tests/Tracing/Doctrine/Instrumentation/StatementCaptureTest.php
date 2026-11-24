@@ -105,7 +105,6 @@ final class StatementCaptureTest extends TestCase
         $request = $this->byName()['request'][0];
         $this->assertCount(QueryTally::CAPTURE_MAX, $this->events($request));
         $this->assertSame(7, $request->getAttributes()->get('db.statements.capture_dropped'));
-        $this->assertSame(QueryTally::CAPTURE_MAX + 7, $request->getAttributes()->get('db.statements.count') ?? QueryTally::CAPTURE_MAX + 7);
     }
 
     public function testEachMainSpanStartsItsOwnCapture(): void
@@ -125,6 +124,75 @@ final class StatementCaptureTest extends TestCase
         $spans = $this->byName();
         $this->assertCount(1, $this->events($spans['request 1'][0]));
         $this->assertSame(1, $this->events($spans['request 2'][0])[0]['db.statement.index'], 'a new main span, a new count');
+    }
+
+    /**
+     * @return iterable<string, array{string, bool, string}>
+     */
+    public static function texts(): iterable
+    {
+        yield 'a string with an escaped quote' => ["SELECT 1 WHERE a = 'it\\'s secret' AND b = 2", false, 'SELECT ? WHERE a = \'?\' AND b = ?'];
+        yield 'a doubled quote' => ["SELECT * FROM t WHERE a = 'it''s secret'", true, "SELECT * FROM t WHERE a = '?'"];
+        yield 'an E string' => ["SELECT * FROM t WHERE a = E'x\\'y secret'", true, "SELECT * FROM t WHERE a = E'?'"];
+        yield 'a dollar-quoted string' => ['SELECT $tag$secret '."'".' text$tag$', true, "SELECT '?'"];
+        yield 'a quote never closed' => ["SELECT * FROM t WHERE a = 'secret that goes on", true, "SELECT * FROM t WHERE a = '?'"];
+        yield 'a prepared statement keeps its placeholders and its numbers' => ['SELECT * FROM t WHERE a = $1 AND b = ? LIMIT 10', true, 'SELECT * FROM t WHERE a = $1 AND b = ? LIMIT 10'];
+        yield 'a prepared statement with an inline literal' => ["SELECT * FROM t WHERE token = 'abc'", true, "SELECT * FROM t WHERE token = '?'"];
+        yield 'a statement run as it is loses its numbers' => ['SELECT * FROM t WHERE id = 42 LIMIT 10', false, 'SELECT * FROM t WHERE id = ? LIMIT ?'];
+        yield 'non-ASCII text' => ["SELECT * FROM t WHERE nom = 'Zürich' ORDER BY é", true, "SELECT * FROM t WHERE nom = '?' ORDER BY é"];
+        yield 'a comment never closed' => ['SELECT 1 /* traceparent=x', true, 'SELECT 1'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('texts')]
+    public function testWhatIsCapturedHasItsQuotedLiteralsMasked(string $sql, bool $prepared, string $expected): void
+    {
+        $tally = new QueryTally($this->mainSpanContext, 0);
+        $tally->capture(true);
+        $main = $this->mainSpan('request');
+
+        $tally->captureStatement($sql, [], 1_000_000, $prepared);
+        $main->end();
+
+        $this->assertSame($expected, $this->events($this->byName()['request'][0])[0]['db.statement.text']);
+    }
+
+    public function testALongStatementIsNotKeptAndATruncatedLiteralDoesNotLeak(): void
+    {
+        $tally = new QueryTally($this->mainSpanContext, 0);
+        $tally->capture(true);
+        $main = $this->mainSpan('request');
+
+        $tally->captureStatement("INSERT INTO t VALUES ('".str_repeat('secret ', 20000)."')", [], 1, true);
+        $tally->captureStatement("SELECT '".str_repeat('secret ', 100)."'", [], 1, true);
+        $main->end();
+
+        $events = $this->events($this->byName()['request'][0]);
+        $this->assertMatchesRegularExpression('/^\[a statement of \d+ bytes\]$/', $events[0]['db.statement.text']);
+        $this->assertSame("SELECT '?'", $events[1]['db.statement.text'], 'cut after the literal is masked, never in the middle of it');
+    }
+
+    public function testTheTransactionsAreNotStatementsAndAFailingStatementKeepsItsOwnError(): void
+    {
+        $tally = new QueryTally($this->mainSpanContext, 0);
+        $driverConnection = $this->createStub(DriverConnection::class);
+        $driverConnection->method('query')->willThrowException(new \RuntimeException('the database is down'));
+        $connection = new Connection($this->provider, $driverConnection, $this->mainSpanContext, [], false, $tally);
+        $tally->capture(true);
+        $main = $this->mainSpan('request');
+
+        $connection->beginTransaction();
+        $connection->commit();
+        try {
+            $connection->query('SELECT 1');
+            $this->fail('the statement fails');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('the database is down', $e->getMessage());
+        }
+        $main->end();
+
+        $events = $this->events($this->byName()['request'][0]);
+        $this->assertCount(1, $events, 'the failing statement is captured, begin and commit are not');
+        $this->assertSame('SELECT ?', $events[0]['db.statement.text']);
     }
 
     private function mainSpan(string $name): \OpenTelemetry\API\Trace\SpanInterface

@@ -90,7 +90,9 @@ class Statement extends AbstractStatementMiddleware
             $durationNs = hrtime(true) - $startedAt;
             $spanned = $this->tally->worthASpan($durationNs);
             $this->tally->record($durationNs, $spanned);
-            $this->tally->captureStatement($this->sqlQuery, $this->attributes, $durationNs, true);
+            if ($this->tally->capturing()) {
+                $this->tally->captureStatement($this->sqlQuery, $this->attributes, $durationNs, true);
+            }
 
             if ($spanned) {
                 $span = $this->getTracer()

@@ -106,7 +106,7 @@ instrumentation:
       token: ''
       header: X-Profile-Token
 
-      # A request carrying the token also has its SQL statements captured as events of its main span (`db.statement`: text, duration, database; at most 100): which statements a page runs and which cost the most, with no span per statement. Prepared text only, the literals of a statement run as it is masked. Needs tracing.doctrine. Off by default: a statement is not data to put in a trace unasked.
+      # A request carrying the token also has its SQL statements captured as events of its main span (`db.statement`: text, duration, database; at most 100): which statements a page runs and which cost the most, with no span per statement. Quoted literals are masked in every statement, the numbers of a statement run as it is too. Needs tracing.doctrine and the profiling `active`; the request must be sampled by the tracer (the main span recording). Not tied to Excimer. Off by default: a statement is not data to put in a trace unasked.
       statements: false
 
     # The attribute set on the main span with the id of its profile: what makes Grafana show "Profiles for this span". Empty: not set.
