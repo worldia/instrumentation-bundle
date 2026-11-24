@@ -1,5 +1,8 @@
 parameters:
   level: 8
+  stubFiles:
+    # ext-excimer is optional (profiling): analyse against its API whether or not the extension is installed.
+    - stubs/excimer.stub
   # The DBAL decorators must compile against both doctrine/dbal 3 and 4, whose
   # driver interfaces have incompatible signatures. The version-specific code is
   # guarded at runtime; reportUnmatchedIgnoredErrors is disabled so the inline

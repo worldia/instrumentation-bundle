@@ -80,6 +80,50 @@ instrumentation:
       # request, command or message either way: db.statements.count, db.statements.total_ms, db.statements.spans.
       min_duration_ms: 0
       connections: []
+  # Continuous profiling of requests (Excimer sampling, pushed to Pyroscope): one profile per sampled request, linked to its trace. Needs ext-excimer; a profile is only taken while `active` and the extension is loaded.
+  profiling:
+
+    # Registers the profiler. Static (read when the container is built): turn it on everywhere and switch profiling per environment with `active`.
+    enabled: false
+
+    # Runtime switch, usually an environment variable, so one image profiles where it is told to.
+    active: true # Example: '%env(bool:PROFILING_ENABLED)%'
+
+    # Samples per second inside a profiled request. 20 to 100 showed no measurable overhead.
+    frequency: 50
+
+    # Share of requests profiled, 0 to 1. 0 profiles only the requests carrying the on-demand token.
+    request_rate: 1.0
+
+    # `wall` answers where the time went (waiting on a database counts), `cpu` only the time the thread ran.
+    clock: wall # One of "wall"; "cpu"
+
+    # Deepest stack kept.
+    max_depth: 256
+    on_demand:
+
+      # A request carrying this secret in `header` is always profiled. Empty: off. Keep it a secret (an environment variable).
+      token: ''
+      header: X-Profile-Token
+
+    # The attribute set on the main span with the id of its profile: what makes Grafana show "Profiles for this span". Empty: not set.
+    span_attribute: pyroscope.profile.id
+    pyroscope:
+
+      # Base URL of the Pyroscope (or of an Alloy pyroscope.receive_http). Empty: profiles are taken and dropped.
+      url: '' # Example: 'http://pyroscope:4040'
+
+      # The series name (the service_name label).
+      application: '%service.name%'
+
+      # The `env` label. Empty: none.
+      environment: ''
+
+      # How long the body of a profile may take to go out (name lookup, connect, upload) after the response; the answer is never waited for.
+      upload_deadline_ms: 150
+
+      # Uploads pending at once; past that a profile is dropped.
+      max_in_flight: 8
   metrics:
     enabled: true
     message:
