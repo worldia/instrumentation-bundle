@@ -50,6 +50,8 @@ class Statement extends AbstractStatementMiddleware
             return $this->executeBounded(...\func_get_args());
         }
 
+        $capturing = true === $this->tally?->capturing();
+        $startedAt = $capturing ? hrtime(true) : 0;
         $span = $this->getTracer()
             ->spanBuilder(self::OP_STMT_EXECUTE)
             ->setSpanKind(SpanKind::KIND_CLIENT)
@@ -65,6 +67,9 @@ class Statement extends AbstractStatementMiddleware
             return parent::execute(...\func_get_args());
         } finally {
             $span->end();
+            if ($capturing) {
+                $this->tally->captureStatement($this->sqlQuery, $this->attributes, hrtime(true) - $startedAt, true);
+            }
         }
     }
 
@@ -85,6 +90,7 @@ class Statement extends AbstractStatementMiddleware
             $durationNs = hrtime(true) - $startedAt;
             $spanned = $this->tally->worthASpan($durationNs);
             $this->tally->record($durationNs, $spanned);
+            $this->tally->captureStatement($this->sqlQuery, $this->attributes, $durationNs, true);
 
             if ($spanned) {
                 $span = $this->getTracer()

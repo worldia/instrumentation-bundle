@@ -213,6 +213,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         }
         $container->setParameter('profiling.on_demand.token', $config['on_demand']['token']);
         $container->setParameter('profiling.on_demand.header', $config['on_demand']['header']);
+        $container->setParameter('profiling.on_demand.statements', $config['on_demand']['statements']);
         foreach (['url', 'application', 'environment', 'upload_deadline_ms', 'max_in_flight'] as $key) {
             $container->setParameter('profiling.pyroscope.'.$key, $config['pyroscope'][$key]);
         }

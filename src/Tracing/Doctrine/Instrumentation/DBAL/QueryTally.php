@@ -20,6 +20,11 @@ use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
  * (`db.statements.count`, `db.statements.total_ms`, `db.statements.spans`), so an N+1 shows on its request even though
  * its fast statements are not in the trace. Without one (0, the default) every statement is a span, as before.
  *
+ * A request that is being profiled (see the profiling subscriber) also has its statements captured: each one, in order, is
+ * an event of the main span (`db.statement`: its text, its duration, its database), up to {@see self::CAPTURE_MAX}, so a trace
+ * of that request says which statements it ran and which cost the most, with no span per statement. The text of a prepared
+ * statement is kept as it is (its values are bound, never in it); a statement run as it is has its literals masked.
+ *
  * One tally serves every connection of the container: a request spanning several stores has one total. It follows the
  * main span, so a connection that outlives a request in a long-lived worker starts a new count for the next one.
  */
@@ -30,7 +35,17 @@ final class QueryTally
     private int $totalNs = 0;
     private int $spans = 0;
 
+    /** The most statements captured on a main span: under the OpenTelemetry SDK's default limit of 128 events per span. */
+    public const CAPTURE_MAX = 100;
+
+    private const CAPTURE_TEXT_MAX = 400;
+
     private readonly int $minDurationNs;
+
+    private bool $capturing = false;
+    private string|null $captureSpanId = null;
+    private int $captured = 0;
+    private int $captureDropped = 0;
 
     /**
      * @param int $minDurationMs the shortest statement, in milliseconds, that is a span of its own; 0: every statement is
@@ -81,5 +96,67 @@ final class QueryTally
                 'db.statements.spans' => $this->spans,
             ]);
         }
+    }
+
+    /** Capture the statements of the request being handled (on) or stop (off). */
+    public function capture(bool $on): void
+    {
+        $this->capturing = $on;
+        $this->captureSpanId = null;
+        $this->captured = $this->captureDropped = 0;
+    }
+
+    public function capturing(): bool
+    {
+        return $this->capturing;
+    }
+
+    /**
+     * A statement that ran, as an event of the main span.
+     *
+     * @param array<string, mixed> $attributes the connection's attributes (`db.namespace`, ...)
+     * @param bool                 $prepared   whether `$sql` is a prepared statement, whose values are bound and not in it
+     */
+    public function captureStatement(string $sql, array $attributes, int $durationNs, bool $prepared): void
+    {
+        if (!$this->capturing) {
+            return;
+        }
+        $main = $this->mainSpanContext->getMainSpan();
+        if (!$main->isRecording()) {
+            return;
+        }
+        $id = $main->getContext()->getSpanId();
+        if ($id !== $this->captureSpanId) {
+            $this->captureSpanId = $id;
+            $this->captured = $this->captureDropped = 0;
+        }
+        if ($this->captured >= self::CAPTURE_MAX) {
+            ++$this->captureDropped;
+            $main->setAttribute('db.statements.capture_dropped', $this->captureDropped);
+
+            return;
+        }
+
+        $database = $attributes['db.namespace'] ?? '';
+        $main->addEvent('db.statement', [
+            'db.statement.index' => ++$this->captured,
+            'db.statement.text' => self::text($sql, $prepared),
+            'db.statement.duration_ms' => round($durationNs / 1e6, 2),
+            'db.namespace' => \is_string($database) ? $database : '',
+        ]);
+    }
+
+    private static function text(string $sql, bool $prepared): string
+    {
+        // A bounded prefix: a bulk statement of megabytes is not worth reading, nor processing.
+        $sql = mb_strcut($sql, 0, self::CAPTURE_TEXT_MAX * 4);
+        if (!$prepared) {
+            $sql = (string) preg_replace(["~'(?:[^']|'')*'~", '~\b\d+(?:\.\d+)?\b~'], ["'?'", '?'], $sql);
+        }
+        // The comment the trace propagation adds is no part of the statement.
+        $sql = trim((string) preg_replace(['~/\*.*?\*/~s', '~\s+~'], ['', ' '], $sql));
+
+        return mb_strimwidth($sql, 0, self::CAPTURE_TEXT_MAX, '...');
     }
 }

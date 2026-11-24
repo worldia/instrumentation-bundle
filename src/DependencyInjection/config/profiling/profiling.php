@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Instrumentation\Profiling;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
+use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\QueryTally;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -51,6 +52,8 @@ return static function (ContainerConfigurator $container) {
             param('profiling.on_demand.header'),
             param('profiling.span_attribute'),
             param('profiling.max_depth'),
+            service(QueryTally::class)->nullOnInvalid(),
+            param('profiling.on_demand.statements'),
         ])
     ;
 };

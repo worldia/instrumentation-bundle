@@ -38,6 +38,17 @@ on-demand token in the `X-Profile-Token` header (`on_demand.header`): with a rat
 to the rest. Profile one request on demand with `curl -H 'X-Profile-Token: ...' -H 'Cache-Control: no-cache' ...` (a response served
 by an HTTP cache runs no PHP) and open its trace.
 
+### The statements of that request
+
+With `on_demand.statements: true` (and Doctrine tracing on) the request that carries the token also has its SQL statements captured, as
+events of its main span (`db.statement`, in order: `db.statement.text`, `db.statement.duration_ms`, `db.namespace`, `db.statement.index`).
+A trace of that one request then says which statements a page runs and which cost the most (an N+1, a statement to merge or lighten) while
+the trace of any other request keeps what `tracing.doctrine.min_duration_ms` leaves of it: the counts and totals on the main span, and a
+span for the slow statements. At most 100 are captured (`db.statements.capture_dropped` on the main span counts the rest). A prepared
+statement is kept as its text (its values are bound, never in it); a statement run as it is (`Connection::query()` or `exec()`) has its
+literals masked, and the comment the trace propagation adds is dropped. The sampled traffic never has its statements captured, only the
+request that carries the token. Off by default.
+
 ## What a profile is
 
 A pprof with one sample type, `wall` (or `cpu`) in nanoseconds: an Excimer event is one sampling period of the real-time clock, so

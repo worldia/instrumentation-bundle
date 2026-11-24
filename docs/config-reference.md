@@ -106,6 +106,9 @@ instrumentation:
       token: ''
       header: X-Profile-Token
 
+      # A request carrying the token also has its SQL statements captured as events of its main span (`db.statement`: text, duration, database; at most 100): which statements a page runs and which cost the most, with no span per statement. Prepared text only, the literals of a statement run as it is masked. Needs tracing.doctrine. Off by default: a statement is not data to put in a trace unasked.
+      statements: false
+
     # The attribute set on the main span with the id of its profile: what makes Grafana show "Profiles for this span". Empty: not set.
     span_attribute: pyroscope.profile.id
     pyroscope:

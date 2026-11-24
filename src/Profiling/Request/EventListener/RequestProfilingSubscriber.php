@@ -13,6 +13,7 @@ use Instrumentation\Profiling\Encoding\PprofEncoder;
 use Instrumentation\Profiling\Label\ProfileLabelProviderInterface;
 use Instrumentation\Profiling\Shipping\ProfileShipperInterface;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
+use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\QueryTally;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -33,7 +34,8 @@ use Symfony\Contracts\Service\ResetInterface;
  *
  * Which requests are sampled: none when not `$active` or without the excimer extension; a share (`$requestRate`, 0..1) of them; and
  * always the one carrying the on-demand token (`$onDemandToken` in the `$onDemandHeader` header), whatever the rate is: with a rate of 0
- * that is the only profiled traffic, at no cost to the rest.
+ * that is the only profiled traffic, at no cost to the rest. With `$onDemandStatements` that request also has its SQL statements captured
+ * as events of its main span (see {@see QueryTally}); the sampled traffic never does.
  */
 final class RequestProfilingSubscriber implements EventSubscriberInterface, ResetInterface
 {
@@ -46,6 +48,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
     private readonly string $onDemandToken;
     private readonly string $onDemandHeader;
     private readonly string $spanAttribute;
+    private readonly bool $onDemandStatements;
 
     private \ExcimerProfiler|null $profiler = null;
     private float $startedAt = 0.0;
@@ -71,6 +74,8 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         string|null $onDemandHeader = 'X-Profile-Token',
         string|null $spanAttribute = 'pyroscope.profile.id',
         int|null $maxDepth = 256,
+        private readonly QueryTally|null $statementTally = null,
+        bool|null $onDemandStatements = false,
     ) {
         $this->logger = $logger ?? new NullLogger();
         // An unset environment variable with a `default::` fallback arrives as null: every setting has its default here.
@@ -81,6 +86,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->onDemandToken = $onDemandToken ?? '';
         $this->onDemandHeader = $onDemandHeader ?: 'X-Profile-Token';
         $this->spanAttribute = $spanAttribute ?? '';
+        $this->onDemandStatements = $onDemandStatements ?? false;
         $this->enabled = (bool) $active && $this->frequency > 0 && \extension_loaded('excimer');
     }
 
@@ -114,6 +120,10 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->startedAt = microtime(true);
         $profiler->start();
         $this->profiler = $profiler;
+        // The statements of the request that carries the token, when asked to: only that one, never the sampled traffic.
+        if ($onDemand && $this->onDemandStatements) {
+            $this->statementTally?->capture(true);
+        }
     }
 
     public function onResponse(Event\ResponseEvent $event): void
@@ -141,6 +151,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $startedAt = $this->startedAt;
         $spanId = $this->spanId;
         $this->profiler = $this->spanId = null;
+        $this->statementTally?->capture(false);
 
         try {
             $profiler->stop();
@@ -195,5 +206,6 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
     {
         $this->profiler?->stop();
         $this->profiler = $this->pending = $this->spanId = null;
+        $this->statementTally?->capture(false);
     }
 }
