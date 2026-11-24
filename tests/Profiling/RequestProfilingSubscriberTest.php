@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Tests\Instrumentation\Profiling;
 
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Profiling\Encoding\PprofEncoder;
 use Instrumentation\Profiling\Label\ProfileLabelProviderInterface;
 use Instrumentation\Profiling\Label\RouteLabelProvider;
@@ -31,6 +32,8 @@ use Tests\Instrumentation\Profiling\Stub\RecordingShipper;
 #[RequiresPhpExtension('excimer')]
 final class RequestProfilingSubscriberTest extends TestCase
 {
+    private OnDemandTrigger $trigger;
+
     /** @return iterable<string, array{bool, float, string, string|null, bool}> active, rate, configured token, supplied token, sampled */
     public static function cases(): iterable
     {
@@ -51,7 +54,9 @@ final class RequestProfilingSubscriberTest extends TestCase
             $request->headers->set('X-Profile-Token', $supplied);
         }
 
-        $subscriber->onRequest(new RequestEvent($this->createStub(HttpKernelInterface::class), $request, HttpKernelInterface::MAIN_REQUEST));
+        $event = new RequestEvent($this->createStub(HttpKernelInterface::class), $request, HttpKernelInterface::MAIN_REQUEST);
+        $this->trigger->onRequest($event); // decides first, as it is subscribed to
+        $subscriber->onRequest($event);
 
         $this->assertSame($sampled, null !== (new \ReflectionProperty($subscriber, 'profiler'))->getValue($subscriber));
         $subscriber->reset(); // stops the timer a sampled case started
@@ -102,7 +107,9 @@ final class RequestProfilingSubscriberTest extends TestCase
     /** @param list<ProfileLabelProviderInterface> $providers */
     private function subscriber(ProfileShipperInterface $shipper, bool $active, float $rate, string $token, array $providers = []): RequestProfilingSubscriber
     {
-        return new RequestProfilingSubscriber($shipper, new PprofEncoder(), $providers, null, null, $active, 50, $rate, 'wall', $token);
+        $this->trigger = new OnDemandTrigger($token);
+
+        return new RequestProfilingSubscriber($shipper, new PprofEncoder(), $providers, null, null, $active, 50, $rate, 'wall', 'pyroscope.profile.id', 256, $this->trigger);
     }
 
     private function shipper(): RecordingShipper

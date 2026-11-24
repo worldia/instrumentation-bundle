@@ -12,6 +12,7 @@ namespace Tests\Instrumentation\Tracing\Doctrine\Instrumentation;
 use Doctrine\DBAL\Driver\Connection as DriverConnection;
 use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\Statement as DriverStatement;
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Tracing\Bridge\MainSpanContext;
 use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\Connection;
 use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\QueryTally;
@@ -20,6 +21,9 @@ use OpenTelemetry\SDK\Trace\SpanExporter\InMemoryExporter;
 use OpenTelemetry\SDK\Trace\SpanProcessor\SimpleSpanProcessor;
 use OpenTelemetry\SDK\Trace\TracerProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 /**
  * A request asked for it has its statements captured as events of its main span: the text, the time and the database of each, in
@@ -30,12 +34,14 @@ final class StatementCaptureTest extends TestCase
     private InMemoryExporter $exporter;
     private TracerProvider $provider;
     private MainSpanContext $mainSpanContext;
+    private OnDemandTrigger $trigger;
 
     protected function setUp(): void
     {
         $this->exporter = new InMemoryExporter();
         $this->provider = new TracerProvider(new SimpleSpanProcessor($this->exporter));
         $this->mainSpanContext = new MainSpanContext();
+        $this->trigger = new OnDemandTrigger('secret');
     }
 
     /**
@@ -50,9 +56,9 @@ final class StatementCaptureTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('modes')]
     public function testTheStatementsOfACapturedRequestAreEventsOfItsMainSpanInOrder(int $minDurationMs): void
     {
-        $tally = new QueryTally($this->mainSpanContext, $minDurationMs);
+        $tally = $this->tally($minDurationMs);
         $connection = $this->connection($tally);
-        $tally->capture(true);
+        $this->asked();
         $main = $this->mainSpan('request');
 
         $connection->query("SELECT * /* traceparent=00-x */ FROM users WHERE email = 'alice@example.com' AND id = 42");
@@ -72,7 +78,7 @@ final class StatementCaptureTest extends TestCase
 
     public function testNothingIsCapturedUnlessTheRequestWasAsked(): void
     {
-        $tally = new QueryTally($this->mainSpanContext, 0);
+        $tally = $this->tally(0);
         $connection = $this->connection($tally);
         $main = $this->mainSpan('request');
 
@@ -82,8 +88,8 @@ final class StatementCaptureTest extends TestCase
 
         $this->assertSame([], $this->events($this->byName()['request'][0]));
 
-        $tally->capture(true);
-        $tally->capture(false);
+        $this->asked();
+        $this->trigger->reset();
         $second = $this->mainSpan('request 2');
         $connection->query('SELECT 3');
         $second->end();
@@ -92,26 +98,26 @@ final class StatementCaptureTest extends TestCase
 
     public function testTheCaptureIsBoundedAndSaysWhatItDropped(): void
     {
-        $tally = new QueryTally($this->mainSpanContext, 0);
+        $tally = $this->tally(0);
         $connection = $this->connection($tally);
-        $tally->capture(true);
+        $this->asked();
         $main = $this->mainSpan('request');
 
-        for ($i = 0; $i < QueryTally::CAPTURE_MAX + 7; ++$i) {
+        for ($i = 0; $i < 100 + 7; ++$i) {
             $connection->query('SELECT '.$i);
         }
         $main->end();
 
         $request = $this->byName()['request'][0];
-        $this->assertCount(QueryTally::CAPTURE_MAX, $this->events($request));
+        $this->assertCount(100, $this->events($request));
         $this->assertSame(7, $request->getAttributes()->get('db.statements.capture_dropped'));
     }
 
     public function testEachMainSpanStartsItsOwnCapture(): void
     {
-        $tally = new QueryTally($this->mainSpanContext, 0);
+        $tally = $this->tally(0);
         $connection = $this->connection($tally);
-        $tally->capture(true);
+        $this->asked();
 
         $first = $this->mainSpan('request 1');
         $connection->query('SELECT 1');
@@ -146,8 +152,8 @@ final class StatementCaptureTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('texts')]
     public function testWhatIsCapturedHasItsQuotedLiteralsMasked(string $sql, bool $prepared, string $expected): void
     {
-        $tally = new QueryTally($this->mainSpanContext, 0);
-        $tally->capture(true);
+        $tally = $this->tally(0);
+        $this->asked();
         $main = $this->mainSpan('request');
 
         $tally->captureStatement($sql, [], 1_000_000, $prepared);
@@ -158,8 +164,8 @@ final class StatementCaptureTest extends TestCase
 
     public function testALongStatementIsNotKeptAndATruncatedLiteralDoesNotLeak(): void
     {
-        $tally = new QueryTally($this->mainSpanContext, 0);
-        $tally->capture(true);
+        $tally = $this->tally(0);
+        $this->asked();
         $main = $this->mainSpan('request');
 
         $tally->captureStatement("INSERT INTO t VALUES ('".str_repeat('secret ', 20000)."')", [], 1, true);
@@ -173,11 +179,11 @@ final class StatementCaptureTest extends TestCase
 
     public function testTheTransactionsAreNotStatementsAndAFailingStatementKeepsItsOwnError(): void
     {
-        $tally = new QueryTally($this->mainSpanContext, 0);
+        $tally = $this->tally(0);
         $driverConnection = $this->createStub(DriverConnection::class);
         $driverConnection->method('query')->willThrowException(new \RuntimeException('the database is down'));
         $connection = new Connection($this->provider, $driverConnection, $this->mainSpanContext, [], false, $tally);
-        $tally->capture(true);
+        $this->asked();
         $main = $this->mainSpan('request');
 
         $connection->beginTransaction();
@@ -193,6 +199,19 @@ final class StatementCaptureTest extends TestCase
         $events = $this->events($this->byName()['request'][0]);
         $this->assertCount(1, $events, 'the failing statement is captured, begin and commit are not');
         $this->assertSame('SELECT ?', $events[0]['db.statement.text']);
+    }
+
+    private function tally(int $minDurationMs, int $max = 100, bool $statements = true): QueryTally
+    {
+        return new QueryTally($this->mainSpanContext, $minDurationMs, $this->trigger, $statements, $max);
+    }
+
+    /** The request being handled is the one an operator asked for. */
+    private function asked(): void
+    {
+        $request = Request::create('/page');
+        $request->headers->set('X-Profile-Token', 'secret');
+        $this->trigger->onRequest(new RequestEvent($this->createStub(HttpKernelInterface::class), $request, HttpKernelInterface::MAIN_REQUEST));
     }
 
     private function mainSpan(string $name): \OpenTelemetry\API\Trace\SpanInterface

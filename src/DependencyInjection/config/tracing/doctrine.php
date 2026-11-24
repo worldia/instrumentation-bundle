@@ -8,6 +8,7 @@ declare(strict_types=1);
  */
 
 use Doctrine\DBAL\ServerVersionProvider;
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Semantics\Attribute\DoctrineConnectionAttributeProviderInterface;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use Instrumentation\Tracing\Doctrine;
@@ -32,6 +33,9 @@ return static function (ContainerConfigurator $container) {
         ->args([
             service(MainSpanContextInterface::class),
             param('tracing.doctrine.min_duration_ms'),
+            service(OnDemandTrigger::class),
+            param('tracing.doctrine.statements.on_demand'),
+            param('tracing.doctrine.statements.max'),
         ])
 
         ->set(Doctrine\Instrumentation\DBAL\Middleware::class)

@@ -21,7 +21,7 @@ instrumentation:
     active: '%env(bool:PROFILING_ENABLED)%'    # runtime: one image profiles where it is told to
     request_rate: '%env(float:PROFILING_REQUEST_RATE)%'   # 0 = only the requests carrying the on-demand token
     on_demand:
-      token: '%env(PROFILING_ON_DEMAND_TOKEN)%'
+      token: '%env(PROFILING_ON_DEMAND_TOKEN)%'   # or, shared with the other on-demand features, `instrumentation.on_demand.token`
     pyroscope:
       url: '%env(PYROSCOPE_URL)%'
       environment: '%env(DEPLOYMENT_ENVIRONMENT)%'
@@ -40,17 +40,18 @@ by an HTTP cache runs no PHP) and open its trace.
 
 ### The statements of that request
 
-With `on_demand.statements: true` (and Doctrine tracing on) the request that carries the token also has its SQL statements captured, as
-events of its main span (`db.statement`, in order: `db.statement.text`, `db.statement.duration_ms`, `db.namespace`, `db.statement.index`).
-A trace of that one request then says which statements a page runs and which cost the most (an N+1, a statement to merge or lighten) while
-the trace of any other request keeps what `tracing.doctrine.min_duration_ms` leaves of it: the counts and totals on the main span, and a
-span for the slow statements. At most 100 are captured (`db.statements.capture_dropped` on the main span counts the rest; other events of
-the span count against the SDK's limit of 128). Quoted literals are masked in every statement (`'...'`, `E'...'`, `$$...$$`, a quote never
-closed), and the numbers of a statement run as it is (`Connection::query()` or `exec()`) too; a prepared statement keeps its placeholders
-and its numbers. A statement of more than 64 KB is not kept (only its size), and the comment the trace propagation adds is dropped.
-It is the SQL the application wrote: for the one request an operator asked for, never traffic. The sampled traffic never has its
-statements captured, only the request that carries the token; it needs `profiling.active` and a request the tracer samples (the main
-span recording), not Excimer. Off by default.
+The request that carries the token is the one the shared on-demand trigger (`instrumentation.on_demand`: the token and its header, which
+`profiling.on_demand` also set, for compatibility) says an operator asked for. Profiling is one thing it switches on; Doctrine tracing's
+`tracing.doctrine.statements.on_demand: true` is another: that request also has its SQL statements captured, as events of its main span
+(`db.statement`, in order: `db.statement.text`, `db.statement.duration_ms`, `db.namespace`, `db.statement.index`), whether or not it is
+profiled and with or without Excimer. A trace of that one request then says which statements a page runs and which cost the most (an
+N+1, a statement to merge or lighten), while the trace of any other request keeps what `tracing.doctrine.min_duration_ms` leaves of it:
+the counts and totals on the main span, and a span for the slow statements. At most `tracing.doctrine.statements.max` (100) are captured
+(`db.statements.capture_dropped` on the main span counts the rest; the span's other events count against the SDK's limit of 128). Quoted
+literals are masked in every statement (`'...'`, `E'...'`, `$$...$$`, a quote never closed), and the numbers of a statement run as it is
+(`Connection::query()` or `exec()`) too; a prepared statement keeps its placeholders and its numbers. A statement of more than 64 KB is
+not kept (only its size), and the comment the trace propagation adds is dropped. It is the SQL the application wrote: for the one
+request an operator asked for, never traffic. It needs a request the tracer samples (the main span recording). Off by default.
 
 ## What a profile is
 

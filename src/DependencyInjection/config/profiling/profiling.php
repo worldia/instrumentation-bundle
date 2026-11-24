@@ -7,9 +7,9 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Profiling;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
-use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\QueryTally;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -48,12 +48,9 @@ return static function (ContainerConfigurator $container) {
             param('profiling.frequency'),
             param('profiling.request_rate'),
             param('profiling.clock'),
-            param('profiling.on_demand.token'),
-            param('profiling.on_demand.header'),
             param('profiling.span_attribute'),
             param('profiling.max_depth'),
-            service(QueryTally::class)->nullOnInvalid(),
-            param('profiling.on_demand.statements'),
+            service(OnDemandTrigger::class),
         ])
     ;
 };

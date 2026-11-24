@@ -9,11 +9,11 @@ declare(strict_types=1);
 
 namespace Instrumentation\Profiling\Request\EventListener;
 
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Profiling\Encoding\PprofEncoder;
 use Instrumentation\Profiling\Label\ProfileLabelProviderInterface;
 use Instrumentation\Profiling\Shipping\ProfileShipperInterface;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
-use Instrumentation\Tracing\Doctrine\Instrumentation\DBAL\QueryTally;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -33,9 +33,8 @@ use Symfony\Contracts\Service\ResetInterface;
  * that is what makes Grafana show "Profiles for this span" on the trace and open that request's flame graph.
  *
  * Which requests are sampled: none when not `$active` or without the excimer extension; a share (`$requestRate`, 0..1) of them; and
- * always the one carrying the on-demand token (`$onDemandToken` in the `$onDemandHeader` header), whatever the rate is: with a rate of 0
- * that is the only profiled traffic, at no cost to the rest. With `$onDemandStatements` that request also has its SQL statements captured
- * as events of its main span (see {@see QueryTally}); the sampled traffic never does.
+ * always the one the {@see OnDemandTrigger} says an operator asked for (it carries the on-demand token), whatever the rate is: with a rate
+ * of 0 that is the only profiled traffic, at no cost to the rest.
  */
 final class RequestProfilingSubscriber implements EventSubscriberInterface, ResetInterface
 {
@@ -46,10 +45,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
     private readonly float $requestRate;
     private readonly string $clock;
     private readonly int $maxDepth;
-    private readonly string $onDemandToken;
-    private readonly string $onDemandHeader;
     private readonly string $spanAttribute;
-    private readonly bool $onDemandStatements;
 
     private \ExcimerProfiler|null $profiler = null;
     private float $startedAt = 0.0;
@@ -71,12 +67,9 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         int|null $frequency = 50,
         float|null $requestRate = 1.0,
         string|null $clock = 'wall',
-        string|null $onDemandToken = '',
-        string|null $onDemandHeader = 'X-Profile-Token',
         string|null $spanAttribute = 'pyroscope.profile.id',
         int|null $maxDepth = 256,
-        private readonly QueryTally|null $statementTally = null,
-        bool|null $onDemandStatements = false,
+        private readonly OnDemandTrigger|null $onDemand = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
         // An unset environment variable with a `default::` fallback arrives as null: every setting has its default here.
@@ -84,10 +77,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->requestRate = $requestRate ?? 1.0;
         $this->clock = 'cpu' === $clock ? 'cpu' : 'wall';
         $this->maxDepth = $maxDepth ?? 256;
-        $this->onDemandToken = $onDemandToken ?? '';
-        $this->onDemandHeader = $onDemandHeader ?: 'X-Profile-Token';
         $this->spanAttribute = $spanAttribute ?? '';
-        $this->onDemandStatements = $onDemandStatements ?? false;
         $this->active = (bool) $active;
         $this->enabled = $this->active && $this->frequency > 0 && \extension_loaded('excimer');
     }
@@ -103,22 +93,13 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
 
     public function onRequest(Event\RequestEvent $event): void
     {
-        if (!$event->isMainRequest()) {
-            return;
-        }
-        // The statements of the request that carries the token, when asked to: only that one, never the sampled traffic, and
-        // whether or not the sampler (Excimer) is there.
-        $this->statementTally?->capture(false);
-        if ($this->active && $this->onDemandStatements && $this->carriesToken($event->getRequest())) {
-            $this->statementTally?->capture(true);
-        }
-        if (!$this->enabled) {
+        if (!$this->enabled || !$event->isMainRequest()) {
             return;
         }
         $this->shipper->reap();
         $this->abandon();
 
-        $onDemand = $this->carriesToken($event->getRequest());
+        $onDemand = true === $this->onDemand?->isOn();
         if (!$onDemand && $this->requestRate < 1.0 && mt_rand() / mt_getrandmax() >= $this->requestRate) {
             return;
         }
@@ -130,13 +111,6 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->startedAt = microtime(true);
         $profiler->start();
         $this->profiler = $profiler;
-    }
-
-    private function carriesToken(Request $request): bool
-    {
-        $supplied = $request->headers->get($this->onDemandHeader);
-
-        return '' !== $this->onDemandToken && \is_string($supplied) && hash_equals($this->onDemandToken, $supplied);
     }
 
     public function onResponse(Event\ResponseEvent $event): void
@@ -157,7 +131,6 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
 
     public function onTerminate(Event\TerminateEvent $event): void
     {
-        $this->statementTally?->capture(false);
         if (null === $this->profiler) {
             return;
         }
@@ -199,7 +172,6 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
     /** kernel.reset, between two requests of a worker: a profile still running belongs to a request that never terminated. */
     public function reset(): void
     {
-        $this->statementTally?->capture(false);
         $this->abandon();
         $this->shipper->reap();
     }
@@ -219,6 +191,5 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
     {
         $this->profiler?->stop();
         $this->profiler = $this->pending = $this->spanId = null;
-        $this->statementTally?->capture(false);
     }
 }

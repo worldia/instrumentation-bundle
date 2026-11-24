@@ -13,6 +13,14 @@ instrumentation:
     # Examples:
     # service.name:        my_instrumented_app
     # service.version:     1.2.3
+  # The request an operator asks to look into: it carries this secret in `header`. What costs something and is for one request (its profile, the SQL statements of its trace) is switched on for that request alone, each by its own setting.
+  on_demand:
+
+    # A request carrying this secret in `header` is the one asked for. Empty: none. Keep it a secret (an environment variable). Without it, `profiling.on_demand.token` is used.
+    token: ''
+
+    # Without a token of its own, `profiling.on_demand.header`.
+    header: X-Profile-Token
   baggage:
     enabled: false
   logging:
@@ -79,6 +87,15 @@ instrumentation:
       # The shortest statement (ms) that is a span of its own, 0: every statement is one. Every statement is counted onto the
       # request, command or message either way: db.statements.count, db.statements.total_ms, db.statements.spans.
       min_duration_ms: 0
+      # The SQL statements of a request, as events of its main span (`db.statement`: text, duration, database), for finding the one to
+      # merge, remove or lighten with no span per statement.
+      statements:
+
+        # Captured for the request that carries the on-demand token (`instrumentation.on_demand`), and for no other. Quoted literals are masked in every statement, the numbers of a statement run as it is too. Off by default: a statement is not data to put in a trace unasked.
+        on_demand: false
+
+        # The most captured on a request; the rest are counted in db.statements.capture_dropped. Under the OpenTelemetry SDK default of 128 events per span, which the span shares with its other events.
+        max: 100
       connections: []
   # Continuous profiling of requests (Excimer sampling, pushed to Pyroscope): one profile per sampled request, linked to its trace. Needs ext-excimer; a profile is only taken while `active` and the extension is loaded.
   profiling:
@@ -102,12 +119,10 @@ instrumentation:
     max_depth: 256
     on_demand:
 
-      # A request carrying this secret in `header` is always profiled. Empty: off. Keep it a secret (an environment variable).
+      # Superseded by `instrumentation.on_demand.token`, which it falls back to when that is empty. A request carrying this secret in `header` is always profiled. Empty: off.
       token: ''
       header: X-Profile-Token
 
-      # A request carrying the token also has its SQL statements captured as events of its main span (`db.statement`: text, duration, database; at most 100): which statements a page runs and which cost the most, with no span per statement. Quoted literals are masked in every statement, the numbers of a statement run as it is too. Needs tracing.doctrine and the profiling `active`; the request must be sampled by the tracer (the main span recording). Not tied to Excimer. Off by default: a statement is not data to put in a trace unasked.
-      statements: false
 
     # The attribute set on the main span with the id of its profile: what makes Grafana show "Profiles for this span". Empty: not set.
     span_attribute: pyroscope.profile.id

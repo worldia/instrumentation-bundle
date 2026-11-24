@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Tracing\Doctrine\Instrumentation\DBAL;
 
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 
 /**
@@ -20,9 +21,10 @@ use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
  * (`db.statements.count`, `db.statements.total_ms`, `db.statements.spans`), so an N+1 shows on its request even though
  * its fast statements are not in the trace. Without one (0, the default) every statement is a span, as before.
  *
- * A request that is being profiled (see the profiling subscriber) also has its statements captured: each one, in order, is
- * an event of the main span (`db.statement`: its text, its duration, its database), up to {@see self::CAPTURE_MAX}, so a trace
- * of that request says which statements it ran and which cost the most, with no span per statement. Quoted literals are masked in
+ * The request an operator asked to look into (the {@see OnDemandTrigger}) also has its statements captured when
+ * `tracing.doctrine.statements.on_demand` is on: each one, in order, is an event of the main span (`db.statement`: its text, its
+ * duration, its database), up to the configured maximum, so a trace of that request says which statements it ran and which cost the
+ * most, with no span per statement. Quoted literals are masked in
  * every statement (`'...'`, `E'...'`, `$$...$$`, an unterminated one included), and the numbers of a statement run as it is (a
  * prepared statement keeps its numbers: its placeholders are `$1` or `?`, and a `LIMIT 10` is no secret). It is the SQL the
  * application wrote, so it is for the one request an operator asked for, not for traffic.
@@ -37,24 +39,25 @@ final class QueryTally
     private int $totalNs = 0;
     private int $spans = 0;
 
-    /** The most statements captured on a main span: under the OpenTelemetry SDK's default limit of 128 events per span. */
-    public const CAPTURE_MAX = 100;
-
     private const CAPTURE_TEXT_MAX = 400;
 
     private readonly int $minDurationNs;
 
-    private bool $capturing = false;
     private string|null $captureSpanId = null;
     private int $captured = 0;
     private int $captureDropped = 0;
 
     /**
-     * @param int $minDurationMs the shortest statement, in milliseconds, that is a span of its own; 0: every statement is
+     * @param int  $minDurationMs      the shortest statement, in milliseconds, that is a span of its own; 0: every statement is
+     * @param bool $statementsOnDemand whether the request the trigger says an operator asked for has its statements captured
+     * @param int  $maxStatements      the most captured on a request, under the OpenTelemetry SDK's default of 128 events per span
      */
     public function __construct(
         private readonly MainSpanContextInterface $mainSpanContext,
         int $minDurationMs = 0,
+        private readonly OnDemandTrigger|null $onDemand = null,
+        private readonly bool $statementsOnDemand = false,
+        private readonly int $maxStatements = 100,
     ) {
         $this->minDurationNs = max(0, $minDurationMs) * 1_000_000;
     }
@@ -100,17 +103,10 @@ final class QueryTally
         }
     }
 
-    /** Capture the statements of the request being handled (on) or stop (off). */
-    public function capture(bool $on): void
-    {
-        $this->capturing = $on;
-        $this->captureSpanId = null;
-        $this->captured = $this->captureDropped = 0;
-    }
-
+    /** Whether the statements of the request being handled are captured: it is the one an operator asked for, and the setting is on. */
     public function capturing(): bool
     {
-        return $this->capturing;
+        return $this->statementsOnDemand && true === $this->onDemand?->isOn();
     }
 
     /**
@@ -121,7 +117,7 @@ final class QueryTally
      */
     public function captureStatement(string $sql, array $attributes, int $durationNs, bool $prepared): void
     {
-        if (!$this->capturing) {
+        if (!$this->capturing()) {
             return;
         }
         // It runs in the `finally` of a statement: whatever it does, it never replaces the error of the statement.
@@ -135,7 +131,7 @@ final class QueryTally
                 $this->captureSpanId = $id;
                 $this->captured = $this->captureDropped = 0;
             }
-            if ($this->captured >= self::CAPTURE_MAX) {
+            if ($this->captured >= $this->maxStatements) {
                 ++$this->captureDropped;
                 $main->setAttribute('db.statements.capture_dropped', $this->captureDropped);
 
