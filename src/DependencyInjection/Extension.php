@@ -49,6 +49,7 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('service.name', $config['resource']['service.name']);
 
         $this->loadSemConv($config['resource'], $container);
+        $this->loadOnDemand($config, $container);
 
         if ($this->isConfigEnabled($container, $config['logging'])) {
             $this->loadLogging($config['logging'], $container);
@@ -174,6 +175,8 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         $container->setParameter('tracing.doctrine.log_queries', $config['doctrine']['log_queries']);
         $container->setParameter('tracing.doctrine.min_duration_ms', $config['doctrine']['min_duration_ms']);
         $container->setParameter('tracing.doctrine.propagation', $config['doctrine']['propagation']);
+        $container->setParameter('tracing.doctrine.statements.on_demand', $config['doctrine']['statements']['on_demand']);
+        $container->setParameter('tracing.doctrine.statements.max', $config['doctrine']['statements']['max']);
         $container->setParameter('tracing.doctrine.instrumentation', $config['doctrine']['instrumentation']);
 
         if (!$config['request']['attributes']['user']) {
@@ -199,6 +202,20 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         if ($config['flush_after_request']) {
             $loader->load('request.php');
         }
+    }
+
+    /**
+     * The request asked for: the token and the header of `on_demand`, or those of `profiling.on_demand` (where they were first).
+     *
+     * @param array<mixed> $config the whole configuration
+     */
+    protected function loadOnDemand(array $config, ContainerBuilder $container): void
+    {
+        $own = '' !== $config['on_demand']['token'];
+        $container->setParameter('on_demand.token', $own ? $config['on_demand']['token'] : $config['profiling']['on_demand']['token']);
+        $container->setParameter('on_demand.header', $own ? $config['on_demand']['header'] : $config['profiling']['on_demand']['header']);
+
+        $this->getLoader('on_demand', $container)->load('on_demand.php');
     }
 
     /**

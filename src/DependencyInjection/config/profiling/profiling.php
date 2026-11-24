@@ -7,6 +7,7 @@ declare(strict_types=1);
  * (c) Worldia <developers@worldia.com>
  */
 
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Profiling;
 use Instrumentation\Tracing\Bridge\MainSpanContextInterface;
 use Psr\Log\LoggerInterface;
@@ -47,10 +48,9 @@ return static function (ContainerConfigurator $container) {
             param('profiling.frequency'),
             param('profiling.request_rate'),
             param('profiling.clock'),
-            param('profiling.on_demand.token'),
-            param('profiling.on_demand.header'),
             param('profiling.span_attribute'),
             param('profiling.max_depth'),
+            service(OnDemandTrigger::class),
         ])
     ;
 };

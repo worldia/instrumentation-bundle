@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Instrumentation\Profiling\Request\EventListener;
 
+use Instrumentation\OnDemand\OnDemandTrigger;
 use Instrumentation\Profiling\Encoding\PprofEncoder;
 use Instrumentation\Profiling\Label\ProfileLabelProviderInterface;
 use Instrumentation\Profiling\Shipping\ProfileShipperInterface;
@@ -32,19 +33,18 @@ use Symfony\Contracts\Service\ResetInterface;
  * that is what makes Grafana show "Profiles for this span" on the trace and open that request's flame graph.
  *
  * Which requests are sampled: none when not `$active` or without the excimer extension; a share (`$requestRate`, 0..1) of them; and
- * always the one carrying the on-demand token (`$onDemandToken` in the `$onDemandHeader` header), whatever the rate is: with a rate of 0
- * that is the only profiled traffic, at no cost to the rest.
+ * always the one the {@see OnDemandTrigger} says an operator asked for (it carries the on-demand token), whatever the rate is: with a rate
+ * of 0 that is the only profiled traffic, at no cost to the rest.
  */
 final class RequestProfilingSubscriber implements EventSubscriberInterface, ResetInterface
 {
     private readonly bool $enabled;
+    private readonly bool $active;
     private readonly LoggerInterface $logger;
     private readonly int $frequency;
     private readonly float $requestRate;
     private readonly string $clock;
     private readonly int $maxDepth;
-    private readonly string $onDemandToken;
-    private readonly string $onDemandHeader;
     private readonly string $spanAttribute;
 
     private \ExcimerProfiler|null $profiler = null;
@@ -67,10 +67,9 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         int|null $frequency = 50,
         float|null $requestRate = 1.0,
         string|null $clock = 'wall',
-        string|null $onDemandToken = '',
-        string|null $onDemandHeader = 'X-Profile-Token',
         string|null $spanAttribute = 'pyroscope.profile.id',
         int|null $maxDepth = 256,
+        private readonly OnDemandTrigger|null $onDemand = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
         // An unset environment variable with a `default::` fallback arrives as null: every setting has its default here.
@@ -78,10 +77,9 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->requestRate = $requestRate ?? 1.0;
         $this->clock = 'cpu' === $clock ? 'cpu' : 'wall';
         $this->maxDepth = $maxDepth ?? 256;
-        $this->onDemandToken = $onDemandToken ?? '';
-        $this->onDemandHeader = $onDemandHeader ?: 'X-Profile-Token';
         $this->spanAttribute = $spanAttribute ?? '';
-        $this->enabled = (bool) $active && $this->frequency > 0 && \extension_loaded('excimer');
+        $this->active = (bool) $active;
+        $this->enabled = $this->active && $this->frequency > 0 && \extension_loaded('excimer');
     }
 
     public static function getSubscribedEvents(): array
@@ -101,8 +99,7 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $this->shipper->reap();
         $this->abandon();
 
-        $supplied = $event->getRequest()->headers->get($this->onDemandHeader);
-        $onDemand = '' !== $this->onDemandToken && \is_string($supplied) && hash_equals($this->onDemandToken, $supplied);
+        $onDemand = true === $this->onDemand?->isOn();
         if (!$onDemand && $this->requestRate < 1.0 && mt_rand() / mt_getrandmax() >= $this->requestRate) {
             return;
         }
@@ -141,7 +138,6 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         $startedAt = $this->startedAt;
         $spanId = $this->spanId;
         $this->profiler = $this->spanId = null;
-
         try {
             $profiler->stop();
             $pprof = $this->encoder->encode(

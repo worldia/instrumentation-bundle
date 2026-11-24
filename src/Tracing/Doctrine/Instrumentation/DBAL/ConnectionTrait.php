@@ -93,6 +93,8 @@ trait ConnectionTrait
 
         $this->ensureMainSpan();
 
+        $capturing = true === $this->tally?->capturing() && (self::OP_CONN_QUERY === $operation || self::OP_CONN_EXEC === $operation);
+        $startedAt = $capturing ? hrtime(true) : 0;
         $span = $this->getTracer()
             ->spanBuilder($operation) // @phpstan-ignore-line
             ->setSpanKind(SpanKind::KIND_CLIENT)
@@ -108,6 +110,9 @@ trait ConnectionTrait
             return $callback();
         } finally {
             $span->end();
+            if ($capturing) {
+                $this->tally->captureStatement($sql, $this->attributes, hrtime(true) - $startedAt, false);
+            }
         }
     }
 
@@ -130,6 +135,9 @@ trait ConnectionTrait
 
             if ($counted) {
                 $this->tally->record($durationNs, $spanned);
+                if ($this->tally->capturing()) {
+                    $this->tally->captureStatement($sql, $this->attributes, $durationNs, false);
+                }
             }
             if ($spanned) {
                 $span = $this->getTracer()
