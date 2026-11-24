@@ -109,7 +109,16 @@ final class TestKernel extends Kernel
                 'enabled' => true,
                 'ai' => ['enabled' => true],
             ],
+            // Registered, but not active: the boot must not need the excimer extension or a Pyroscope.
+            'profiling' => [
+                'enabled' => true,
+                'active' => '%env(bool:default::INSTRUMENTATION_TEST_PROFILING)%',
+                'request_rate' => '%env(float:default:instrumentation.test_rate:INSTRUMENTATION_TEST_PROFILING_RATE)%',
+                'on_demand' => ['token' => '%env(default::INSTRUMENTATION_TEST_PROFILING_TOKEN)%'],
+                'pyroscope' => ['url' => 'http://pyroscope.invalid:4040', 'environment' => 'test'],
+            ],
         ]);
+        $container->parameters()->set('instrumentation.test_rate', 0.0);
 
         // A stub service tagged `ai.platform` so the AI tracing/metrics compiler
         // passes have a real service to decorate during container compilation.

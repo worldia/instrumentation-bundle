@@ -14,6 +14,7 @@ use Instrumentation\DependencyInjection\CompilerPass\AIPlatformMetricsCompilerPa
 use Instrumentation\DependencyInjection\CompilerPass\AIPlatformTracingCompilerPass;
 use Instrumentation\DependencyInjection\CompilerPass\DoctrineTracingCompilerPass;
 use Instrumentation\Metrics\AI\Platform\MeteringPlatform;
+use Instrumentation\Profiling\Label\ProfileLabelProviderInterface;
 use Instrumentation\Semantics\Url\UrlSanitizer;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
@@ -60,6 +61,9 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         }
         if ($this->isConfigEnabled($container, $config['metrics'])) {
             $this->loadMetrics($config['metrics'], $container);
+        }
+        if ($this->isConfigEnabled($container, $config['profiling'])) {
+            $this->loadProfiling($config['profiling'], $container);
         }
     }
 
@@ -195,6 +199,25 @@ class Extension extends BaseExtension implements CompilerPassInterface, PrependE
         if ($config['flush_after_request']) {
             $loader->load('request.php');
         }
+    }
+
+    /**
+     * @param array<mixed> $config
+     */
+    protected function loadProfiling(array $config, ContainerBuilder $container): void
+    {
+        $container->registerForAutoconfiguration(ProfileLabelProviderInterface::class)->addTag('instrumentation.profiling.label_provider');
+
+        foreach (['active', 'frequency', 'request_rate', 'clock', 'max_depth', 'span_attribute'] as $key) {
+            $container->setParameter('profiling.'.$key, $config[$key]);
+        }
+        $container->setParameter('profiling.on_demand.token', $config['on_demand']['token']);
+        $container->setParameter('profiling.on_demand.header', $config['on_demand']['header']);
+        foreach (['url', 'application', 'environment', 'upload_deadline_ms', 'max_in_flight'] as $key) {
+            $container->setParameter('profiling.pyroscope.'.$key, $config['pyroscope'][$key]);
+        }
+
+        $this->getLoader('profiling', $container)->load('profiling.php');
     }
 
     /**

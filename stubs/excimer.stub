@@ -1,0 +1,75 @@
+<?php
+
+// The excimer extension (https://www.mediawiki.org/wiki/Excimer), for PHPStan: the extension is optional and absent from most CI images.
+
+const EXCIMER_REAL = 0;
+const EXCIMER_CPU = 1;
+
+class ExcimerProfiler
+{
+    public function setPeriod(float $period): void
+    {
+    }
+
+    public function setEventType(int $eventType): void
+    {
+    }
+
+    public function setMaxDepth(int $maxDepth): void
+    {
+    }
+
+    public function start(): void
+    {
+    }
+
+    public function stop(): void
+    {
+    }
+
+    public function getLog(): ExcimerLog
+    {
+    }
+}
+
+/**
+ * @implements Iterator<int, ExcimerLogEntry>
+ */
+class ExcimerLog implements Iterator, Countable
+{
+    public function count(): int
+    {
+    }
+
+    public function current(): ExcimerLogEntry
+    {
+    }
+
+    public function key(): int
+    {
+    }
+
+    public function next(): void
+    {
+    }
+
+    public function rewind(): void
+    {
+    }
+
+    public function valid(): bool
+    {
+    }
+}
+
+class ExcimerLogEntry
+{
+    /** @return list<array<string, mixed>> */
+    public function getTrace(): array
+    {
+    }
+
+    public function getEventCount(): int
+    {
+    }
+}

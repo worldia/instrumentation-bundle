@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Tests\Instrumentation\Functional;
 
 use Instrumentation\Metrics\AI\Platform\MeteringPlatform;
+use Instrumentation\Profiling\Request\EventListener\RequestProfilingSubscriber;
 use Instrumentation\Tracing\AI\Agent\Legacy\TracingAgent as LegacyTracingAgent;
 use Instrumentation\Tracing\AI\Agent\TracingAgent;
 use Instrumentation\Tracing\AI\Platform\TracingPlatform;
@@ -18,7 +19,9 @@ use OpenTelemetry\API\Trace\TracerProviderInterface;
 use Symfony\AI\Agent\Execution\Execution;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpKernel\KernelEvents;
 use Tests\Instrumentation\Functional\Stub\DummyPlatform;
 
 /**
@@ -47,6 +50,20 @@ final class BootTest extends KernelTestCase
 
         $this->assertInstanceOf(TracerProviderInterface::class, $container->get(TracerProviderInterface::class));
         $this->assertInstanceOf(MeterProviderInterface::class, $container->get(MeterProviderInterface::class));
+    }
+
+    public function testTheProfilerIsRegisteredOnTheRequestEventsWithItsRuntimeSettings(): void
+    {
+        self::bootKernel();
+        $dispatcher = self::getContainer()->get('event_dispatcher');
+        $this->assertInstanceOf(EventDispatcherInterface::class, $dispatcher);
+
+        $subscribers = array_filter(
+            array_map(static fn (callable|array $l): mixed => \is_array($l) ? $l[0] : null, $dispatcher->getListeners(KernelEvents::REQUEST)),
+            static fn (mixed $o): bool => $o instanceof RequestProfilingSubscriber,
+        );
+
+        $this->assertCount(1, $subscribers, 'the profiler listens to kernel.request');
     }
 
     public function testTheConfiguredQueryParametersAreRedactedOnTopOfTheDefaults(): void
