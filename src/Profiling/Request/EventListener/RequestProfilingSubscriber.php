@@ -39,6 +39,10 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
 {
     private readonly bool $enabled;
     private readonly LoggerInterface $logger;
+    private readonly int $frequency;
+    private readonly float $requestRate;
+    private readonly string $clock;
+    private readonly int $maxDepth;
     private readonly string $onDemandToken;
     private readonly string $onDemandHeader;
     private readonly string $spanAttribute;
@@ -59,21 +63,25 @@ final class RequestProfilingSubscriber implements EventSubscriberInterface, Rese
         private readonly iterable $labelProviders = [],
         private readonly MainSpanContextInterface|null $mainSpanContext = null,
         LoggerInterface|null $logger = null,
-        bool $active = true,
-        private readonly int $frequency = 50,
-        private readonly float $requestRate = 1.0,
-        private readonly string $clock = 'wall',
+        bool|null $active = true,
+        int|null $frequency = 50,
+        float|null $requestRate = 1.0,
+        string|null $clock = 'wall',
         string|null $onDemandToken = '',
         string|null $onDemandHeader = 'X-Profile-Token',
         string|null $spanAttribute = 'pyroscope.profile.id',
-        private readonly int $maxDepth = 256,
+        int|null $maxDepth = 256,
     ) {
         $this->logger = $logger ?? new NullLogger();
-        // An unset environment variable with a `default::` fallback arrives as null.
+        // An unset environment variable with a `default::` fallback arrives as null: every setting has its default here.
+        $this->frequency = $frequency ?? 50;
+        $this->requestRate = $requestRate ?? 1.0;
+        $this->clock = 'cpu' === $clock ? 'cpu' : 'wall';
+        $this->maxDepth = $maxDepth ?? 256;
         $this->onDemandToken = $onDemandToken ?? '';
         $this->onDemandHeader = $onDemandHeader ?: 'X-Profile-Token';
         $this->spanAttribute = $spanAttribute ?? '';
-        $this->enabled = $active && $frequency > 0 && \extension_loaded('excimer');
+        $this->enabled = (bool) $active && $this->frequency > 0 && \extension_loaded('excimer');
     }
 
     public static function getSubscribedEvents(): array

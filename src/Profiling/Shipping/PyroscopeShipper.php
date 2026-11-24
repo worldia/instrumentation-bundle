@@ -35,13 +35,15 @@ final class PyroscopeShipper implements ProfileShipperInterface
     private readonly string $url;
     private readonly string $application;
     private readonly string $environment;
+    private readonly int $uploadDeadlineMs;
+    private readonly int $maxInFlight;
 
     public function __construct(
         string|null $url,
         string|null $application,
         string|null $environment = '',
-        private readonly int $uploadDeadlineMs = 150,
-        private readonly int $maxInFlight = 8,
+        int|null $uploadDeadlineMs = 150,
+        int|null $maxInFlight = 8,
         LoggerInterface|null $logger = null,
     ) {
         $this->logger = $logger ?? new NullLogger();
@@ -49,6 +51,8 @@ final class PyroscopeShipper implements ProfileShipperInterface
         $this->url = $url ?? '';
         $this->application = $application ?? '';
         $this->environment = $environment ?? '';
+        $this->uploadDeadlineMs = $uploadDeadlineMs ?? 150;
+        $this->maxInFlight = $maxInFlight ?? 8;
     }
 
     public function ship(string $pprof, float $startedAt, array $labels): void
@@ -59,8 +63,9 @@ final class PyroscopeShipper implements ProfileShipperInterface
         if ('' !== $this->environment) {
             $labels += ['env' => $this->environment];
         }
-        $name = $this->application.'{'.implode(',', array_map(
-            static fn (string $k, string $v): string => $k.'='.preg_replace('/[^\x21-\x7E]|[{},"]/', '_', $v),
+        $clean = static fn (string $v): string => (string) preg_replace('/[^\x21-\x7E]|[{},"=]/', '_', $v);
+        $name = $clean($this->application).'{'.implode(',', array_map(
+            static fn (string $k, string $v): string => $clean($k).'='.$clean($v),
             array_keys($labels),
             $labels,
         )).'}';
@@ -89,7 +94,7 @@ final class PyroscopeShipper implements ProfileShipperInterface
         curl_setopt_array($handle, [
             \CURLOPT_POST => true,
             \CURLOPT_POSTFIELDS => $pprof,
-            \CURLOPT_HTTPHEADER => ['Content-Type: application/octet-stream'],
+            \CURLOPT_HTTPHEADER => ['Content-Type: application/octet-stream', 'Expect:'], // no 100-continue round trip before a large body
             \CURLOPT_RETURNTRANSFER => true,
             \CURLOPT_CONNECTTIMEOUT_MS => max(1, $this->uploadDeadlineMs * 2),
             \CURLOPT_TIMEOUT_MS => 10_000,

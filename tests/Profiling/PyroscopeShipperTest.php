@@ -28,8 +28,8 @@ final class PyroscopeShipperTest extends TestCase
 
         try {
             $body = random_bytes(40_000);
-            (new PyroscopeShipper('http://127.0.0.1:'.$server['port'], 'app', 'test'))
-                ->ship($body, 1_795_000_000.5, ['route' => 'a b{c}', 'method' => 'GET']);
+            (new PyroscopeShipper('http://127.0.0.1:'.$server['port'], 'my app{1}', 'test'))
+                ->ship($body, 1_795_000_000.5, ['route' => 'a b{c}', 'method' => 'GET', 'my key=' => 'x']);
 
             // The server records what it read, then waits 300 ms before answering: read it back while the answer is still pending.
             $deadline = microtime(true) + 3;
@@ -42,7 +42,7 @@ final class PyroscopeShipperTest extends TestCase
             $this->assertSame(\strlen($body), $received['bytes'], 'the whole body arrived');
             $this->assertStringStartsWith('POST /ingest?', $received['request']);
             parse_str((string) parse_url('http://x'.explode(' ', $received['request'])[1], \PHP_URL_QUERY), $query);
-            $this->assertSame('app{route=a_b_c_,method=GET,env=test}', $query['name']);
+            $this->assertSame('my_app_1_{route=a_b_c_,method=GET,my_key_=x,env=test}', $query['name']);
             $this->assertSame('pprof', $query['format']);
             $this->assertSame('1795000000', $query['from']);
         } finally {
